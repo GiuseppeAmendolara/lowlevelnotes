@@ -1,3 +1,10 @@
+---
+layout: page
+title: 7. Extension Methods
+parent: 2. Intermediate
+nav_order: 6
+---
+
 # Extension Methods
 Extension methods allow you to add new methods to existing classes, structs, or interfaces without modifying their original code. This is super useful if you need to add functionality to a class but can't change its definition (like with classes from libraries or the .NET framework).
 

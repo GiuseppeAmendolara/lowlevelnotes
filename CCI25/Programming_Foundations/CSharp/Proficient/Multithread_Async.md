@@ -1,3 +1,10 @@
+---
+layout: page
+title: 4. Mulithreading & Async
+parent: 3. Proficient
+nav_order: 3
+---
+
 # Mulithreading / Asynchronous programming
 Normally, C# runs code `line by line` (synchronously). `Multithreading` allows `multiple operations to run at the same time`, improving performance. Think of it like multitasking.
 

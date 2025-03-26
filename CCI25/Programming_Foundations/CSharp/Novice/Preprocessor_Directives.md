@@ -1,3 +1,10 @@
+---
+layout: page
+title: 7. Preprocessor directives
+parent: 1. Novice
+nav_order: 6
+---
+
 # Preprocessor directives
 Preprocessor directives are instructions that tell the compiler how to process the source code before actual compilation begins. They do not produce executable code but instead `control how the compiler treats parts of the code`.
 

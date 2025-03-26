@@ -1,3 +1,10 @@
+---
+layout: page
+title: 1. Operator Overloading
+parent: 2. Intermediate
+nav_order: 0
+---
+
 # Operator Overloading
 You can redefine or overload most of the built-in operators available in C#. Thus a programmer can use operators with user-defined types as well. Overloaded operators are functions with special names the keyword ``operator``.
 

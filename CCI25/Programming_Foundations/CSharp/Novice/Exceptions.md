@@ -1,3 +1,10 @@
+---
+layout: page
+title: 6. Exception handling
+parent: 1. Novice
+nav_order: 5
+---
+
 # Exception handling
 Exception handling is a way to manage errors and prevent your program from crashing unexpectedly. Exceptions are events that disrupt the normal flow of execution, and C# offers ways to deal with them safely.
 

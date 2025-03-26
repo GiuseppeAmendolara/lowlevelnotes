@@ -1,3 +1,10 @@
+---
+layout: page
+title: 11.  Expression Bodies
+parent: 2. Intermediate
+nav_order: 10
+---
+
 # Expression-Bodied Members
 Expression-bodied members are a `shorter way to write methods and properties` when they only have one line of code. Instead of `{ }`, you use `=>` (fat arrow).
 

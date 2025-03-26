@@ -1,3 +1,10 @@
+---
+layout: page
+title: 5. Partial Classes & Partial Methods
+parent: 2. Intermediate
+nav_order: 4
+---
+
 # Partials
 Partials allows us to split up "definitions" into multiple files. When compiled, the compiler combines all parts into a single class file.
 

@@ -1,3 +1,10 @@
+---
+layout: page
+title: 5. Data Collections
+parent: 1. Novice
+nav_order: 4
+---
+
 # Data collections
 In C#, data collections are used to store and manage `multiple values in a single structure`. Each type of collection serves a unique purpose, depending on how you want to manage, access, and modify the data.
 
@@ -13,6 +20,7 @@ In C#, data collections are used to store and manage `multiple values in a singl
 | `Stack` | LIFO (Last In First Out) | When you need a stack-like structure |
 | `HashSet` | Unordered, unique elements | When duplicates should be avoided |
 | `SortedList` | Key-value pairs, sorted by key | When you need a sorted key-value collection |
+
 ## Arrays
 An array is a fixed-size collection that holds elements of the same type.
 

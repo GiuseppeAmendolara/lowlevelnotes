@@ -1,3 +1,10 @@
+---
+layout: page
+title: 9. Lambda expressions (Anonymous Functions)
+parent: 2. Intermediate
+nav_order: 8
+---
+
 # Lambda
 A lambda expression is just a `shortcut for writing small functions` without naming them.
 
@@ -49,6 +56,7 @@ Statement lambda encloses one or more statements in the lambda body. We use curl
 ```
 
 **Key Differences:**
+
 | Feature | Expression Lambda | Statement Lambda |
 |-|-|-|
 | Syntax Complexity | Simple (single expression) | Supports multiple statements |

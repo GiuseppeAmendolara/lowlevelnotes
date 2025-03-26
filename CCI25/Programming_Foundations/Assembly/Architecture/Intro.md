@@ -1,3 +1,10 @@
+---
+layout: page
+title: 1. Introduction
+parent: 1. Architecture
+nav_order: 0
+---
+
 # Introduction
 ## What is assembly?
 Assembly is a family of low-level programming languages that are one step above machine code. Each assembly language is specific to a particular CPU architecture (e.g., x86, ARM, MIPS) and directly corresponds to the processor's instruction set.
@@ -19,6 +26,7 @@ Key aspects of architecture:
 - Peripheral Interfaces
 
 ### Common CPU architecures
+
 | Architecture | Description | Use cases |
 |-|-|-|
 | x86 | A complex instruction set computer architecture (CISC) used in most desktops, laptops and servers. | PCs |

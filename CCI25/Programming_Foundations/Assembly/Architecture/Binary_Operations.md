@@ -1,3 +1,10 @@
+---
+layout: page
+title: 10. Binary operations
+parent: 1. Architecture
+nav_order: 9
+---
+
 # Binary operations
 
 True / false: In programming 1 is generally respresented as a value being "True" and 0 as one being "False".

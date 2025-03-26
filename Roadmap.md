@@ -5,7 +5,7 @@ permalink: /Roadmap/
 nav_order: 1
 ---
 
-<img src="/Images/Roadmap.png" alt="Roadmap logo" width="35"/><span style="font-size: 25px;"><strong> Roadmap </strong></span>
+# Roadmap
 
 ```mermaid
 graph TD;
@@ -45,14 +45,19 @@ graph TD;
 		end
 	end
 
-LL <-.-> RE
-OS <-.-> RE
-NET -.-> PEN
+	LL <-.-> RE
+	OS <-.-> RE
+	NET -.-> PEN
+	
+	classDef DarkMode fill:#000000,stroke:#FFFFFF,color:#FFFFFF;
+	linkStyle 0,1,2,3,4 stroke:#FFFFFF,stroke-width:3px;
+	class Code,HL,LL,OS,RE,NS,NET,PEN DarkMode;
 ```
 
 {: .warning}
-> - Add this folder to your windows defender exclusions as it might remove valuable resources.
+> - In case you are studying this using the raw github files, add this folder to your Windows Defender exclusions as it might remove valuable resources.
 > - Don't jump from topic to topic unless you know what you're doing. Most of the "steps" build on top of each other.
-> - Install add-ons like [dark reader](https://darkreader.org/) and [remove HTML elements](https://chromewebstore.google.com/detail/remove-html-elements/enegojdnkeicfoiknhfjaedhlckeahmf?hl=en&pli=1) that make reading better.
-> - If you really can't wrap your head around something, just ask [ChatGPT](https://chatgpt.com/) to clarify it.
-> - Keep note of where you left off studying and make bookmarks in your browser application.
+> - Install add-ons like [dark reader](https://darkreader.org/) and [remove HTML elements](https://chromewebstore.google.com/detail/remove-html-elements/enegojdnkeicfoiknhfjaedhlckeahmf?hl=en&pli=1) to make reading better on supported webpages.
+> - If you really can't wrap your head around something, just ask [ChatGPT](https://chatgpt.com/) or other AI to clarify it.
+> - Keep note of where you left off studying
+> - Make bookmarks of useful resources in your browser application.

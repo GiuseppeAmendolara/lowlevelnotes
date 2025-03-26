@@ -1,6 +1,6 @@
 ---
 layout: page
-title: About Me
+title: About
 permalink: /about/
 nav_order: 6
 ---
@@ -8,9 +8,10 @@ nav_order: 6
 # Hello, world!
 I'm Grimy86, passionate about low-level programming and cybersecurity. I contribute to the open-source community by sharing notes to help newcomers learn and grow.
 
+[Contact](mailto:grimy86@proton.me){: .btn}
+
 ## Current projects
 [![Readme Card](https://github-readme-stats.vercel.app/api/pin/?username=grimy86&repo=CCI25&theme=swift)](https://github.com/grimy86/CCI25)
-- [x] Making a Microsoft's Sticky Notes clone from scratch using WPF (MVVM)
 
 ---
 
@@ -46,6 +47,8 @@ I'm Grimy86, passionate about low-level programming and cybersecurity. I contrib
   - Reads out all of the system info: NTAccounts, OSVersionInfo, Win32_OperatingSystem Info, Win32_Processor Info, etc...
   - Mail services to be used by a in-house "bot" to send application csv's, bool results, etc. to a team mailaddress.
   - Windows Process services that handle complete control over administrative tasks like executing batch, ps1, .exe, etc.
+- Making a Microsoft's Sticky Notes clone from scratch using WPF (MVVM)
+	- Project-wide exception logging
 
 ---
 

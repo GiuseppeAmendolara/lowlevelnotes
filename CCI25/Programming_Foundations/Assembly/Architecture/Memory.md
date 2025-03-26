@@ -1,3 +1,10 @@
+---
+layout: page
+title: 4. Memory
+parent: 1. Architecture
+nav_order: 3
+---
+
 # Memory
 You could see memory as a collection of small and large databases or containers to store our information for later processing. Every byte of memory has a unique address that allows the CPU to locate it.
 
@@ -23,6 +30,7 @@ Volatile memory requires power to retain data. When the system is powered off, t
 
 ## Memory Hierarchy
 Memory in a computer system is structured as a hierarchy, based on speed, size, and proximity to the CPU:
+
 | Level | Type | Speed | Capacity | Proximity |
 |-|-|-|-|-|
 | 1 (Fastest) | Registers | Fastest | Very small | Inside the CPU |
@@ -68,10 +76,9 @@ Here is a general overview of how memory is laid out in Windows. This is extreme
 
 In here we'll also dive just a bit deeper into how the stack and the heap are layed out in memory.
 
-![Windows memory layout](/Programming_Foundations/Assembly/Images/WindowsMemoryLayoutRF.png)
+![Windows memory layout](/CCI25/Programming_Foundations/Assembly/Images/WindowsMemoryLayoutRF.png)
 
-> [!IMPORTANT]
->
+{: .warning }
 > The diagram above shows the direction variables (and any named data, even structures) are put into or taken out of memory. The actual data is put into memory differently. This is why stack diagrams vary so much. You'll often see stack diagrams with the stack and heap growing towards each other or high memory addresses at the top. However, this diagram is the most relevant for reverse engineering. Low addresses being at the top is also the most realistic depiction.
 
 ### Stack
@@ -85,7 +92,7 @@ For now it's important to take note of two things:
 
 That all may seem odd but remember, it's like a normal numerical list where 1, the lower number, is at the top. 10, the higher number, is at the bottom.
 
- To dive deeper into how the stack works read the [Call stack file](/Programming_Foundations/Assembly/Architecture/Call_stack.md).
+ To dive deeper into how the stack works read the [Call stack file](/CCI25/Programming_Foundations/Assembly/Architecture/Call_stack.md).
 
 ### Heap
 The heap is a region of memory in RAM that is used for dynamic memory allocation, where variables or objects are created and destroyed at runtime (long-time large data objects). Unlike the stack, the heap is not managed automatically by the CPU; it is managed by the programmer or a memory manager (e.g., the operating system or language runtime).
@@ -107,7 +114,8 @@ To read more about the PEB structure layout read [microsoft learn PEB structure 
 ### Program image
 This is the program/executable loaded into memory. On Windows, this is typically a Portable Executable (PE).
 
-## Key Differences Between x86 and x86-64 Directives
+## Key Differences Between x86 and x86_64 Directives
+
 | Aspect | x86 (32-bit) | x86-64 (64-bit) |
 |-|-|-|
 | Address Space | 4 GB total for all sections. | Vastly larger (up to 256 TB practical). | 

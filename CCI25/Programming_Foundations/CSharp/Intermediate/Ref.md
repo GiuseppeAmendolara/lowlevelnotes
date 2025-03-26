@@ -1,3 +1,10 @@
+---
+layout: page
+title: 3. Pass by reference
+parent: 1. Intermediate
+nav_order: 2
+---
+
 # Pass by reference
 The `ref` and `out` keywords are used to `pass arguments by reference` to functions or methods. This means that any `changes made to the parameters inside the function will affect the original values outside the function`. 
 

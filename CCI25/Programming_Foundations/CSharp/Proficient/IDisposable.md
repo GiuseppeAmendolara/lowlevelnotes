@@ -1,3 +1,10 @@
+---
+layout: page
+title: 3. The `IDisposable` interface
+parent: 3. Proficient
+nav_order: 2
+---
+
 # The `IDisposable` interface
 `IDisposable` is an interface that allows you to `release unmanaged resources` like files, database connections, network sockets, etc., when an object is no longer needed.
 

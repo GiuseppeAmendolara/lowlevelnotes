@@ -1,3 +1,10 @@
+---
+layout: page
+title: 3. Functions & Methods
+parent: 1. Novice
+nav_order: 2
+---
+
 # Functions / Methods
 A `function` is a block of code that will run whenever we call it, think of our `Main` function.
 

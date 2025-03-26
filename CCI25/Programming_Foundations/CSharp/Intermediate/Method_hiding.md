@@ -1,3 +1,10 @@
+---
+layout: page
+title: 12. Method Hiding
+parent: 2. Intermediate
+nav_order: 11
+---
+
 # Method Hiding
 When a derived class defines a method with the same name as a method in the base class `without using virtual and override`, the derived method hides the base method instead of overriding it. This is called `method hiding`.
 

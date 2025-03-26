@@ -1,12 +1,13 @@
 ---
 layout: page
-title: 1. Programming
+title: Programming
 parent: Programming Foundations
 nav_order: 0
 ---
 
-**Note:** BIG REWORK IN PROGRESS TO BUNDLE C# AND C/C++ GUIDES
+## To be implemented
 
+<!--
 **prerequisites:** None
 
 **disclaimer:** Learning a high-level language like C# isn’t necessary for low-level programming, but it can help if you find C or C++ challenging. Some prefer C++ since it has less abstraction, reducing the gap to low-level concepts.
@@ -32,3 +33,4 @@ Object-Oriented Programming:
 5. [Inheritance]()
 6. [Polymorphism]()
 7. [Interfaces]()
+   -->

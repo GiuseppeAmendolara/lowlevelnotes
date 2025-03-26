@@ -1,3 +1,10 @@
+---
+layout: page
+title: 2. Language Integrated Query (LINQ)
+parent: 3. Proficient
+nav_order: 1
+---
+
 # Language Integrated Query (LINQ)
 A feature in C# that lets you `query collections` (arrays, lists, databases, XML, etc.) using a simple and readable syntax.
 

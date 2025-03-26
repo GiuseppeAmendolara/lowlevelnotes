@@ -1,3 +1,10 @@
+---
+layout: page
+title: 1. Dependency Injection (DI)
+parent: 4. Expert
+nav_order: 0
+---
+
 # Dependency Injection (DI)
 Dependency Injection is a technique that helps us write flexible, maintainable, and testable code by `providing objects (dependencies) from outside a class instead of creating them inside the class`. This `reduces tight coupling` between components, making it easier to change implementations without modifying too much code.
 

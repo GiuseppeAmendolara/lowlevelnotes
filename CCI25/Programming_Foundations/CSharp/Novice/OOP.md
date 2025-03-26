@@ -1,3 +1,10 @@
+---
+layout: page
+title: 8. Object-Oriented Programming (OOP)
+parent: 1. Novice
+nav_order: 7
+---
+
 # Object-Oriented Programming (OOP)
 This is most likely the most confusing and important part of C#. To clear up any confusion about OOP, think of it like this:
 
@@ -116,6 +123,7 @@ class Car
 ```
 
 As you can see abstraction is mostly done by using `access modifiers`:
+
 | Modifier | Description |
 |-|-|
 | `public` | The code is accessible for all classes. |

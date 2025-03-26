@@ -1,3 +1,10 @@
+---
+layout: page
+title: 4. Type conversion & parsing
+parent: 1. Novice
+nav_order: 3
+---
+
 # Type conversion and parsing
 Conversion is the process of going from one data type to another. This can be done in a couple of different ways:
 - `Casting`: convert compatible types (e.g., `int → double`).

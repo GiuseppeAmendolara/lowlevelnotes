@@ -1,3 +1,10 @@
+---
+layout: page
+title: 5. CPU Registers
+parent: 1. Architecture
+nav_order: 4
+---
+
 # Registers
 Registers are for storing data. There are 8 common registers in assembly and 6 are used for general purpose.
 In general you could use these registers in whatever way you like but there are common conventions.
@@ -7,6 +14,7 @@ What is the difference between the "E" and "R" prefixes? Besides one being a 64-
 
 
 ## General purpose
+
 | Register  | Usage                                 | Description       |
 |-----------|---------------------------------------|-------------------|
 | EAX - RAX | multiplication and division           | Accumulator       |
@@ -18,6 +26,7 @@ What is the difference between the "E" and "R" prefixes? Besides one being a 64-
 
 
 ## Specific purpose
+
 | Register  | Usage                                                          | Description           |
 |-----------|----------------------------------------------------------------|-----------------------|
 | ESP - RSP | Reference function parameters and local variables on the stack | Stack pointer         |

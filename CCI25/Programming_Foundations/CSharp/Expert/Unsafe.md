@@ -1,3 +1,10 @@
+---
+layout: page
+title: 2. Unsafe
+parent: 4. Expert
+nav_order: 1
+---
+
 # Unsafe
 The unsafe keyword allows you to write code that uses `pointers`, enabling `direct memory access`. By default, C# runs in a safe mode to prevent memory manipulation errors, but using the unsafe modifier, you can work with pointers `similar to languages like C and C++`.
 

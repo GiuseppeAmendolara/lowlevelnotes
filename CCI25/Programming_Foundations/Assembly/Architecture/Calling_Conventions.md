@@ -1,3 +1,10 @@
+---
+layout: page
+title: 11. Calling Conventions
+parent: 1. Architecture
+nav_order: 10
+---
+
 # Calling Conventions
 Calling conventions are the blueprint for functions within a program:
 

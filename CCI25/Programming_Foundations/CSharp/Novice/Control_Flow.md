@@ -1,3 +1,10 @@
+---
+layout: page
+title: 2. Control Flow
+parent: 1. Novice
+nav_order: 1
+---
+
 # Control flow
 Simply said, control flow statements allow us to alter the execution of our programs based on certain conditions.
 

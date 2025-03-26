@@ -1,3 +1,10 @@
+---
+layout: page
+title: 4. Generics
+parent: 2. Intermediate
+nav_order: 3
+---
+
 # Generics
 Generics allow you to write a class or method that can work with any data type. Much like templates in C++.
 

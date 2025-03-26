@@ -1,3 +1,10 @@
+---
+layout: page
+title: 5. Declaring variables
+parent: 2. Syntax
+nav_order: 4
+---
+
 # Declaring variables
 Declare variables in the .data section. The 'd' stands for defined / declared. So db is a defined or declared byte.
 

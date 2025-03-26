@@ -1,3 +1,10 @@
+---
+layout: page
+title: 10. Delegates, Anonymous Methods, etc.
+parent: 2. Intermediate
+nav_order: 9
+---
+
 # Delegates
 A delegate is like a `function pointer in C or C++`, meaning it can store `references to methods` and call them dynamically.
 
@@ -30,7 +37,7 @@ del.Invoke("Hello World!");
 // or 
 del("Hello World!");
 ```
-![delegates](/Programming_Foundations/CSharp/Images/Delegates.png)
+![delegates](/CCI25/Programming_Foundations/CSharp/Images/Delegates.png)
 
 ## Passing delegates
 You can even pass a delegate as an argument to another method.

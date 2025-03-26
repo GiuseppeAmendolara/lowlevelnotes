@@ -1,3 +1,10 @@
+---
+layout: page
+title: 6. Tuples & Value Tuples
+parent: 2. Intermediate
+nav_order: 5
+---
+
 # Tuples
 A data structure that contains a sequence of elements of different data types. A tuple can have elements from 1 to 8 types. If try to add elements greater than eight, then the compiler will throw an error. 
 

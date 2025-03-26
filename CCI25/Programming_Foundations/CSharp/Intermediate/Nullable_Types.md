@@ -1,3 +1,10 @@
+---
+layout: page
+title: 2. Nullable value types
+parent: 2. Intermediate
+nav_order: 1
+---
+
 # Nullable value types
 Some value types (like int, float, bool, etc.) cannot have a `null` value by default. However, sometimes you might want to represent the absence of a value, especially when working with databases or optional fields.
 

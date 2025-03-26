@@ -20,7 +20,7 @@ aux_links_new_tab: true
 
 # Images
 logo: "Images/Logo.png"
-# favicon_ico: "Images/Logo.ico"
+favicon_ico: "Images/Logo.ico"
 
 # Search bar
 search_enabled: true
@@ -45,3 +45,5 @@ callouts:
   warning:
     title: Warning
     color: red
+
+# Build & Run: bundle exec jekyll serve

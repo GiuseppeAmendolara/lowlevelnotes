@@ -1,3 +1,10 @@
+---
+layout: page
+title: 5. Attributes & Reflection
+parent: 3. Proficient
+nav_order: 4
+---
+
 # Attributes
 Attributes are `special markers (metadata)` that you can attach to classes, methods, properties, etc., to `provide extra information about them`. They `don’t change how the code runs` but help at runtime or compile-time.
 

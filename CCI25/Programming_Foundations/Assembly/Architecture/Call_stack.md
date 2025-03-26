@@ -1,3 +1,10 @@
+---
+layout: page
+title: 8. The stack
+parent: 1. Architecture
+nav_order: 7
+---
+
 # The stack
 Refers to the logical structure used to manage function calls, consisting of stack frames.
 
@@ -15,12 +22,12 @@ The stack's main mechanism is that it uses a "stack" data structure for manipula
 - elements get pushed onto the stack
 - elements get popped off of the stack
 
-> [!IMPORTANT]
+{: .warning }
 > The stack grows negatively!
 > 
 > So, the higher up you go into the stack the more negative the items become.
 
-![Stack DataStructure](/Info/Images/Stack_DataStructure.png)
+![Stack Data Structure](/CCI25/Programming_Foundations/Assembly/Images/Stack_datastructure.png)
 
 ## A stack frame
 By default any function that you can call will create it's own "stack frame".
@@ -52,7 +59,7 @@ When the function terminates, the following steps happen:
 2. Pop ebp to restore the caller's base pointer.
 3. Return to the caller's stack frame.
 
-![Stack in action](/Programming_Foundations/Assembly/Images/Stack_example.png)
+![Stack in action](/CCI25/Programming_Foundations/Assembly/Images/Stack_example.png)
 
 <!--
 (The x86 architecture has hardware support for an execution stack mechanism. Instructions such as push, pop, call and ret are used with the properly set up stack to pass parameters, to allocate space for local data, and to save and restore call-return points. The ret size instruction is very useful for implementing space efficient (and fast) calling conventions where the callee is responsible for reclaiming stack space occupied by parameters. When setting up a stack frame to hold local data of a recursive procedure there are several choices; the high level enter instruction (introduced with the 80186) takes a procedure-nesting-depth argument as well as a local size argument, and may be faster than more explicit manipulation of the registers (such as push bp ; mov bp, sp ; sub sp, size). Whether it is faster or slower depends on the particular x86-processor implementation as well as the calling convention used by the compiler, programmer or particular program code; most x86 code is intended to run on x86-processors from several manufacturers and on different technological generations of processors, which implies highly varying microarchitectures and microcode solutions as well as varying gate- and transistor-level design choices. The full range of addressing modes (including immediate and base+offset) even for instructions such as push and pop, makes direct usage of the stack for integer, floating point and address data simple, as well as keeping the ABI specifications and mechanisms relatively simple compared to some RISC architectures (require more explicit call stack details).)

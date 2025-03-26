@@ -1,3 +1,10 @@
+---
+layout: page
+title: 8. Indexers
+parent: 2. Intermediate
+nav_order: 7
+---
+
 # Indexers
 An indexer is a special kind of property that allows you to access an object as if it were an array, even though it's a custom class or struct. It enables the use of the square bracket `[]` syntax for getting or setting values within an object.
 

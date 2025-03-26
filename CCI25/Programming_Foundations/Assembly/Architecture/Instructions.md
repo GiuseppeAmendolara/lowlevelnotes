@@ -1,5 +1,13 @@
+---
+layout: page
+title: 9. Instructions / opcodes
+parent: 1. Architecture
+nav_order: 8
+---
+
 # Instructions / opcodes
-> [!NOTE]
+
+{: .warning }
 > It's important to know that you can't study all instructions. Use an [x86 instruction reference](https://www.felixcloutier.com/x86/) instead.
 
 - They are executable statements

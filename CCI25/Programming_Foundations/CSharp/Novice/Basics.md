@@ -1,10 +1,17 @@
+---
+layout: page
+title: 1. Entry-point, variables, data types & operators
+parent: 1. Novice
+nav_order: 0
+---
+
 # Basics
 ## Entry point
 C#'s Entry point, like other languages is the `Main` function. It's the function that gets ran first whenever we start the program. For now there's no need to worry about `static`, `void` or `string[]`, it's unimportant.
 
 Take a look at the picture below, this is what a typical C# program looks like at first:
 
-![Entry](/Programming_Foundations/CSharp/Images/Entry.png)
+![Entry](/CCI25/Programming_Foundations/CSharp/Images/Entry.png)
 
 ## Data types
 Variables are a container for us to store a value that belongs to a `data type`. There's two different types of value types: `value` and `reference`.
@@ -17,6 +24,7 @@ We can use built-in types that are defined by the language or build these data t
 
 ### Value types
 Predefined:
+
 | Real-word type | According C# keyword | Example |
 |-|-|-|
 | Whole numbers | `int` | `-5` or `5` |
@@ -25,6 +33,7 @@ Predefined:
 | Validity | `bool` | `true` or `false` |
 
 User-Defined:
+
 | Real-word type | According C# keyword | Example |
 |-|-|-|
 | A lightweight type for grouping others. | `struct` | `struct Point { public int X, Y; }` |
@@ -32,12 +41,14 @@ User-Defined:
 
 ### Reference types
 Predefined:
+
 | Real-word type | According C# keyword | Example |
 |-|-|-|
 | Sentences (collection of letters) | `string` | `"Hello World!"` |
 | A 'thing', any thing. | `object` | `"Hello World!"` or `5.5` |
 
 User-Defined:
+
 | Real-word type | According C# keyword | Example |
 |-|-|-|
 | A constructed object that can do things. | `class` | `class Dog{}` |
@@ -66,6 +77,7 @@ There's a bunch of types of operators. Usually when thinking of operators we thi
 For example: `int a = 5 + 5;` or `int b = a + 5;` or `int c = a + b;`
 
 ### Arithmetic
+
 | Name | Operator |
 |-|-|
 | Addition | `+` |
@@ -77,6 +89,7 @@ For example: `int a = 5 + 5;` or `int b = a + 5;` or `int c = a + b;`
 | Decrement | `--` |
 
 ### Assignment
+
 | Name | Operator |
 |-|-|
 | Assignment | `=` |
@@ -87,6 +100,7 @@ For example: `int a = 5 + 5;` or `int b = a + 5;` or `int c = a + b;`
 | Modulus assignment | `%=` |
 
 ### Comparison
+
 | Name | Operator |
 |-|-|
 | Equal to | `==` |
@@ -97,6 +111,7 @@ For example: `int a = 5 + 5;` or `int b = a + 5;` or `int c = a + b;`
 | Less than or equal to | `<=` |
 
 ### Logical
+
 | Name | Operator |
 |-|-|
 | Logical AND | `&&` |

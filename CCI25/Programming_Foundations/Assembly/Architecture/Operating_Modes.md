@@ -1,3 +1,10 @@
+---
+layout: page
+title: 3. Modes of Operation
+parent: 1. Architecture
+nav_order: 2
+---
+
 # Modes of Operation
 ## Protective mode
 The native processor state (default mode, therefor most commonly used)
