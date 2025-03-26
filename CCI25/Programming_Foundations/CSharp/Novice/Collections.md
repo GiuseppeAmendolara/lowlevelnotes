@@ -1,6 +1,7 @@
 ---
 layout: page
 title: 5. Data Collections
+permalink: /Collections/
 parent: 1. Novice
 nav_order: 4
 ---

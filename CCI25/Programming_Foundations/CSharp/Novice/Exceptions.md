@@ -1,6 +1,7 @@
 ---
 layout: page
 title: 6. Exception handling
+permalink: /Exception handling/
 parent: 1. Novice
 nav_order: 5
 ---

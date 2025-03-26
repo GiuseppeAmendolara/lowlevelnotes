@@ -1,6 +1,7 @@
 ---
 layout: page
 title: 4. Mulithreading & Async
+permalink: /Mulithreading & Async/
 parent: 3. Proficient
 nav_order: 3
 ---

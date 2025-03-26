@@ -1,6 +1,7 @@
 ---
 layout: page
 title: 2. Language Integrated Query (LINQ)
+permalink: /LINQ/
 parent: 3. Proficient
 nav_order: 1
 ---

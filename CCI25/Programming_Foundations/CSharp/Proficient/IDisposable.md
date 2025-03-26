@@ -1,6 +1,7 @@
 ---
 layout: page
 title: 3. The `IDisposable` interface
+permalink: /IDisposable/
 parent: 3. Proficient
 nav_order: 2
 ---

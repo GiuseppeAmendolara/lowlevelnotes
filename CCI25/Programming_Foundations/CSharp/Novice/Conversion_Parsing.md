@@ -1,6 +1,7 @@
 ---
 layout: page
 title: 4. Type conversion & parsing
+permalink: /Type conversion & parsing/
 parent: 1. Novice
 nav_order: 3
 ---

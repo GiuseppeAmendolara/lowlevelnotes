@@ -1,6 +1,7 @@
 ---
 layout: page
 title: 1. Events
+permalink: /Events/
 parent: 3. Proficient
 nav_order: 0
 ---

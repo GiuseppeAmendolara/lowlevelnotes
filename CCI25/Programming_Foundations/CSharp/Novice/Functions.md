@@ -1,6 +1,7 @@
 ---
 layout: page
 title: 3. Functions & Methods
+permalink: /Functions/
 parent: 1. Novice
 nav_order: 2
 ---

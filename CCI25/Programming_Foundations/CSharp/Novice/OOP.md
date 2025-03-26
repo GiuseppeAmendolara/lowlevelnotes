@@ -1,6 +1,7 @@
 ---
 layout: page
 title: 8. Object-Oriented Programming (OOP)
+permalink: /OOP/
 parent: 1. Novice
 nav_order: 7
 ---

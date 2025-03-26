@@ -1,6 +1,7 @@
 ---
 layout: page
 title: Programming
+permalink: /Programming/
 parent: Programming Foundations
 nav_order: 0
 ---

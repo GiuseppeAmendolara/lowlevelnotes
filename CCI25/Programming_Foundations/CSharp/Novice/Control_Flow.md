@@ -1,6 +1,7 @@
 ---
 layout: page
 title: 2. Control Flow
+permalink: /Control Flow/
 parent: 1. Novice
 nav_order: 1
 ---

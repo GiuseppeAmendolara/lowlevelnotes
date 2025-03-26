@@ -1,6 +1,7 @@
 ---
 layout: page
 title: 7. Preprocessor directives
+permalink: /Preprocessor directives/
 parent: 1. Novice
 nav_order: 6
 ---

@@ -1,6 +1,7 @@
 ---
 layout: page
 title: 5. Attributes & Reflection
+permalink: /Attributes & Reflection/
 parent: 3. Proficient
 nav_order: 4
 ---
