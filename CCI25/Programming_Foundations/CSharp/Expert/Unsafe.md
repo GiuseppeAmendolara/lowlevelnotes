@@ -1,7 +1,8 @@
 ---
 layout: page
 title: 2. Unsafe
-parent: 4. Expert
+permalink: /Programming_Foundations/CSharp/Expert/Unsafe
+parent: Expert
 nav_order: 1
 ---
 

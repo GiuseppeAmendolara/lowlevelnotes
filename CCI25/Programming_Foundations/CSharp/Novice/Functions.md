@@ -1,8 +1,8 @@
 ---
 layout: page
 title: 3. Functions & Methods
-permalink: /Functions/
-parent: 1. Novice
+permalink: /Programming_Foundations/CSharp/Novice/Functions/
+parent: Novice
 nav_order: 2
 ---
 

@@ -1,7 +1,7 @@
 ---
 layout: page
-title: 4. Expert
-permalink: /Proficient/
+title: Expert
+permalink: /Programming_Foundations/CSharp/Expert/
 parent: C#
 nav_order: 3
 ---

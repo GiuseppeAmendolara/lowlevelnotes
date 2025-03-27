@@ -1,8 +1,8 @@
 ---
 layout: page
 title: 5. Data Collections
-permalink: /Collections/
-parent: 1. Novice
+permalink: /Programming_Foundations/CSharp/Novice/Collections/
+parent: Novice
 nav_order: 4
 ---
 

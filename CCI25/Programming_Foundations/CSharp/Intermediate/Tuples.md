@@ -1,7 +1,8 @@
 ---
 layout: page
 title: 6. Tuples & Value Tuples
-parent: 2. Intermediate
+permalink: /Programming_Foundations/CSharp/Intermediate/Tuples
+parent: Intermediate
 nav_order: 5
 ---
 

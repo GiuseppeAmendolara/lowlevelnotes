@@ -1,7 +1,7 @@
 ---
 layout: page
 title: C/C++
-permalink: /C++/
+permalink: /Programming_Foundations/C++/
 parent: Programming Foundations
 nav_order: 2
 ---

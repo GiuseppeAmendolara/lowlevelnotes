@@ -1,7 +1,8 @@
 ---
 layout: page
 title: 7. Sizes / Words
-parent: 1. Architecture
+permalink: /Programming_Foundations/Assembly/Architecture/Sizes
+parent: Architecture
 nav_order: 6
 ---
 

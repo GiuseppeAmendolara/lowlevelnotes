@@ -1,7 +1,8 @@
 ---
 layout: page
 title: 12. Method Hiding
-parent: 2. Intermediate
+permalink: /Programming_Foundations/CSharp/Intermediate/Method_Hiding
+parent: Intermediate
 nav_order: 11
 ---
 

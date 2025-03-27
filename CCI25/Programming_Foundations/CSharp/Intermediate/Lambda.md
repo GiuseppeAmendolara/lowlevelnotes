@@ -1,7 +1,8 @@
 ---
 layout: page
 title: 9. Lambda expressions (Anonymous Functions)
-parent: 2. Intermediate
+permalink: /Programming_Foundations/CSharp/Intermediate/Lambda_Expressions
+parent: Intermediate
 nav_order: 8
 ---
 

@@ -1,7 +1,8 @@
 ---
 layout: page
 title: 1. Reserved words
-parent: 2. Syntax
+permalink: /Programming_Foundations/Assembly/Syntax/Reserved_Words
+parent: Syntax
 nav_order: 0
 ---
 

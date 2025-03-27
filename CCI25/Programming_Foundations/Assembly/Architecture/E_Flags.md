@@ -1,7 +1,8 @@
 ---
 layout: page
 title: 6. E_Flags
-parent: 1. Architecture
+permalink: /Programming_Foundations/Assembly/Architecture/E_Flags
+parent: Architecture
 nav_order: 5
 ---
 

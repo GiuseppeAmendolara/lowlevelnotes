@@ -1,7 +1,8 @@
 ---
 layout: page
 title: 8. The stack
-parent: 1. Architecture
+permalink: /Programming_Foundations/Assembly/Architecture/Stack
+parent: Architecture
 nav_order: 7
 ---
 

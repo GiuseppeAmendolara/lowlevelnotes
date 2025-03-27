@@ -1,7 +1,8 @@
 ---
 layout: page
 title: 4. Memory
-parent: 1. Architecture
+permalink: /Programming_Foundations/Assembly/Architecture/Memory
+parent: Architecture
 nav_order: 3
 ---
 

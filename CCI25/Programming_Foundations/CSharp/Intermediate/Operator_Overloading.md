@@ -1,7 +1,8 @@
 ---
 layout: page
 title: 1. Operator Overloading
-parent: 2. Intermediate
+permalink: /Programming_Foundations/CSharp/Intermediate/Operator_Overloading
+parent: Intermediate
 nav_order: 0
 ---
 

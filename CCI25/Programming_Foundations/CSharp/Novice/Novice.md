@@ -1,7 +1,7 @@
 ---
 layout: page
-title: 1. Novice
-permalink: /Novice/
+title: Novice
+permalink: /Programming_Foundations/CSharp/Novice/
 parent: C#
 nav_order: 0
 ---

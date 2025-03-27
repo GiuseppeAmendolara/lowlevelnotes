@@ -1,7 +1,8 @@
 ---
 layout: page
 title: 2. x86 & x86_64 Architecture
-parent: 1. Architecture
+permalink: /Programming_Foundations/Assembly/Architecture/x86_64_Architecture
+parent: Architecture
 nav_order: 1
 ---
 

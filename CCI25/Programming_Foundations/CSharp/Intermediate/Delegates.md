@@ -1,7 +1,8 @@
 ---
 layout: page
 title: 10. Delegates, Anonymous Methods, etc.
-parent: 2. Intermediate
+permalink: /Programming_Foundations/CSharp/Intermediate/Delegates
+parent: Intermediate
 nav_order: 9
 ---
 

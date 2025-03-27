@@ -1,8 +1,8 @@
 ---
 layout: page
 title: 2. Control Flow
-permalink: /Control Flow/
-parent: 1. Novice
+permalink: /Programming_Foundations/CSharp/Novice/Control Flow/
+parent: Novice
 nav_order: 1
 ---
 

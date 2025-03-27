@@ -1,8 +1,8 @@
 ---
 layout: page
 title: 1. Events
-permalink: /Events/
-parent: 3. Proficient
+permalink: /Programming_Foundations/CSharp/Proficient/Events
+parent: Proficient
 nav_order: 0
 ---
 

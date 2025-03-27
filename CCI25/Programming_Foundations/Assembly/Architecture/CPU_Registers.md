@@ -1,7 +1,8 @@
 ---
 layout: page
 title: 5. CPU Registers
-parent: 1. Architecture
+permalink: /Programming_Foundations/Assembly/Architecture/CPU_Registers
+parent: Architecture
 nav_order: 4
 ---
 

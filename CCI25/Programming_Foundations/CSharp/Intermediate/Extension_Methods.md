@@ -1,7 +1,8 @@
 ---
 layout: page
 title: 7. Extension Methods
-parent: 2. Intermediate
+permalink: /Programming_Foundations/CSharp/Intermediate/Extension_Methods
+parent: Intermediate
 nav_order: 6
 ---
 

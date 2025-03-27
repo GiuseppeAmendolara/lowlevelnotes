@@ -1,8 +1,8 @@
 ---
 layout: page
 title: 8. Object-Oriented Programming (OOP)
-permalink: /OOP/
-parent: 1. Novice
+permalink: /Programming_Foundations/CSharp/Novice/OOP/
+parent: Novice
 nav_order: 7
 ---
 

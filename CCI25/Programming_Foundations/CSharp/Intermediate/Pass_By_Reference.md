@@ -1,7 +1,8 @@
 ---
 layout: page
 title: 3. Pass by reference
-parent: 1. Intermediate
+permalink: /Programming_Foundations/CSharp/Intermediate/Pass_By_Reference
+parent: Intermediate
 nav_order: 2
 ---
 

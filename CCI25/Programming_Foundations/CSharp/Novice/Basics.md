@@ -1,8 +1,8 @@
 ---
 layout: page
 title: 1. Entry-point, variables, data types & operators
-permalink: /Basics/
-parent: 1. Novice
+permalink: /Programming_Foundations/CSharp/Novice/Basics/
+parent: Novice
 nav_order: 0
 ---
 

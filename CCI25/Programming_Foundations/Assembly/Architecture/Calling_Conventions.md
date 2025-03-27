@@ -1,8 +1,9 @@
 ---
 layout: page
-title: 11. Calling Conventions
-parent: 1. Architecture
-nav_order: 10
+title: 12. Calling Conventions
+permalink: /Programming_Foundations/Assembly/Architecture/Calling_Conventions
+parent: Architecture
+nav_order: 11
 ---
 
 # Calling Conventions

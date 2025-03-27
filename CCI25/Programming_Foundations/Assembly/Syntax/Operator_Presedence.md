@@ -1,7 +1,8 @@
 ---
 layout: page
 title: 6. Operator Presedence
-parent: 2. Syntax
+permalink: /Programming_Foundations/Assembly/Syntax/Operator_Presedence
+parent: Syntax
 nav_order: 5
 ---
 

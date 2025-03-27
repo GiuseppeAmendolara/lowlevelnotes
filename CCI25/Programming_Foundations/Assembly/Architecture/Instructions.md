@@ -1,7 +1,8 @@
 ---
 layout: page
 title: 9. Instructions / opcodes
-parent: 1. Architecture
+permalink: /Programming_Foundations/Assembly/Architecture/Instructions
+parent: Architecture
 nav_order: 8
 ---
 

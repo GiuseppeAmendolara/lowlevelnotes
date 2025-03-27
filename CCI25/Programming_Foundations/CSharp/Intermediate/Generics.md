@@ -1,7 +1,8 @@
 ---
 layout: page
 title: 4. Generics
-parent: 2. Intermediate
+permalink: /Programming_Foundations/CSharp/Intermediate/Generics
+parent: Intermediate
 nav_order: 3
 ---
 

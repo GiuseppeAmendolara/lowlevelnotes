@@ -1,7 +1,8 @@
 ---
 layout: page
 title: 5. Declaring variables
-parent: 2. Syntax
+permalink: /Programming_Foundations/Assembly/Syntax/Declaring_Variables
+parent: Syntax
 nav_order: 4
 ---
 

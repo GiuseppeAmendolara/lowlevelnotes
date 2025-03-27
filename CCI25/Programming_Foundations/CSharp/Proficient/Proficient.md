@@ -1,7 +1,7 @@
 ---
 layout: page
-title: 3. Proficient
-permalink: /Proficient/
+title: Proficient
+permalink: /Programming_Foundations/CSharp/Proficient/
 parent: C#
 nav_order: 2
 ---

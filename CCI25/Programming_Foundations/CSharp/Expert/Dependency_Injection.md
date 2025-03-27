@@ -1,7 +1,8 @@
 ---
 layout: page
 title: 1. Dependency Injection (DI)
-parent: 4. Expert
+permalink: /Programming_Foundations/CSharp/Expert/Dependency_Injection
+parent: Expert
 nav_order: 0
 ---
 

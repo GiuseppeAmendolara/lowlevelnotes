@@ -1,7 +1,8 @@
 ---
 layout: page
 title: 2. Nullable value types
-parent: 2. Intermediate
+permalink: /Programming_Foundations/CSharp/Intermediate/Nullable_Types
+parent: Intermediate
 nav_order: 1
 ---
 

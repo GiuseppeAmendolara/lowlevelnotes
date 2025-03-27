@@ -1,8 +1,9 @@
 ---
 layout: page
-title: 10. Binary operations
-parent: 1. Architecture
-nav_order: 9
+title: 11. Binary operations
+permalink: /Programming_Foundations/Assembly/Architecture/Binary_Operations
+parent: Architecture
+nav_order: 10
 ---
 
 # Binary operations

@@ -1,6 +1,7 @@
 ---
 layout: page
 title: Assembly - x86 & x86_64
+permalink: /Programming_Foundations/Assembly/
 parent: Programming Foundations
 ---
 

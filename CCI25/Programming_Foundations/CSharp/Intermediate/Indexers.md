@@ -1,7 +1,8 @@
 ---
 layout: page
 title: 8. Indexers
-parent: 2. Intermediate
+permalink: /Programming_Foundations/CSharp/Intermediate/Indexers
+parent: Intermediate
 nav_order: 7
 ---
 

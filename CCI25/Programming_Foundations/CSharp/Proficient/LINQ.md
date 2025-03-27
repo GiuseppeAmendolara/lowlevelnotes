@@ -1,8 +1,8 @@
 ---
 layout: page
 title: 2. Language Integrated Query (LINQ)
-permalink: /LINQ/
-parent: 3. Proficient
+permalink: /Programming_Foundations/CSharp/Proficient/LINQ
+parent: Proficient
 nav_order: 1
 ---
 

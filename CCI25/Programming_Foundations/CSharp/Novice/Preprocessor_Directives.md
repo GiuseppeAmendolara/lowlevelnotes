@@ -1,8 +1,8 @@
 ---
 layout: page
 title: 7. Preprocessor directives
-permalink: /Preprocessor directives/
-parent: 1. Novice
+permalink: /Programming_Foundations/CSharp/Novice/Preprocessor directives/
+parent: Novice
 nav_order: 6
 ---
 

@@ -1,7 +1,8 @@
 ---
 layout: page
 title: 11.  Expression Bodies
-parent: 2. Intermediate
+permalink: /Programming_Foundations/CSharp/Intermediate/Expression_Bodies
+parent: Intermediate
 nav_order: 10
 ---
 

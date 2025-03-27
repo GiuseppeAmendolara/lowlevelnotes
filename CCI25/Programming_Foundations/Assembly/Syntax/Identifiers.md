@@ -1,7 +1,8 @@
 ---
 layout: page
 title: 4. Identifiers
-parent: 2. Syntax
+permalink: /Programming_Foundations/Assembly/Syntax/Identifiers
+parent: Syntax
 nav_order: 3
 ---
 

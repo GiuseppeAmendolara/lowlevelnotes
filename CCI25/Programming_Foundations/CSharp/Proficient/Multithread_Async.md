@@ -1,8 +1,8 @@
 ---
 layout: page
 title: 4. Mulithreading & Async
-permalink: /Mulithreading & Async/
-parent: 3. Proficient
+permalink: /Programming_Foundations/CSharp/Proficient/Multithread_Async
+parent: Proficient
 nav_order: 3
 ---
 

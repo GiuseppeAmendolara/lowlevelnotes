@@ -1,7 +1,8 @@
 ---
 layout: page
 title: 1. Introduction
-parent: 1. Architecture
+permalink: /Programming_Foundations/Assembly/Architecture/Introduction
+parent: Architecture
 nav_order: 0
 ---
 

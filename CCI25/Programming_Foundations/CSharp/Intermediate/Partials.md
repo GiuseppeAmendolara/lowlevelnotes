@@ -1,7 +1,8 @@
 ---
 layout: page
 title: 5. Partial Classes & Partial Methods
-parent: 2. Intermediate
+permalink: /Programming_Foundations/CSharp/Intermediate/Partials
+parent: Intermediate
 nav_order: 4
 ---
 

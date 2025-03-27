@@ -1,8 +1,8 @@
 ---
 layout: page
 title: 4. Type conversion & parsing
-permalink: /Type conversion & parsing/
-parent: 1. Novice
+permalink: /Programming_Foundations/CSharp/Novice/Type conversion & parsing/
+parent: Novice
 nav_order: 3
 ---
 

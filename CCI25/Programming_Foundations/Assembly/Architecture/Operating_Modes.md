@@ -1,7 +1,8 @@
 ---
 layout: page
 title: 3. Modes of Operation
-parent: 1. Architecture
+permalink: /Programming_Foundations/Assembly/Architecture/Operating_Modes
+parent: Architecture
 nav_order: 2
 ---
 

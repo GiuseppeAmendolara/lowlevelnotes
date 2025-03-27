@@ -1,8 +1,8 @@
 ---
 layout: page
 title: 6. Exception handling
-permalink: /Exception handling/
-parent: 1. Novice
+permalink: /Programming_Foundations/CSharp/Novice/Exception handling/
+parent: Novice
 nav_order: 5
 ---
 
