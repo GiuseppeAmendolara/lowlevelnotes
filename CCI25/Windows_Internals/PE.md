@@ -1,3 +1,11 @@
+---
+layout: page
+title: 10. Portable Executable file format (PE)
+permalink: /Windows_Internals/PE
+parent: Windows Internals
+nav_order: 9
+---
+
 # Portable executable file format
 ## Introduction
 Executables and applications are a large portion of how Windows internals operate at a higher level. You might have often seen files with extension `.exe` which stands for `executable (file)`.
@@ -38,11 +46,11 @@ Some of the important headers that we will discuss are:
 
 All of these headers are of the data type `STRUCT`. A struct is a user-defined data type that combines several different types of data elements in a single variable. Since it is user-defined, we need to see the documentation to understand the type for each STRUCT variable. The documentation for each header can be found on [Microsoft learn](https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-image_nt_headers32), where you can find the data types of the different fields inside these headers.
 
-![PE structure](/Windows_Internals/Images/PE_structure.png)
+![PE structure](/CCI25/Windows_Internals/Images/PE_structure.png)
 
 Here's another depiction of the PE structure.
 
-![PE structure](/Windows_Internals/Images/PE_structure_02.png)
+![PE structure](/CCI25/Windows_Internals/Images/PE_structure_02.png)
 
 ## Basic file info
 Below properties are common to find, note that they are always relevant to the section you are looking at. In this case since we're looking at information about the PE file they're applied to the entire PE file.
@@ -302,7 +310,7 @@ dLq<
 #### Section header names
 A PE file has a .text section, a .data section, and a .rsrc section, where only the .text section has the execute flag set because it contains the code. Now take the example of the file named zmsuz3pinwl. When we open this file in pe-tree, we find that it has `unconventional section names` (`or no names`, in this case).
 
-![Packed PE file](/Windows_Internals/Images/Packed.png)
+![Packed PE file](/CCI25/Windows_Internals/Images/Packed.png)
 
 We might think this has something to do with the tool we use to analyze the file. Therefore, let's check it using another PE analysis tool called `pecheck`. The pecheck tool provides the same information we have been gathering from the pe-tree tool, but it is a command-line tool.
 
@@ -347,7 +355,7 @@ We see here that the section name is empty, and it is not a glitch in the tool w
     - Inside this directory, there is a `pointer to an array of TLS callback function addresses`.
     - The actual callback functions are located in the .text section, just like DllMain.
 
-> [!IMPORTANT]
+{: .warning}
 > Reads about [DllMain Loader Locks](https://learn.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-best-practices).
 
 #### Section entropy
@@ -363,9 +371,9 @@ Another valuable piece of information from the section headers to identify a pac
 The last important indicator of a packed executable we discuss here is its import functions. The redline PE file we analyzed earlier imported lots of functions, indicating the activity it potentially performs. However, for the PE file zmsuz3pinwl, `we will see only a handful of imports`, especially the GetProcAddress, GetModuleHandleA, and `LoadLibraryA`. These functions are often `some of the only few imports of a packed PE file because these functions provide the functionality to unpack the PE file during runtime`.
 
 ### Used tools
-- [`wxHexEditor`](https://www.wxhexeditor.org/)
-- [`pe-tree`](https://github.com/blackberry/pe_tree)
-- [`pecheck`](https://github.com/DidierStevens/DidierStevensSuite/blob/master/pecheck.py)
-- [`Detect it easy`](https://github.com/horsicq/Detect-It-Easy)
-- [`NTCore: Explorer Suite` or `CFF explorer`](https://ntcore.com/explorer-suite/)
-- [`PE-bear`](https://github.com/hasherezade/pe-bear)
+- [wxHexEditor](https://www.wxhexeditor.org/)
+- [pe-tree](https://github.com/blackberry/pe_tree)
+- [pecheck](https://github.com/DidierStevens/DidierStevensSuite/blob/master/pecheck.py)
+- [Detect it easy](https://github.com/horsicq/Detect-It-Easy)
+- [NTCore: Explorer Suite or CFF explorer](https://ntcore.com/explorer-suite/)
+- [PE-bear](https://github.com/hasherezade/pe-bear)

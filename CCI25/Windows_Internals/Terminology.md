@@ -1,3 +1,11 @@
+---
+layout: page
+title: 2. Terminology
+permalink: /Windows_Internals/Terminology
+parent: Windows Internals
+nav_order: 1
+---
+
 # Services, functions and routines
 Some Windows internals terms have different meanings based on it's context.
 

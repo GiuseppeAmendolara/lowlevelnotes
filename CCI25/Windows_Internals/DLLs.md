@@ -1,3 +1,11 @@
+---
+layout: page
+title: 4. Dynamic Link Libraries (DLLs)
+permalink: /Windows_Internals/DLLs
+parent: Windows Internals
+nav_order: 3
+---
+
 # Dynamic Link Libraries
 The [Microsoft docs](https://learn.microsoft.com/en-us/troubleshoot/windows-client/setup-upgrade-and-drivers/dynamic-link-library) describe a `DLL` as "`a library that contains code and data that can be used by more than one program at the same time`."
 

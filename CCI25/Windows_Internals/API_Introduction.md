@@ -1,15 +1,17 @@
+---
+layout: page
+title: 7. Introduction to API's
+permalink: /Windows_Internals/API_Introduction
+parent: Windows Internals
+nav_order: 6
+---
+
 # Application Programming Interface (API) introduction
 An API is a way for two or more software components to communicate with each other.
 APIs define rules for how requests and responses should be structured.
 
 ## Types
 There are different types of APIs depending on how they are used and what they interact with:
-
-- Hardware APIs
-
-    These allow software to `communicate with hardware`.
-
-    Example: DirectX API → Used in game development to interact with GPUs.
 
 | API Type | Description | Example |
 |-|-|-|

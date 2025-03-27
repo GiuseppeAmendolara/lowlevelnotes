@@ -1,6 +1,14 @@
+---
+layout: page
+title: 8. Windows API, IPC and WinRT
+permalink: /Windows_Internals/Windows_API
+parent: Windows Internals
+nav_order: 7
+---
+
 # Windows API
-> [!NOTE]
-> IF you don't know what an API is, check out [API introduction](/Windows_Internals/API_Introduction.md).
+{: .warning}
+> IF you don't know what an API is, check out [API introduction](/Windows_Internals/API_Introduction).
 
 The Windows API is a type of local / OS API that provides native functionality in `User-mode` to interact with key components of the Windows operating system.
 
@@ -25,7 +33,7 @@ Microsoft has brought out [a bunch of API's](https://learn.microsoft.com/en-us/w
   - File and XML schema specifications for UWP apps
 
 ## Win32 API
-> [!NOTE]
+{: .warning}
 > The Win32 API is the API commonly referred to as the Windows API. However, in reality the Windows API is the entire collection of API's listed above.
 >
 > We will be looking at the Win32 API, which might be referred to as the Windows API from here on out.
@@ -83,9 +91,9 @@ Programs often need to access or modify Windows subsystems or hardware but are `
 
 Windows distinguishes hardware access by two distinct modes: `user` and `kernel` mode. These modes determine the hardware, kernel, and memory access an application or driver is permitted. `API or system calls interface between each mode`, sending information to the system to be `processed in kernel mode`.
 
-Read [processor modes and system calls](/Windows_Internals/Processor_Modes.md) to learn more.
+Read [processor modes and system calls](/Windows_Internals/Processor_Modes) to learn more.
 
-![Modes](/Windows_Internals/Images/Modes.png)
+![Modes](/CCI25/Windows_Internals/Images/Modes.png)
 
 ## Win32 API components
 The Win32 API, more commonly known as the Windows API, has several dependent components that are used to define the structure and organization of the API.
@@ -267,7 +275,7 @@ Below is a table of the most commonly abused API organized by frequency in a col
 ## The Windows Runtime API (WinRT)
 Windows 8 introduced a new API and the `Windows Runtime (WinRT)`, the runtime is designed for Windows Apps (previously called Metro, Modern, Immersive, or Windows Store Apps). These apps run on various devices, from IoT and phones to desktops, Xbox One, even on HoloLens.
 
-> [!NOTE]
+{: .warning}
 > `WinRT` is not to be confused with `Windows RT`, a discontinued ARM-based OS version.
 
 ### WinRT and COM
@@ -297,5 +305,5 @@ WinRT APIs are accessible in multiple languages through `language projections`:
 - C#/.NET: Works naturally with the existing COM interop layer.
 - JavaScript: Uses WinJS but requires HTML for UI design.
 
-> [!NOTE]
+{: .warning}
 > Windows Apps using HTML are still local client apps, not web applications loaded from a server.

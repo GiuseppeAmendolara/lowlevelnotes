@@ -1,3 +1,11 @@
+---
+layout: page
+title: 5. Processes, Threads, Fibers, UMS Threads, Handles, Jobs and more
+permalink: /Windows_Internals/Processes
+parent: Windows Internals
+nav_order: 4
+---
+
 # Processes
 A process might seem a lot like a program, but they are two different things.
 
@@ -17,7 +25,7 @@ Applications running on your operating system can contain `one or more processes
 <details>
 <summary> Kernel structure </summary>
 
-```C
+{% highlight c %}
 //0x840 bytes (sizeof)
 struct _EPROCESS
 {
@@ -436,12 +444,13 @@ struct _EPROCESS
     struct _PROCESS_NETWORK_COUNTERS* NetworkCounters;                      //0x7f0
     union _PROCESS_EXECUTION Execution;                                     //0x7f8
     VOID* ThreadIndexTable;                                                 //0x800
-}; 
-```
+};
+{% endhighlight %}
 
 </details>
 
 ## High-level components
+
 | Component | Purpose |
 |-|-|
 | `Name` | Define the name of the process, typically inherited from the application. |
@@ -459,6 +468,7 @@ struct _EPROCESS
 | `Process state` | The current state of the process like; Created, Terminated, Running, Waiting, Suspended, Blocked, etc. |
 
 ## Low-level components
+
 | Component | Purpose |
 |-|-|
 | `Code` | Code to be executed by the process. |
@@ -467,7 +477,7 @@ struct _EPROCESS
 | `Process Resources` | Defines further resources of the process. |
 | `Process Environment Block` | Data structure to define process information. |
 
-![Process](/Windows_Internals/Images/Process.png)
+![Process](/CCI25/Windows_Internals/Images/Process.png)
 
 ## Threads
 In essence, processes aren't even executed by the CPU. The threads inside of the process are executed by the CPU, they typically represent the code.
@@ -488,6 +498,7 @@ Threads can also switch between eachother to control execution (`context-switchi
 Threads also have their unique values and architecture-specific components called the `Thread context`. The Windows `GetThreadContext` function provides access to this `architecture-specific structure (context block)`.
 
 ### Thread context
+
 | Component | Purpose |
 |-|-|
 | `Context Structure` or `Volatile registers` | Holds a set of CPU registers that represent the state of the processor maintained by the kernel. |
@@ -497,12 +508,12 @@ Threads also have their unique values and architecture-specific components calle
 | `Security context` | Sometimes threads have their own security context or token. Commonly used by multi-threaded server applications that clone the security context of their served client. |
 | `Priority class` | Representing the priority of the execution of the thread. |
 
-![Threads](/Windows_Internals/Images/Threads.png)
+![Threads](/CCI25/Windows_Internals/Images/Threads.png)
 
 <details>
 <summary> Kernel structure </summary>
 
-```C
+{% highlight c %}
 //0x788 bytes (sizeof)
 struct _ETHREAD
 {
@@ -711,7 +722,7 @@ struct _ETHREAD
     ULONGLONG Win32kThreadLock;                                             //0x778
     VOID* ThreadIndex;                                                      //0x780
 };
-```
+{% endhighlight %}
 
 </details>
 
@@ -735,7 +746,7 @@ In most cases, letting Windows manage threads automatically is a better choice o
 <details>
 <summary> User-mode structure </summary>
 
-```C
+{% highlight c %}
 typedef struct _NT_FIBER {
     PVOID FiberData;         // Pointer to user-defined fiber-specific (storage) data, similar to TLS
     struct _NT_FIBER *Self;  // Self-reference for integrity checks
@@ -745,7 +756,7 @@ typedef struct _NT_FIBER {
     CONTEXT FiberContext;    // CPU register state for fiber switching
     BOOLEAN FiberFlags;      // Flags (e.g.: Is this the primary fiber?) + other metadeta
 } NT_FIBER, *PNT_FIBER;
-```
+{% endhighlight %}
 
 </details>
 
@@ -779,6 +790,7 @@ Since it runs in the background it doesn't have a GUI or require any interaction
 They run independently of user sessions and provide essential system functions, such as networking, printing, and security. They can start automatically, manually, or on demand.
 
 ### Types of services
+
 | System services critical to the OS | Purpose |
 |-|-|
 | `wininit.exe` | Windows Initialization |
@@ -829,7 +841,7 @@ explorer.exe
 ```
 
 ## Handles
-Like we've mentioned before in the overview, everything in Windows could be seen as an [object](/Windows_Internals/Introduction.md). Oversimplified but, a handle is a `reference` to a Windows object.
+Like we've mentioned before in the overview, everything in Windows could be seen as an `object`. Oversimplified but, a handle is a `reference` to a Windows object.
 
 When threads are being run they often require system resources like registry keys, files, folders, session information, etc. 
 
@@ -869,10 +881,10 @@ The steps the kernel takes to create a process are:
     - Map `KUSER_SHARED_DATA`, read-only shared memory used for system time, tick count, and other global data.
     - Map the `executable`, Loads the program file into memory.
     - Map `ntdll.dll`, This library is essential for `system calls`, so it’s always mapped into the process.
-    - Allocate the [PEB](/Windows_Internals/Virtual_Memory.md#peb), Stores information like command-line arguments, loaded modules, and heap details.
+    - Allocate the [PEB](/Windows_Internals/Virtual_Memory#peb), Stores information like command-line arguments, loaded modules, and heap details.
 2. Create the initial thread
    - Allocate the stack(s), each thread gets a user-mode stack and a kernel-mode stack.
-   - Allocate the [TEB](/Windows_Internals/Virtual_Memory.md#teb), stores per-thread information like thread ID, exception handling data, and TLS slots.
+   - Allocate the [TEB](/Windows_Internals/Virtual_Memory#teb), stores per-thread information like thread ID, exception handling data, and TLS slots.
    - Set the instruction pointer to `ntdll.LdrInitializeThunk`, instead of directly executing the program, the thread first runs a function in ntdll.dll to prepare the environment.
      - Handles dynamic DLL loading → Loads required DLLs like kernel32.dll, user32.dll, etc.
      - Processes TLS Callbacks → Calls thread-local storage (TLS) initializers.
@@ -887,8 +899,8 @@ The steps the kernel takes to create a process are:
    - `mainCRTStartup(PEB)` (provided by the C runtime library):
 calls `main(argc, argv)` (for C programs) or `WinMain` (for Windows GUI applications).
 
-> [!NOTE]
-> The PEB and TEB are part of a process’s virtual address space in memory. Don't confuse a process's [Virtual Memory Components](/Windows_Internals/Virtual_Memory.md) with process components.
+{: .warning}
+> The PEB and TEB are part of a process’s virtual address space in memory. Don't confuse a process's [Virtual Memory Components](/Windows_Internals/Virtual_Memory) with process components.
 
 ## Tools
 There are multiple utilities available that make observing processes easier:

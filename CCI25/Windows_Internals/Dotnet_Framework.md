@@ -1,3 +1,11 @@
+---
+layout: page
+title: 3. .NET Framework
+permalink: /Windows_Internals/Dotnet_Framework
+parent: Windows Internals
+nav_order: 2
+---
+
 # The .NET Framework
 .NET is a software framework for building software .
 
@@ -14,6 +22,7 @@ The old .NET, initially name the .NET Framework worked only on Windows and wasn'
 Don't try to make any of this naming convention make sense cause it won't.
 
 ## Versions
+
 | Windows version | .NET Framework version |
 |-|-|
 | Windows 8 | 4.5 |

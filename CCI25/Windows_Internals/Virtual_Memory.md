@@ -1,3 +1,11 @@
+---
+layout: page
+title: 6. Virtual Memory
+permalink: /Windows_Internals/Virtual_Memory
+parent: Windows Internals
+nav_order: 5
+---
+
 # Memory
 If you're unfamiliar with what memory is at all take a look at the [x86-64 assembly guide](/Programming_Foundations/Assembly/Architecture/Memory.md).
 
@@ -5,6 +13,7 @@ For the sake of windows internals we'll cover memory a little more in-depth.
 
 ## Memory Hierarchy
 Memory in a computer system is structured as a hierarchy, based on speed, size, and proximity to the CPU:
+
 | Level | Type | Speed | Capacity | Proximity |
 |-|-|-|-|-|
 | 1 (Fastest) | Registers | Fastest | Very small | Inside the CPU |
@@ -53,7 +62,7 @@ Although this concept does not directly translate to Windows internals or concep
 
     Solution: Because of the mapper, programs can still write to the same memory address within their own address space. These addresses then get mapped to different location in the physical address space.
 
-![Pages](/Windows_Internals/Images/Pages.png)
+![Pages](/CCI25/Windows_Internals/Images/Pages.png)
 
 
 > [!NOTE]
@@ -83,14 +92,13 @@ Here is an extremely simplified overview of how memory is laid out in Windows.
 
 Remember that everything within the `User-Space or Userland get mapped randomly into memory` because of `Address space layout randomization (ASLR)`.
 
-![Windows memory layout](/Programming_Foundations/Assembly/Images/WindowsMemoryLayoutRF.png)
+![Windows memory layout](/CCI25/Programming_Foundations/Assembly/Images/WindowsMemoryLayoutRF.png)
 
 Here's another depiction of memory.
 
-![Win32 memory map](/Windows_Internals/Images/Win32_memory_map.png)
+![Win32 memory map](/CCI25/Windows_Internals/Images/Win32_memory_map.png)
 
-> [!IMPORTANT]
->
+{: .warning}
 > The diagram above shows the direction variables (and any named data, even structures) are put into or taken out of memory. The actual data is put into memory differently. This is why stack diagrams vary so much. You'll often see stack diagrams with the stack and heap growing towards each other or high memory addresses at the top. However, this diagram is the most relevant for reverse engineering. Low addresses being at the top is also the most realistic depiction.
 
 ## Stack
@@ -104,7 +112,7 @@ For now it's important to take note of two things:
 
 That all may seem odd but remember, it's like a normal numerical list where 1, the lower number, is at the top. 10, the higher number, is at the bottom.
 
- To dive deeper into how the stack works read the [Call stack file](/Programming_Foundations/Assembly/Architecture/Call_stack.md).
+ To dive deeper into how the stack works read the [stack file](/Programming_Foundations/Assembly/Architecture/Stack).
 
 ## Heap
 The heap is a region of memory in RAM that is used for dynamic memory allocation, where variables or objects are created and destroyed at runtime (long-time large data objects). Unlike the stack, the heap is not managed automatically by the CPU; it is managed by the programmer or a memory manager (e.g., the operating system or language runtime).
@@ -164,12 +172,12 @@ The Thread Environment Block (TEB) is a small memory range that stores `informat
 | Thread ID |
 | Stack range |
 | GetLastError |
-| [TLS](/Windows_Internals/Processes_And_Threads.md#thread-context) |
+| [TLS](/Windows_Internals/Processes#thread-context) |
 
 <details>
 <summary> Kernel structure </summary>
 
-```C
+{% highlight c %}
 //0x38 bytes (sizeof)
 struct _NT_TIB
 {
@@ -185,5 +193,6 @@ struct _NT_TIB
     VOID* ArbitraryUserPointer;                                             //0x28
     struct _NT_TIB* Self;                                                   //0x30
 }; 
-```
+{% endhighlight %}
+
 </details>

@@ -1,3 +1,11 @@
+---
+layout: page
+title: 9. Processor modes, Privileges, Syscalls, the Kernel and more
+permalink: /Windows_Internals/Processor_Modes
+parent: Windows Internals
+nav_order: 8
+---
+
 # Processor modes
 The Windows operating system has a `user mode` and a `kernel mode`. This security measure is implemented through processor `acces modes` and `privilege levels`. Some processors might use terms like `code privilege level`, `ring level`, `supervisor mode` and `application mode`.
 
@@ -15,7 +23,7 @@ An application by default cannot interact with the kernel or modify critical OS 
 ## Privilidge levels
 You might have noticed that these modes like user-mode and kernel-mode provide different priviledges associated with the mode. As a general rule: user-mode has access to anything that's withing userland or user-space: `ring 3`. Essentially, kernel-mode has access to everything: `ring 0`.
 
-> [!NOTE]
+{: .warning}
 > x86 and x86-64 processors define four rings. 
 >
 > Again, Windows will only use two for: compatibility reasons, efficiency and portability and because the other x86/x86-x64 ring levels do not provide the same guarantees.
@@ -23,7 +31,7 @@ You might have noticed that these modes like user-mode and kernel-mode provide d
 ## System calls and the Switching Point
 Applications that start in `user mode` (also known as `userland`) remain in that mode until they make a `system call (syscall)` or interact with the OS via an API. When a syscall occurs, the application transitions into kernel mode to execute privileged operations.
 
-> [!NOTE]
+{: .warning}
 > User-mode has many terms; User-mode, userspace, userland, etc.
 >
 > Userland is a common term, however, it's not a term defined by Windows.
@@ -39,6 +47,7 @@ Applications that start in `user mode` (also known as `userland`) remain in that
 System calls in Windows are often prefixed with `Nt`, which stands for `Windows New Technology (NT)`. These calls are the lower-level APIs used internally by the OS. However, some system calls use the `Zw` prefix. While `Zw` has no official meaning, it was chosen to avoid naming conflicts with other APIs and to preserve other useful two-letter prefixes for future use.
 
 Additionally, many Windows driver support routines use standardized prefixes that indicate which kernel-mode system component implements them:
+
 | Prefix | Kernel component | Example routine |
 |-|-|-|
 | `Cm` | Configuration manager | `CmRegisterCallbackEx` |
@@ -55,7 +64,7 @@ Additionally, many Windows driver support routines use standardized prefixes tha
 ### The Switching Point
 The `switch between user mode and kernel mode` is facilitated by `system and API calls`. In some documentation, this transition is referred to as the `Switching Point`.
 
-![Switching point](/Windows_Internals/Images/Switching_point.png)
+![Switching point](/CCI25/Windows_Internals/Images/Switching_point.png)
 
 ### Performance Counters for Mode Transitions
 The following performance counters help track the time spent in user and kernel modes:
@@ -106,6 +115,7 @@ Here's a simplified list of what the core kernel component actually does:
 
 
 ### Types
+
 | Kernel type | Description | Advantage |
 |-|-|-|
 | Monolithic kernel | The kernel incorporates most of the OS's main functions. | Higher performance and easier for programmers to work with. |
@@ -130,7 +140,6 @@ Since kernel-mode code has full system access, Microsoft enforces strict driver-
 - Enterprise configurations (e.g., `Device Guard`) can customize these policies, enforcing stricter requirements where needed.
 
 These measures are an effort by Microsoft to reduce untrusted third-party drivers in kernel memory, strengthening system security.
-
 
 <!--
 - CPU MEM MANAGEMENT UNIT MMU

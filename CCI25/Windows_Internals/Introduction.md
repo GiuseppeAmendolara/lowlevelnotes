@@ -1,3 +1,11 @@
+---
+layout: page
+title: 1. Introduction
+permalink: /Windows_Internals/Introduction
+parent: Windows Internals
+nav_order: 0
+---
+
 # Windows Internals
 Windows Internals is an umbrella term that refers to the architecture and it's back-end components that make up the Windows Operating System.
 
