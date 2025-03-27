@@ -1,4 +1,12 @@
-# Basic Dynamic analysis
+---
+layout: page
+title: 3. Dynamic Analysis
+parent: Reverse Engineering
+permalink: /Reverse_Engineering/Dynamic_Analysis
+nav_order: 2
+---
+
+# Dynamic analysis
 As we have learned, malware can use techniques to hide its features from a malware analyst. But no matter how good malware hides its features from static analysis, its primary purpose is to execute. And `when malware executes, it leaves traces` that a malware analyst can use to identify if it's malicious. 
 
 ## Sandboxing
@@ -6,7 +14,7 @@ It has been emphasized that malware should only be analyzed in a controlled envi
 
 The primary concern regarding performing static analysis on malware in a live environment is an accidental execution, but we intentionally execute malware in a dynamic analysis scenario.
 
-In the [Intro to Malware Analysis](/Reverse_Engineering/Intro.md), we learned about some automated sandboxes to help perform dynamic analysis. Below, we will learn about some tools to help create our sandbox, which gives us more analysis control.
+In the [Intro to Malware Analysis](/Reverse_Engineering/Intro), we learned about some automated sandboxes to help perform dynamic analysis. Below, we will learn about some tools to help create our sandbox, which gives us more analysis control.
 
 ## Virtualization
 A lot of commercial and free tools are available for virtualization:
@@ -15,8 +23,7 @@ A lot of commercial and free tools are available for virtualization:
 
 These three tools allow us to create Virtual Machines isolated from our local machine. 
 
->[!NOTE]
->
+{: .warning}
 > However, `VMWare Player can't create snapshots`.
  
 For dynamic analysis of malware, `snapshot creation is a critical requirement`, which makes VMWare Player unsuitable for malware analysis. VMWare Workstation and VirtualBox have the snapshot creation option and are, therefore, suitable for malware analysis.
@@ -26,7 +33,7 @@ Apart from these, `server-based virtualization software` like `XenServer`, `QEmu
 ## ProcMon
 ProcMon is part of the `Sysinternals suite`, a set of utilities created by a company named Winternals Software and purchased by Microsoft in 2006. Sysinternals consists of many handy utilities that provide advanced functionalities for Windows.
 
-![Procmon](/Reverse_Engineering/Images/Procmon.png)
+![Procmon](/CCI25/Reverse_Engineering/Images/Procmon.png)
 
 The controls of ProcMon are self-explanatory, and a brief description is shown if we hover over one of the controls. The labels in the screenshot show some of the critical controls of the data visible below these controls.
 
@@ -67,7 +74,7 @@ This Window shows processes with PIDs, the User that ran that process, and the i
 ### API monitor
 The API Monitor provides more advanced information about a process's API calls. API Monitor has 32-bit and 64-bit versions for 32-bit and 64-bit processes, respectively. When we open API Monitor, we see the following Window.
 
-![API monitor](/Reverse_Engineering/Images/API_monitor.png)
+![API monitor](/CCI25/Reverse_Engineering/Images/API_monitor.png)
 
 As we can see, API Monitor has multiple tabs, as numbered in the image above:
 
@@ -94,7 +101,7 @@ Regshot is a tool that `identifies any changes to the registry` (or the file sys
 
 When we execute Regshot, we see the following interface:
 
-![Regshot](/Reverse_Engineering/Images/Regshot.png)
+![Regshot](/CCI25/Reverse_Engineering/Images/Regshot.png)
 
 In this simple interface, if we select the Scan dir1 option, we can also scan for changes to the file system. However, for the sake of brevity, we will only cover registry changes. To start, we can click on the '1st shot' option. It will ask us whether to take a shot or take a shot and save.
 

@@ -1,3 +1,11 @@
+---
+layout: page
+title: 5. Anti-Reverse Engineering
+parent: Reverse Engineering
+permalink: /Reverse_Engineering/Anti_reversing
+nav_order: 4
+---
+
 # Anti-reverse engineering
 alware authors are constantly looking for ways to evade detection and analysis to maintain the effectiveness of their malware. At the same time, security professionals are working to develop new methods and tools for detecting and mitigating the threat posed by malware. This ongoing "arms race" can lead to the development of increasingly sophisticated and effective malware defences as both sides seek to stay ahead of their counterparts.
 

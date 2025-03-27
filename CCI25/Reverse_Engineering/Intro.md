@@ -1,9 +1,17 @@
+---
+layout: page
+title: 1. Introduction to (malware) analysis
+parent: Reverse Engineering
+permalink: /Reverse_Engineering/Introduction
+nav_order: 0
+---
+
 # Intro to (Malware) Analysis
 Notice how malware is in brackets, this is because analysis of other software in order to reverse it later on happens the same way.
 
 E.g: A game cheat could also be classified as `malware`. In order to write the code for the anti-cheat we'd have to do some analysis on the cheat as well.
 
->[!IMPORTANT]
+{: .warning}
 >Don't perform malware analysis on a live machine not purpose-built for malware analysis.
 
 ## Malware analysis

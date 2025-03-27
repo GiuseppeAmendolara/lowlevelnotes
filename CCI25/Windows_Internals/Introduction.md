@@ -69,6 +69,10 @@ graph BT;
     firmware -.-> bootldr
     bootldr -.-> HAL
     km <-.-> um
+
+    classDef DarkMode fill:#000000,stroke:#FFFFFF,color:#FFFFFF;
+	linkStyle 1,2,3 stroke:#FFFFFF,stroke-width:3px;
+	class Computer,OS,km,um DarkMode;
 ```
 
 <!-- TO DO:

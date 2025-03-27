@@ -1,3 +1,11 @@
+---
+layout: page
+title: 4. Debugging
+parent: Reverse Engineering
+permalink: /Reverse_Engineering/Debugging
+nav_order: 3
+---
+
 # Dynamic Analysis: Debugging
 In [Basic Dynamic Analysis](/Reverse_Engineering/Basic_dynamic.md), we learned to identify malware traces in the infected system during execution. However, malware authors understand that the malware will be analyzed and want to thwart it. This can be done through various evasion techniques.
 
@@ -55,18 +63,18 @@ For malware analysis, there are many options to choose a debugger from. These op
 
 For this example, we will be using `x32dbg` and `x64dbg`. Upon opening the application we will be greeted by this interface:
 
-![x64dbg](/Reverse_Engineering/Images/x64dbg.png)
+![x64dbg](/CCI25/Reverse_Engineering/Images/x64dbg.png)
 
 To open a file in the debugger, we can navigate to File > Open and open our desired file. We are currently seeing the CPU tab in the interface.
 
->[!NOTE]
+{: .warning}
 > Please note that we must use x32dbg for 32-bit samples and x64dbg for 64-bit samples.
 
-![x64dbg CPU inteface](/Reverse_Engineering/Images/x64dbgCPU.png)
+![x64dbg CPU inteface](/CCI25/Reverse_Engineering/Images/x64dbgCPU.png)
 
 As we can see in the bottom left corner, the execution of the program is paused because a `System breakpoint` has been reached. We can control whether to execute one instruction at a time or the whole program. But before that, let's take a look at the screenshot above. Here, we can see Disassembly in the middle pane, with the Instruction pointer pointing to the next instruction executed if we start the program. In the right pane, we can see the registers and their values. We can note that the value in EIP is the address EIP is pointing to in the disassembly pane. Similarly, on the bottom pane, we can see the stack view (right), the dump view (left), and the timer showing the time we spent debugging the sample (right corner). 
 
-[!NOTE]
+{: .warning}
 > x32-x64dbg is programmed to break execution on [TLS callbacks](https://hex-rays.com/blog/tls-callbacks)
 >
 > We can set where to put automatic breakpoints on a program by going to the Options > Preferences menu.

@@ -50,7 +50,7 @@ graph TD;
 	NET -.-> PEN
 	
 	classDef DarkMode fill:#000000,stroke:#FFFFFF,color:#FFFFFF;
-	linkStyle 0,1,2,3,4 stroke:#FFFFFF,stroke-width:3px;
+	linkStyle 1,2,3 stroke:#FFFFFF,stroke-width:3px;
 	class Code,HL,LL,OS,RE,NS,NET,PEN DarkMode;
 ```
 
