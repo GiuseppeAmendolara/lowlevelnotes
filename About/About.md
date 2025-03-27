@@ -1,7 +1,7 @@
 ---
 layout: page
 title: About
-permalink: /about/
+permalink: /About/
 nav_order: 6
 ---
 
@@ -23,32 +23,12 @@ I'm Grimy86, passionate about low-level programming and cybersecurity. I contrib
   - [ ] Study function hooking
   - [ ] Call game functions
   - [ ] Make an ESP
-- Study Books & include them into the `CCI25` repo
-  - [ ] Design Patterns Elements of Reusable Object-Oriented Software
-  - [ ] Windows Internals part 1
-- [ ] Rework the my C++ course from PDF to markdown files (Absolute last priority for now).
-
----
-
-## Past projects
-- Very basic local login, registration through file validation in C++
-- Web Terminal CLI in JavaScript, HTML and CSS
-- Calling T-SQL stored procedures from apps using SQL Server Management Studio (SSMS) & ADO.NET
-- C# DLL for better data provisioning through ADO.NET
-- C# external trainer for Assault Cube
-- Traffic intersection simulation using C# and WPF
-- Using Model-View-ViewModel (MVVM) & Layered (DAL) architecture with WPF applications
-- Powershell scripting for managing AzureDB components
-- Basic process informer in python
-- C# GUI App that: runs powershell scripts, extracts system info to .csv files and mails them.
-- C# summary in 2025
-- Reverse engineering role for TryHackMe's Hackfinity student contest @ Cyber Legion
-- Software architecture in C# for Mailing, System & Windows Process services.
-  - Reads out all of the system info: NTAccounts, OSVersionInfo, Win32_OperatingSystem Info, Win32_Processor Info, etc...
-  - Mail services to be used by a in-house "bot" to send application csv's, bool results, etc. to a team mailaddress.
-  - Windows Process services that handle complete control over administrative tasks like executing batch, ps1, .exe, etc.
-- Making a Microsoft's Sticky Notes clone from scratch using WPF (MVVM)
-	- Project-wide exception logging
+- Work on the `CCI25` repo
+  - Study Books & include them into the `CCI25` repo
+    - [ ] Design Patterns Elements of Reusable Object-Oriented Software
+    - [ ] Windows Internals part 1
+  - [ ] Rework the C# and C++ course into a more unified programming fundamentals course
+  - [ ] Rework the reverse engineering & cybersec sections
 
 ---
 
