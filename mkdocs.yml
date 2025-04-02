@@ -164,6 +164,13 @@ nav:
       - Operator Presedence: Assembly/Syntax/Operator_Presedence.md
     - How to compile: Assembly/Compiling.md
 
+  - Software Architecture & Patterns:
+    - Code Pattern Matching: Architecture/Pattern_matching.md
+    - SOLID Principles: Architecture/SOLID.md
+    - Class Relationships: Architecture/Class_Relationships.md
+    - Design Patterns: Architecture/Design_Patterns.md
+    - Common Architectures: Architecture/Common_Architectures.md
+
   - Windows Internals:
     - Introduction: Windows_Internals/Introduction.md
     - Terminology: Windows_Internals/Terminology.md
