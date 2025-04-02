@@ -53,9 +53,10 @@ extra:
 
 plugins:
   - search
-  - git-committers:
-      repository: grimy86/CCI25
-      branch: main
+  # Git-committers dependencies causing deployment issues
+  # - git-committers:
+  #     repository: grimy86/CCI25
+  #     branch: main
   # https://github.com/ojacques/mkdocs-git-committers-plugin-2
   # https://github.com/timvink/mkdocs-git-authors-plugin/
 
