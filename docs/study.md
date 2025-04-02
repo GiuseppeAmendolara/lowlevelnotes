@@ -9,11 +9,11 @@ Some topics are standalone, as they have their own separate path but eventually 
 
  Key Takeaways:
  
-    - Use spaced repetition (e.g., Anki) for memorization.
-    - Write summaries like these, in your own words to reinforce understanding.
-    - Don't jump from topic to topic unless you know what you're doing. Most of the "steps" build on top of each other.
-    - Every small "step" you take should be a small practical project, code base, or challenge.
-    - Keep note of where you left off studying.
+- Use spaced repetition (e.g., Anki) for memorization.
+- Write summaries like these, in your own words to reinforce understanding.
+- Don't jump from topic to topic unless you know what you're doing. Most of the "steps" build on top of each other.
+- Every small "step" you take should be a small practical project, code base, or challenge.
+- Keep note of where you left off studying.
 
 ## Roadmap
 
