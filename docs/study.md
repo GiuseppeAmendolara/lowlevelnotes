@@ -8,6 +8,7 @@ Some topics are standalone, as they have their own separate path but eventually 
 - Networking and security
 
  Key Takeaways:
+ 
     - Use spaced repetition (e.g., Anki) for memorization.
     - Write summaries like these, in your own words to reinforce understanding.
     - Don't jump from topic to topic unless you know what you're doing. Most of the "steps" build on top of each other.
