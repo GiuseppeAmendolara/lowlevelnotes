@@ -15,4 +15,4 @@ This summary is entirely possible thanks to the authors of the Learncpp website 
 
 **Prerequisites:** None
 
-**C++ PDF Course:** [PDF](/CCI25/Programming_Foundations/Cpp/C-Style_CPP_24.pdf)
+**C++ PDF Course:** [PDF](/Cpp/C-CPP.pdf)
