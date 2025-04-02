@@ -1,0 +1,180 @@
+copyright: Copyright &copy; Grimy86, 2024 - 2025
+site_name: Cybersecurity & Code Insights '25
+site_url: https://grimy86.github.io/
+repo_name: grimy86.github.io
+repo_url: https://grimy86.github.io/
+theme:
+  name: material
+  logo: /assets/Key.png
+  favicon: /assets/Key3.png
+  language: en
+
+  palette:
+# Palette toggle for light mode
+    - scheme: default
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to dark mode
+      primary: black
+      accent: orange
+
+    # Palette toggle for dark mode
+    - scheme: slate
+      toggle:
+        icon: material/weather-night
+        name: Switch to light mode
+      primary: black
+      accent: orange
+
+# Intercepted and dispatched via XHR without fully reloading the page
+  features:
+    - navigation.instant
+    - navigation.instant.prefetch
+    - navigation.instant.progress
+    - navigation.tracking
+    - navigation.tabs
+    # - navigation.tabs.sticky, this keept the tabs on the top while scrolling
+    - navigation.sections
+    # - navigation.expand, this will expand all of the navbar's subsections automatically
+    - navigation.path
+    - navigation.prune
+    - navigation.indexes
+    - navigation.top
+    - navigation.footer
+    # - content.action.view
+
+extra:
+  generator: false
+  social:
+    - icon: fontawesome/solid/envelope
+      link: mailto:grimy86@proton.me
+    - icon: fontawesome/brands/github 
+      link: https://github.com/grimy86
+
+plugins:
+  - search
+  - git-committers:
+      repository: grimy86/CCI25
+      branch: main
+  # https://github.com/ojacques/mkdocs-git-committers-plugin-2
+  # https://github.com/timvink/mkdocs-git-authors-plugin/
+
+markdown_extensions:
+
+  # Python Markdown
+  - abbr
+  - admonition # Callouts
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - toc:
+      permalink: true
+
+  # Python Markdown Extensions
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.superfences:
+        custom_fences:
+          - name: mermaid
+            class: mermaid
+            format: !!python/name:pymdownx.superfences.fence_code_format
+
+  - pymdownx.details
+  - pymdownx.snippets
+  - pymdownx.tilde
+  - pymdownx.caret
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+
+nav:
+  - Home: index.md
+
+  - How to study: study.md
+
+  - C#:
+    - Level 1:
+      - Entry-point, variables, data types & operators: CSharp/Level1/Basics.md
+      - Control Flow: CSharp/Level1/Control_Flow.md
+      - Functions & Methods: CSharp/Level1/Functions.md
+      - Type conversion & parsing: CSharp/Level1/Conversion_Parsing.md
+      - Data Collections: CSharp/Level1/Collections.md
+      - Exception handling: CSharp/Level1/Exceptions.md
+      - Preprocessor directives: CSharp/Level1/Preprocessor_Directives.md
+      - Object-Oriented Programming (OOP): CSharp/Level1/OOP.md
+    - Level 2:
+      - Operator Overloading: CSharp/Level2/Operator_Overloading.md
+      - Nullable value types: CSharp/Level2/Nullable_Types.md
+      - Pass by reference: CSharp/Level2/Pass_By_Reference.md
+      - Generics: CSharp/Level2/Generics.md
+      - Partial Classes & Partial Methods: CSharp/Level2/Partials.md
+      - Tuples & Value Tuples: CSharp/Level2/Tuples.md
+      - Extension Methods: CSharp/Level2/Extension_Methods.md
+      - Indexers: CSharp/Level2/Indexers.md
+      - Lambda expressions (Anonymous Functions): CSharp/Level2/Lambda.md
+      - Delegates, Anonymous Methods, etc.: CSharp/Level2/Delegates.md
+      - Expression Bodies: CSharp/Level2/Expression_Bodies.md
+      - Method Hiding: CSharp/Level2/Method_Hiding.md
+    - Level 3:
+      - Events: CSharp/Level3/Events.md
+      - Language Integrated Query (LINQ): CSharp/Level3/LINQ.md
+      - The `IDisposable` interface: CSharp/Level3/IDisposable.md
+      - Mulithreading & Async: CSharp/Level3/Multithread_Async.md
+      - Attributes & Reflection: CSharp/Level3/Attributes_Reflection.md
+    - Level 4:
+      - Dependency Injection (DI): CSharp/Level4/Dependency_Injection.md
+      - Unsafe: CSharp/Level4/Unsafe.md
+
+  - C++:
+    - C/C++ Summary: Cpp/Cpp.md
+
+  - Assembly:
+    - Architecture:
+      - Introduction: Assembly/Architecture/Introduction.md
+      - x86 & x86_64 Architecture: Assembly/Architecture/x86_Architecture.md
+      - Modes of Operation: Assembly/Architecture/Operating_Modes.md
+      - Memory: Assembly/Architecture/Memory.md
+      - CPU Registers: Assembly/Architecture/CPU_Registers.md
+      - E_Flags: Assembly/Architecture/E_Flags.md
+      - Sizes / Words: Assembly/Architecture/Sizes.md
+      - The stack: Assembly/Architecture/Stack.md
+      - Instructions / opcodes: Assembly/Architecture/Instructions.md
+      - Procedures: Assembly/Architecture/Procedures.md
+      - Binary operations: Assembly/Architecture/Binary_Operations.md
+      - Calling Conventions: Assembly/Architecture/Calling_Conventions.md
+    - Syntax:
+      - Reserved words: Assembly/Syntax/Reserved_Words.md
+      - Radix characters: Assembly/Syntax/Radix_Characters.md
+      - Character constants: Assembly/Syntax/Character_Constants.md
+      - Identifiers: Assembly/Syntax/Identifiers.md
+      - Declaring variables: Assembly/Syntax/Declaring_Variables.md
+      - Operator Presedence: Assembly/Syntax/Operator_Presedence.md
+    - How to compile: Assembly/Compiling.md
+
+  - Windows Internals:
+    - Introduction: Windows_Internals/Introduction.md
+    - Terminology: Windows_Internals/Terminology.md
+    - .NET Framework: Windows_Internals/Dotnet_Framework.md
+    - Dynamic Link Libraries (DLLs): Windows_Internals/DLLs.md
+    - Processes, Threads, Fibers, UMS Threads, Handles, Jobs and more: Windows_Internals/Processes.md
+    - Virtual Memory: Windows_Internals/Virtual_Memory.md
+    - Introduction to API's: Windows_Internals/API_Introduction.md
+    - Windows API, IPC and WinRT: Windows_Internals/Windows_API.md
+    - Processor modes, Privileges, Syscalls, the Kernel and more: Windows_Internals/Processor_Modes.md
+    - Portable Executable file format (PE): Windows_Internals/PE.md
+
+  - About Me:
+    - GitHub: About/github.md
+    - Portfolio: About/portfolio.md
