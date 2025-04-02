@@ -1,0 +1,1749 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://grimy86.github.io/Cybersecurity/Scanning/Nmap/">
+      
+      
+      
+      
+      <link rel="icon" href="/assets/Key3.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.11">
+    
+    
+      
+        <title>Nmap - Cybersecurity & Code Insights '25</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.4af4bdda.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#nmap" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="Cybersecurity &amp; Code Insights &#39;25" class="md-header__button md-logo" aria-label="Cybersecurity & Code Insights '25" data-md-component="logo">
+      
+  <img src="/assets/Key.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Cybersecurity & Code Insights '25
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Nmap
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://grimy86.github.io/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    grimy86.github.io
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../study/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  How to study
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../CSharp/Level1/Basics/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  C#
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../Cpp/Cpp/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  C++
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../Assembly/Architecture/Introduction/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Assembly
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../Windows_Internals/Introduction/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Windows Internals
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../About/github/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  About Me
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="Cybersecurity &amp; Code Insights &#39;25" class="md-nav__button md-logo" aria-label="Cybersecurity & Code Insights '25" data-md-component="logo">
+      
+  <img src="/assets/Key.png" alt="logo">
+
+    </a>
+    Cybersecurity & Code Insights '25
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://grimy86.github.io/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    grimy86.github.io
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../study/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    How to study
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    <li class="md-nav__item md-nav__item--pruned md-nav__item--nested">
+      
+        
+  
+  
+  
+    
+  
+  
+  
+    <a href="../../../CSharp/Level1/Basics/" class="md-nav__link">
+      
+  
+  
+  <span class="md-ellipsis">
+    C#
+    
+  </span>
+  
+
+      
+        <span class="md-nav__icon md-icon"></span>
+      
+    </a>
+  
+
+  
+
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    <li class="md-nav__item md-nav__item--pruned md-nav__item--nested">
+      
+        
+  
+  
+  
+    <a href="../../../Cpp/Cpp/" class="md-nav__link">
+      
+  
+  
+  <span class="md-ellipsis">
+    C++
+    
+  </span>
+  
+
+      
+        <span class="md-nav__icon md-icon"></span>
+      
+    </a>
+  
+
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    <li class="md-nav__item md-nav__item--pruned md-nav__item--nested">
+      
+        
+  
+  
+  
+    
+  
+  
+  
+    <a href="../../../Assembly/Architecture/Introduction/" class="md-nav__link">
+      
+  
+  
+  <span class="md-ellipsis">
+    Assembly
+    
+  </span>
+  
+
+      
+        <span class="md-nav__icon md-icon"></span>
+      
+    </a>
+  
+
+  
+
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    <li class="md-nav__item md-nav__item--pruned md-nav__item--nested">
+      
+        
+  
+  
+  
+    <a href="../../../Windows_Internals/Introduction/" class="md-nav__link">
+      
+  
+  
+  <span class="md-ellipsis">
+    Windows Internals
+    
+  </span>
+  
+
+      
+        <span class="md-nav__icon md-icon"></span>
+      
+    </a>
+  
+
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    <li class="md-nav__item md-nav__item--pruned md-nav__item--nested">
+      
+        
+  
+  
+  
+    <a href="../../../About/github/" class="md-nav__link">
+      
+  
+  
+  <span class="md-ellipsis">
+    About Me
+    
+  </span>
+  
+
+      
+        <span class="md-nav__icon md-icon"></span>
+      
+    </a>
+  
+
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#subnetting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Subnetting
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#enumerating-targets" class="md-nav__link">
+    <span class="md-ellipsis">
+      Enumerating Targets
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      Summary
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-process-of-network-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      The process of network mapping
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#nmap-tcp-and-udp-port-states" class="md-nav__link">
+    <span class="md-ellipsis">
+      Nmap TCP and UDP port states
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#live-host-discovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      Live Host Discovery
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Live Host Discovery">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#protocols" class="md-nav__link">
+    <span class="md-ellipsis">
+      Protocols
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#arp-scanning" class="md-nav__link">
+    <span class="md-ellipsis">
+      ARP scanning
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#icmp-scanning" class="md-nav__link">
+    <span class="md-ellipsis">
+      ICMP scanning
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tcp-scanning" class="md-nav__link">
+    <span class="md-ellipsis">
+      TCP scanning
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="TCP scanning">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#syn" class="md-nav__link">
+    <span class="md-ellipsis">
+      SYN
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ack" class="md-nav__link">
+    <span class="md-ellipsis">
+      ACK
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#basic-port-scanning" class="md-nav__link">
+    <span class="md-ellipsis">
+      Basic Port Scanning
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Basic Port Scanning">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tcp-flags" class="md-nav__link">
+    <span class="md-ellipsis">
+      TCP flags
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tcp-connect-scan" class="md-nav__link">
+    <span class="md-ellipsis">
+      TCP connect scan
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tcp-syn-scan" class="md-nav__link">
+    <span class="md-ellipsis">
+      TCP SYN scan
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#udp-scan" class="md-nav__link">
+    <span class="md-ellipsis">
+      UDP scan
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#advanced-port-scans" class="md-nav__link">
+    <span class="md-ellipsis">
+      Advanced port scans
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Advanced port scans">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tcp-null-scan" class="md-nav__link">
+    <span class="md-ellipsis">
+      TCP Null scan
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tcp-fin-scan" class="md-nav__link">
+    <span class="md-ellipsis">
+      TCP FIN scan
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tcp-xmas-scan" class="md-nav__link">
+    <span class="md-ellipsis">
+      TCP Xmas scan
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tcp-maimon-scan" class="md-nav__link">
+    <span class="md-ellipsis">
+      TCP Maimon scan
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tcp-ack-scan" class="md-nav__link">
+    <span class="md-ellipsis">
+      TCP ACK scan
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tcp-window-scan" class="md-nav__link">
+    <span class="md-ellipsis">
+      TCP Window scan
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#spoofing" class="md-nav__link">
+    <span class="md-ellipsis">
+      Spoofing
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#decoys" class="md-nav__link">
+    <span class="md-ellipsis">
+      Decoys
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fragmented-packets" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fragmented packets
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#idlezombie-scan" class="md-nav__link">
+    <span class="md-ellipsis">
+      Idle/Zombie Scan
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#nmap-post-port-scans" class="md-nav__link">
+    <span class="md-ellipsis">
+      Nmap Post port scans
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Nmap Post port scans">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#service-detection" class="md-nav__link">
+    <span class="md-ellipsis">
+      Service detection
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#os-detection" class="md-nav__link">
+    <span class="md-ellipsis">
+      OS detection
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traceroute" class="md-nav__link">
+    <span class="md-ellipsis">
+      Traceroute
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nmap-scripting-engine" class="md-nav__link">
+    <span class="md-ellipsis">
+      Nmap scripting engine
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#saving-the-scan-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      Saving the scan results
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="nmap">Nmap<a class="headerlink" href="#nmap" title="Permanent link">&para;</a></h1>
+<h2 id="subnetting">Subnetting<a class="headerlink" href="#subnetting" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Definition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>network segment</td>
+<td>This refers tp a physical connection, a group of computers connected using a shared medium like a Ethernet switch or WiFi access point.</td>
+</tr>
+<tr>
+<td>subnet(work)</td>
+<td>This refers to a logical connection, equivalent of one or more network segments connected together and configured to use the same router.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="enumerating-targets">Enumerating Targets<a class="headerlink" href="#enumerating-targets" title="Permanent link">&para;</a></h2>
+<p>If you want to check the list of hosts that Nmap will scan, you can use <code>nmap -sL TARGETS</code>.</p>
+<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Purpose</th>
+<th>Example Command</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Host discovery</strong></td>
+<td>-</td>
+</tr>
+<tr>
+<td>Discover live hosts without port scanning</td>
+<td><code>sudo nmap -sn MACHINE_IP/24</code></td>
+</tr>
+<tr>
+<td>ARP Scan</td>
+<td><code>sudo nmap -PR -sn MACHINE_IP/24</code></td>
+</tr>
+<tr>
+<td>ICMP Echo Scan</td>
+<td><code>sudo nmap -PE -sn MACHINE_IP/24</code></td>
+</tr>
+<tr>
+<td>ICMP Timestamp Scan</td>
+<td><code>sudo nmap -PP -sn MACHINE_IP/24</code></td>
+</tr>
+<tr>
+<td>ICMP Address Mask Scan</td>
+<td><code>sudo nmap -PM -sn MACHINE_IP/24</code></td>
+</tr>
+<tr>
+<td>TCP SYN Ping Scan</td>
+<td><code>sudo nmap -PS22,80,443 -sn MACHINE_IP/30</code></td>
+</tr>
+<tr>
+<td>TCP ACK Ping Scan</td>
+<td><code>sudo nmap -PA22,80,443 -sn MACHINE_IP/30</code></td>
+</tr>
+<tr>
+<td>UDP Ping Scan</td>
+<td><code>sudo nmap -PU53,161,162 -sn MACHINE_IP/30</code></td>
+</tr>
+<tr>
+<td><strong>DNS discovery</strong></td>
+<td>-</td>
+</tr>
+<tr>
+<td>Skip reverse-dns lookup</td>
+<td><code>sudo nmap -n MACHINE_IP/24</code></td>
+</tr>
+<tr>
+<td>DNS offline host discovery</td>
+<td><code>sudo nmap -R MACHINE_IP/24</code></td>
+</tr>
+<tr>
+<td>Specify DNS server</td>
+<td><code>sudo nmap --dns-servers DNS_SERVER MACHINE_IP/24</code></td>
+</tr>
+<tr>
+<td><strong>Basic port scans</strong></td>
+<td>-</td>
+</tr>
+<tr>
+<td>TCP connect scan</td>
+<td><code>sudo nmap -sT MACHINE_IP</code></td>
+</tr>
+<tr>
+<td>TCP SYN scan</td>
+<td><code>sudo nmap -sS MACHINE_IP</code></td>
+</tr>
+<tr>
+<td>UDP scan</td>
+<td><code>sudo nmap -sU MACHINE_IP</code></td>
+</tr>
+<tr>
+<td><strong>Advanced port scans</strong></td>
+<td>-</td>
+</tr>
+<tr>
+<td>TCP Null scan</td>
+<td><code>sudo nmap -sN MACHINE_IP</code></td>
+</tr>
+<tr>
+<td>TCP FIN scan</td>
+<td><code>sudo nmap -sF MACHINE_IP</code></td>
+</tr>
+<tr>
+<td>TCP Xmas scan</td>
+<td><code>sudo nmap -sX MACHINE_IP</code></td>
+</tr>
+<tr>
+<td>TCP Maimon scan</td>
+<td><code>sudo nmap -sM MACHINE_IP</code></td>
+</tr>
+<tr>
+<td>TCP ACK scan</td>
+<td><code>sudo nmap -sA MACHINE_IP</code></td>
+</tr>
+<tr>
+<td>TCP Window scan</td>
+<td><code>sudo nmap -sW MACHINE_IP</code></td>
+</tr>
+<tr>
+<td>Custom scan</td>
+<td><code>--scanflags FLAGS</code></td>
+</tr>
+<tr>
+<td><strong>Spoofing and decoys</strong></td>
+<td>-</td>
+</tr>
+<tr>
+<td>Basic spoofing</td>
+<td><code>nmap -S SPOOFED_IP MACHINE_IP</code></td>
+</tr>
+<tr>
+<td>Spoofing specifying the interface</td>
+<td><code>nmap -e NET_INTERFACE -Pn -S SPOOFED_IP MACHINE_IP</code></td>
+</tr>
+<tr>
+<td>Spoof mac</td>
+<td><code>--spoof-mac SPOOFED_MAC</code></td>
+</tr>
+<tr>
+<td>Decoy</td>
+<td><code>nmap -D DECOY1_IP,DECOY2_IP,ME MACHINE_IP</code> where <code>ME</code> indicates that your IP address should appear in the third order.</td>
+</tr>
+<tr>
+<td>Random decoys</td>
+<td><code>nmap -D 10.10.0.1,10.10.0.2,RND,RND,ME MACHINE_IP</code> where the third and fourth source IP addresses are assigned randomly.</td>
+</tr>
+<tr>
+<td>Idle/Zombie scan</td>
+<td><code>nmap -sI ZOMBIE_IP MACHINE_IP</code>, where <code>ZOMBIE_IP</code> is the IP address of the idle host (zombie).</td>
+</tr>
+<tr>
+<td><strong>Packet fragments</strong></td>
+<td>-</td>
+</tr>
+<tr>
+<td>Fragment packets</td>
+<td>Add <code>-f</code> or <code>-ff</code> for further fragmentation.</td>
+</tr>
+<tr>
+<td>Increase packet size</td>
+<td><code>--data-length NUM</code></td>
+</tr>
+<tr>
+<td>Change the default fragment size value</td>
+<td>Use <code>--mtu</code>.</td>
+</tr>
+<tr>
+<td><strong>Post port scanning</strong></td>
+<td>-</td>
+</tr>
+<tr>
+<td>Service and version</td>
+<td><code>nmap -sV MACHINE_IP</code></td>
+</tr>
+<tr>
+<td>Control detection intensity</td>
+<td><code>--version-intensity LEVEL</code> where levels are between 0 and 9.</td>
+</tr>
+<tr>
+<td>Higest intensity detection</td>
+<td><code>-sV --version-all</code></td>
+</tr>
+<tr>
+<td>OS detection</td>
+<td><code>nmap -O MACHINE_IP</code></td>
+</tr>
+<tr>
+<td>Traceroute</td>
+<td><code>nmap --traceroute MACHINE_IP</code></td>
+</tr>
+<tr>
+<td>Run default scripts</td>
+<td><code>nmap --script=default MACHINE_IP</code> or <code>nmap -sC MACHINE_IP</code> or <code>nmap --script "SCRIPT-NAME" MACHINE_IP</code></td>
+</tr>
+<tr>
+<td>All</td>
+<td><code>-A</code>, equivalent to <code>-sV -O -sC --traceroute</code></td>
+</tr>
+<tr>
+<td><strong>Saving output</strong></td>
+<td>-</td>
+</tr>
+<tr>
+<td>Normal format</td>
+<td><code>-oN FILENAME</code></td>
+</tr>
+<tr>
+<td>Grepable format</td>
+<td><code>-oG FILENAME</code></td>
+</tr>
+<tr>
+<td>XML format</td>
+<td><code>-oX FILENAME</code></td>
+</tr>
+<tr>
+<td>Use all formats</td>
+<td><code>-oA FILENAME</code></td>
+</tr>
+<tr>
+<td>Script kiddie</td>
+<td><code>-oS FILENAME</code></td>
+</tr>
+<tr>
+<td><strong>Misc</strong></td>
+<td>-</td>
+</tr>
+<tr>
+<td>Enable fast mode</td>
+<td><code>sudo nmap -F MACHINE_IP</code></td>
+</tr>
+<tr>
+<td>Scan ports in consecutive order</td>
+<td><code>sudo nmap -r MACHINE_IP</code></td>
+</tr>
+<tr>
+<td>Specify ports</td>
+<td><code>sudo nmap -p22,80,443 MACHINE_IP</code></td>
+</tr>
+<tr>
+<td>Port range</td>
+<td><code>sudo nmap -p22-443 MACHINE_IP</code></td>
+</tr>
+<tr>
+<td>All ports</td>
+<td><code>sudo nmap -p- MACHINE_IP</code></td>
+</tr>
+<tr>
+<td>Scan timing</td>
+<td><code>-T&lt;0-5&gt;</code> where 0=paranoid, 1=sneaky, 2=polite, 3=normal, 4=aggressive, 5=insane</td>
+</tr>
+<tr>
+<td>Control packet rate</td>
+<td><code>--min-rate &lt;number&gt;</code> &amp; <code>--max-rate &lt;number&gt;</code> = packets/second</td>
+</tr>
+<tr>
+<td>Control probing parallelization</td>
+<td><code>--min-parallelism &lt;numprobes&gt;</code> &amp; <code>--max-parallelism &lt;numprobes&gt;</code> = Nmap probes the targets to discover which hosts are live and which ports are open; probing parallelization specifies the number of such probes that can be run in parallel.</td>
+</tr>
+<tr>
+<td>Specify the network interface</td>
+<td><code>-e NET_INTERFACE</code></td>
+</tr>
+<tr>
+<td>Specify source port number</td>
+<td><code>--source-port PORT_NUM</code></td>
+</tr>
+<tr>
+<td>Let Nmap provide more detailed reasoning</td>
+<td><code>--reason</code></td>
+</tr>
+<tr>
+<td>Let Nmap provide more detailed output</td>
+<td>Use <code>-v</code> or <code>-vv</code> for even more verbosity.</td>
+</tr>
+<tr>
+<td>Denugging</td>
+<td><code>-d</code></td>
+</tr>
+<tr>
+<td>More details for debugging</td>
+<td><code>-dd</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="the-process-of-network-mapping">The process of network mapping<a class="headerlink" href="#the-process-of-network-mapping" title="Permanent link">&para;</a></h2>
+<ol>
+<li>Enumerate targets</li>
+<li>Discover live hosts</li>
+<li>Reverse-DNS lookup</li>
+<li>Scan ports</li>
+<li>Detect versions</li>
+<li>Detect OS</li>
+<li>Traceroute</li>
+<li>Scripts</li>
+<li>Write output / logging</li>
+</ol>
+<h2 id="nmap-tcp-and-udp-port-states">Nmap TCP and UDP port states<a class="headerlink" href="#nmap-tcp-and-udp-port-states" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Port state</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Open</td>
+<td>Service is <code>actively listening</code> for connections on the port.</td>
+</tr>
+<tr>
+<td>Closed</td>
+<td><code>No service listening</code>, <code>port is accessible</code> / reachable but a firewall or other security appliances might be blocking the packets.</td>
+</tr>
+<tr>
+<td>Filtered</td>
+<td>Nmap cannot determine if the port is <code>open or closed</code>. The <code>port is not accessible</code>. Usually due to a firewall preventing nmap.</td>
+</tr>
+<tr>
+<td>Unfiltered</td>
+<td>Nmap cannot determine if the port is <code>open or closed</code>. The <code>port is accessible</code>. Encountered when <code>TCP ACK</code> scanning.</td>
+</tr>
+<tr>
+<td>Open/Filtered</td>
+<td>Nmap cannot determine if the port is <code>open or filtered</code>.</td>
+</tr>
+<tr>
+<td>Closed/Filtered</td>
+<td>Nmap cannot determine if the port is <code>closed or filtered</code>.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="live-host-discovery">Live Host Discovery<a class="headerlink" href="#live-host-discovery" title="Permanent link">&para;</a></h2>
+<h3 id="protocols">Protocols<a class="headerlink" href="#protocols" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Protocol</th>
+<th>Description</th>
+<th>Packet example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ARP</td>
+<td>Sends a frame to the <strong>broadcast</strong> address on the network segment <code>asking who has the MAC-address of a certain IP-address</code>. Subsequently storing the MAC in it's routing table.</td>
+<td><code>Who has 10.10.210.1? Tell 10.10.210.6</code></td>
+</tr>
+<tr>
+<td>ICMP</td>
+<td>ICMP has many types. ICMP ping uses Type 8 (Echo) and Type 0 (Echo Reply).</td>
+<td><code>[Echo (ping) request or Timespamp request] id=0x22e1, seq=0/0, ttl=...</code></td>
+</tr>
+<tr>
+<td>TCP</td>
+<td>Send a specially-crafted packet to common TCP ports to check whether the target will respond. This method is efficient, especially when ICMP Echo is blocked.</td>
+<td><code>[PortNumber: 80] [SYN or ACK] Seq=1 Win=1024 Len=0 MSS=1460...</code></td>
+</tr>
+<tr>
+<td>UDP</td>
+<td>Send a specially-crafted packet to common UDP ports to check whether the target will respond. This method is efficient, especially when ICMP Echo is blocked.</td>
+<td>For live hosts we will only see <code>UDP traffic</code>. If a host is down we will also see <code>ICMP(type 3) traffic</code>.</td>
+</tr>
+</tbody>
+</table>
+<p><code>Nmap, by default, uses a ping scan to find live hosts</code>, then proceeds to scan live hosts only.
+To be able to use different protocols we need priviledged or <code>sudo</code> access to nmap, otherwise nmap will default back to <code>TCP</code> scanning.
+If you want to use Nmap to discover online hosts without port-scanning the live systems, you can issue <code>nmap -sn TARGETS</code>.</p>
+<h3 id="arp-scanning">ARP scanning<a class="headerlink" href="#arp-scanning" title="Permanent link">&para;</a></h3>
+<p>Inside of a <code>subnet</code> we can use <code>ARP</code> requests to see if a host is online. Remember, an ARP query <code>aims to get the hardware</code> address (MAC address) so that communication over the link-layer becomes possible. <code>ARP queries won’t be routed</code> and hence <strong>cannot cross the subnet router</strong>. ARP is a link-layer protocol, and ARP <strong>packets are bound to their subnet</strong>.</p>
+<p>Basically, a host that replies to ARP queries is up. If you want Nmap only to perform an ARP scan without port-scanning, you can use <code>nmap -PR -sn TARGETS</code>, where <code>-PR</code> indicates that you only want an ARP scan.</p>
+<p><img alt="Arp scan" src="https://tryhackme-images.s3.amazonaws.com/user-uploads/5f04259cf9bf5b57aed2c476/room-content/f0ce4cd34b827f529255c5c73bb909d1.png" /></p>
+<p>Talking about ARP scans, we should mention a scanner built around ARP queries: <code>arp-scan</code>; it provides many options to customize your scan. Visit the arp-scan wiki for detailed information. One popular choice is <code>arp-scan --localnet</code> or simply <code>arp-scan -l</code>.  You can also specify the interface using <code>-I</code>. For instance, <code>sudo arp-scan -I eth0 -l</code> will send ARP queries for all valid IP addresses on the eth0 interface.</p>
+<h3 id="icmp-scanning">ICMP scanning<a class="headerlink" href="#icmp-scanning" title="Permanent link">&para;</a></h3>
+<p>ICMP (Internet Control Message Protocol) is a network protocol used for diagnostic and error-reporting purposes. Think of it as a way for devices on a network to exchange quick "status updates" or ask basic questions to help maintain communication.</p>
+<p>An <code>ICMP echo scan</code> works by sending an ICMP echo request (<code>ICMP Type 8/Echo</code>) and expects the target to reply with an ICMP echo (<code>ICMP Type 0/Echo</code>) reply if it is online. Many firewalls block ICMP echo; new versions of MS Windows are configured with a host firewall that blocks ICMP echo requests by default.</p>
+<p>To use ICMP echo request to discover live hosts, add the option <code>-PE</code>. </p>
+<p><img alt="ICMP scan" src="https://tryhackme-images.s3.amazonaws.com/user-uploads/5f04259cf9bf5b57aed2c476/room-content/25fb5fd5d2009cf69d7aae40e8fde2ec.png" /></p>
+<p>Because ICMP echo requests tend to be blocked, you might also consider <code>ICMP Timestamp</code> or <code>ICMP Address Mask requests</code> to tell if a system is online. Nmap uses timestamp request (<code>ICMP Type 13</code>) and checks whether it will get a Timestamp reply (<code>ICMP Type 14</code>). Adding the <code>-PP</code> option tells Nmap to use ICMP timestamp requests.</p>
+<p><img alt="ICMP timestamp scan" src="https://tryhackme-images.s3.amazonaws.com/user-uploads/5f04259cf9bf5b57aed2c476/room-content/06443faaa41a349ff46732d60e2e3bcd.png" /></p>
+<p>Similarly, Nmap uses address mask queries (<code>ICMP Type 17</code>) and checks whether it gets an address mask reply (<code>ICMP Type 18</code>). This scan can be enabled with the option <code>-PM</code>.</p>
+<p><img alt="ICMP address mask scan" src="https://tryhackme-images.s3.amazonaws.com/user-uploads/5f04259cf9bf5b57aed2c476/room-content/14c31c66e002e2f50b0f8525c8d8e456.png" /></p>
+<h3 id="tcp-scanning">TCP scanning<a class="headerlink" href="#tcp-scanning" title="Permanent link">&para;</a></h3>
+<h4 id="syn">SYN<a class="headerlink" href="#syn" title="Permanent link">&para;</a></h4>
+<p>We can send a packet with the <code>SYN (Synchronize)</code> flag set to a TCP port, 80 by default, and wait for a response. An open port should reply with a <code>SYN/ACK (Acknowledge)</code>; a closed port would result in an <code>RST (Reset)</code>. In this case, <strong>we only check whether we will get any response to infer whether the host is up</strong>, the specific state of the port is not significant here.</p>
+<p><img alt="TCP 3-way handshake / SYN scan" src="https://tryhackme-images.s3.amazonaws.com/user-uploads/5f04259cf9bf5b57aed2c476/room-content/168d48701c5f872cf1930e08b32bcd6f.png" /></p>
+<p>If you want Nmap to use TCP SYN ping, you can do so via the option <code>-PS</code> followed by the port number, range, list, or a combination of them. For example, <code>-PS21</code> will target port 21, while <code>-PS21-25</code> will target ports 21, 22, 23, 24, and 25. Finally <code>-PS80,443,8080</code> will target the three ports 80, 443, and 8080.</p>
+<p>Privileged users (root and sudoers) can send TCP SYN packets and <code>don’t need to complete the TCP 3-way handshake</code> even if the port is open. Unprivileged users <code>have no choice but to complete the 3-way handshake</code> if the port is open.</p>
+<h4 id="ack">ACK<a class="headerlink" href="#ack" title="Permanent link">&para;</a></h4>
+<p>This sends a packet with the ACK flag set. You <code>must be running Nmap as a privileged user</code> to be able to accomplish this. If you try it as an unprivileged user, Nmap will attempt a 3-way handshake.</p>
+<p>By default, port 80 is used. The syntax is similar to TCP SYN ping. <code>-PA</code> should be followed by a port number, range, list, or a combination of them. For example, consider <code>-PA21</code>, <code>-PA21-25</code> and <code>-PA80,443,8080</code>. If no port is specified, port 80 will be used.</p>
+<p>Any TCP packet with an ACK flag <code>should get a TCP packet back with an RST flag set</code>. The target responds with the RST flag set because the TCP packet with the ACK flag is not part of any ongoing connection. The expected response is used to detect if the target host is up. The systems that don’t respond are offline or inaccessible.</p>
+<p><img alt="ACK scan" src="https://tryhackme-images.s3.amazonaws.com/user-uploads/5f04259cf9bf5b57aed2c476/room-content/db5ab44a8c700c4ab0603e85e456040d.png" /></p>
+<p>### UDP scanning
+Contrary to TCP SYN ping, sending a UDP packet to an open port is not expected to lead to any reply. However, if we send a <code>UDP packet to a closed</code> UDP port, we <code>expect to get an ICMP port unreachable packet</code>.</p>
+<p><img alt="UDP scanning" src="https://tryhackme-images.s3.amazonaws.com/user-uploads/5f04259cf9bf5b57aed2c476/room-content/c8b2d403667487322058619e561186d2.png" /></p>
+<p>The syntax to specify the ports is similar to that of TCP SYN ping and TCP ACK ping; Nmap uses <code>-PU</code> for UDP ping.</p>
+<h2 id="basic-port-scanning">Basic Port Scanning<a class="headerlink" href="#basic-port-scanning" title="Permanent link">&para;</a></h2>
+<h3 id="tcp-flags">TCP flags<a class="headerlink" href="#tcp-flags" title="Permanent link">&para;</a></h3>
+<p><img alt="TCP Header RFC793" src="https://tryhackme-images.s3.amazonaws.com/user-uploads/5f04259cf9bf5b57aed2c476/room-content/79ca8e4acbd573a27cee413cde927769.png" /></p>
+<p>Setting a flag bit means setting its value to 1. From left to right, the TCP header flags are:
+1. URG: Urgent flag indicates that the urgent pointer filed is significant.  a TCP segment with the URG flag set is processed immediately without consideration of having to wait on previously sent TCP segments.
+2. ACK: Used to acknowledge the receipt of a TCP segment.
+3. PSH: Asking TCP to pass the data to the application promptly.
+4. RST: Used to reset the connection. Also used when data is sent to a host and there is no service on the receiving end to answer.
+5. SYN: Used to initiate a TCP 3-way handshake and synchronize sequence numbers with the other host. The sequence number should be set randomly during TCP connection establishment.
+6. FIN: The sender has no more data to send.</p>
+<h3 id="tcp-connect-scan">TCP connect scan<a class="headerlink" href="#tcp-connect-scan" title="Permanent link">&para;</a></h3>
+<p>Similar to a TCP 3-way handshake BUT we are interested in learning whether the TCP port is open, not establishing a TCP connection. Hence the connection is torn as soon as its state is confirmed by sending a RST/ACK.
+<img alt="TCP connect scan" src="https://tryhackme-images.s3.amazonaws.com/user-uploads/5f04259cf9bf5b57aed2c476/room-content/514972cd54b3f58c83f951978ea9183e.png" /></p>
+<h3 id="tcp-syn-scan">TCP SYN scan<a class="headerlink" href="#tcp-syn-scan" title="Permanent link">&para;</a></h3>
+<p>Unprivileged users are limited to connect scan. However, the default scan mode is SYN scan, and it requires a privileged (root or sudoer) user to run it.</p>
+<p>SYN scan does not need to complete the TCP 3-way handshake; instead, it tears down the connection once it receives a response from the server.</p>
+<p><img alt="TCP SYN scan" src="https://tryhackme-images.s3.amazonaws.com/user-uploads/5f04259cf9bf5b57aed2c476/room-content/48e631fd3deba4a2b759ca48405fcc08.png" /></p>
+<h3 id="udp-scan">UDP scan<a class="headerlink" href="#udp-scan" title="Permanent link">&para;</a></h3>
+<p>UDP is a connectionless protocol, and hence it does not require any handshake for connection establishment. We cannot guarantee that a service listening on a UDP port would respond to our packets.</p>
+<p>However, if a UDP packet is sent to a closed port, an ICMP port unreachable error (type 3, code 3) is returned.</p>
+<p><img alt="UDP scan, port closed" src="https://tryhackme-images.s3.amazonaws.com/user-uploads/5f04259cf9bf5b57aed2c476/room-content/8b8b32517699b96777641a97dbf9d880.png" /></p>
+<h2 id="advanced-port-scans">Advanced port scans<a class="headerlink" href="#advanced-port-scans" title="Permanent link">&para;</a></h2>
+<p>Security researchers and hackers wanted to know what would happen if we send a TCP packet, which is not part of any ongoing TCP connection, with <code>one or more flags set</code>.</p>
+<h3 id="tcp-null-scan">TCP Null scan<a class="headerlink" href="#tcp-null-scan" title="Permanent link">&para;</a></h3>
+<p>The null scan does not set any flag; all six flag bits are set to zero.</p>
+<p>A TCP packet with no flags set will not trigger any response when it reaches an open port. However, we expect the target server to respond with an RST packet if the port is closed.</p>
+<p>Because the null scan relies on the lack of a response to infer that the port is not closed, it cannot indicate with certainty that these ports are open; there is a possibility that the ports are not responding due to a firewall rule.</p>
+<p><img alt="Null scan" src="https://tryhackme-images.s3.amazonaws.com/user-uploads/5f04259cf9bf5b57aed2c476/room-content/224e01a913a1ce7b0fb2b9290ff5e1c8.png" /></p>
+<h3 id="tcp-fin-scan">TCP FIN scan<a class="headerlink" href="#tcp-fin-scan" title="Permanent link">&para;</a></h3>
+<p>The FIN scan sends a TCP packet with the FIN flag set. No response will be sent if the TCP port is open. The target system should respond with an RST if the port is closed.</p>
+<p>Again, Nmap cannot be sure if the port is open or if a firewall is blocking the traffic related to this TCP port. It's worth noting some firewalls will 'silently' drop the traffic without sending an RST.</p>
+<p><img alt="FIN scan" src="https://tryhackme-images.s3.amazonaws.com/user-uploads/5f04259cf9bf5b57aed2c476/room-content/74dc07da7351a5a7f258948ec59efccc.png" /></p>
+<h3 id="tcp-xmas-scan">TCP Xmas scan<a class="headerlink" href="#tcp-xmas-scan" title="Permanent link">&para;</a></h3>
+<p>An Xmas scan sets the <code>FIN, PSH, and URG flags</code> simultaneously.</p>
+<p>Like the Null scan and FIN scan, if an RST packet is received, it means that the port is closed. Otherwise, it will be reported as open|filtered.</p>
+<p><img alt="Xmas scan" src="https://tryhackme-images.s3.amazonaws.com/user-uploads/5f04259cf9bf5b57aed2c476/room-content/4304eacbc3db1af21657f285bc16ebce.png" /></p>
+<h3 id="tcp-maimon-scan">TCP Maimon scan<a class="headerlink" href="#tcp-maimon-scan" title="Permanent link">&para;</a></h3>
+<p>The FIN and ACK bits are set. The target should send an RST packet as a response. However, <code>certain BSD-derived systems drop the packet if it is an open port</code> exposing the open ports.</p>
+<p>This scan won’t work on most targets encountered in modern networks. Most target systems respond with an RST packet regardless of whether the TCP port is open.</p>
+<p><img alt="Maimon scan" src="https://tryhackme-images.s3.amazonaws.com/user-uploads/5f04259cf9bf5b57aed2c476/room-content/8ca5e5e0f6e0a1843cebe11b5b0785b3.png" /></p>
+<h3 id="tcp-ack-scan">TCP ACK scan<a class="headerlink" href="#tcp-ack-scan" title="Permanent link">&para;</a></h3>
+<p>Not to be confused with the TCP ping ACK scan. An ACK scan will send a TCP packet with the ACK flag set. The target would respond to the ACK with RST regardless of the state of the port.</p>
+<p>The TCP packet with the ACK flag set should be sent only in response to a received TCP packet to acknowledge the receipt of some data.  Hence, this scan won’t tell us whether the target port is open in a simple setup.</p>
+<p>Based on which ACK packets resulted in responses, you will learn which ports were not blocked by the firewall. In other words, this type of scan is more <code>suitable to discover firewall rule sets and configuration</code>.</p>
+<p><img alt="TCP ACK scan" src="https://tryhackme-images.s3.amazonaws.com/user-uploads/5f04259cf9bf5b57aed2c476/room-content/a991831cedbb2761dde1fe66012a7311.png" /></p>
+<h3 id="tcp-window-scan">TCP Window scan<a class="headerlink" href="#tcp-window-scan" title="Permanent link">&para;</a></h3>
+<p>Almost the same as the ACK scan; it examines the <code>TCP Window field of the RST packets</code> returned.</p>
+<p><code>On specific systems, this can reveal that the port is open</code>. We expect to get an RST packet in reply to our “uninvited” ACK packets, regardless of whether the port is open or closed.</p>
+<p>If we repeat our TCP window scan against a server behind a firewall, we expect to get more satisfying results. The ports that responded differently, indicate that the firewall does not block them.</p>
+<h3 id="spoofing">Spoofing<a class="headerlink" href="#spoofing" title="Permanent link">&para;</a></h3>
+<p>In some network setups, you will be able to scan a target system using a spoofed IP address and even a spoofed MAC address. This is only beneficial in a situation where you can guarantee to capture the response. If you try to scan a target from some random network using a spoofed IP address, <code>chances are you won’t have any response routed to you</code>, and the scan results could be unreliable.</p>
+<p><img alt="spoofed scanning" src="https://tryhackme-images.s3.amazonaws.com/user-uploads/5f04259cf9bf5b57aed2c476/room-content/45b982d501fd26deb2b381059b16f80c.png" /></p>
+<p>In general, you expect to specify the network interface using <code>-e</code> and to explicitly disable ping scan <code>-Pn</code>. Therefore, instead of <code>nmap -S SPOOFED_IP MACHINE_IP</code>, you will need to issue <code>nmap -e NET_INTERFACE -Pn -S SPOOFED_IP MACHINE_IP</code> to tell Nmap explicitly which network interface to use and not to expect to receive a ping reply.</p>
+<p>When you are on the same subnet as the target machine, you would be able to spoof your MAC address as well. You can specify the source MAC address using <code>--spoof-mac SPOOFED_MAC</code>.</p>
+<h3 id="decoys">Decoys<a class="headerlink" href="#decoys" title="Permanent link">&para;</a></h3>
+<p>Spoofing only works in a minimal number of cases where certain conditions are met. Therefore, the attacker might resort to using decoys to make it more challenging to be pinpointed. The concept is simple, <code>make the scan appear to be coming from many IP addresses so that the attacker’s IP address would be lost among them</code>.</p>
+<p>The scan of the target machine will appear to be coming from 3 different sources, and consequently, the <code>replies will go the decoys as well</code>.</p>
+<p><img alt="Decoy scanning" src="https://tryhackme-images.s3.amazonaws.com/user-uploads/5f04259cf9bf5b57aed2c476/room-content/754fc455556a424ca83f512665beaf7d.png" /></p>
+<h3 id="fragmented-packets">Fragmented packets<a class="headerlink" href="#fragmented-packets" title="Permanent link">&para;</a></h3>
+<p>Nmap provides the option <code>-f</code> to fragment packets. Once chosen, the IP data will be <code>divided into 8 bytes or less</code>. Adding another -f (<code>-f -f</code> or <code>-ff</code>) <code>will split the data into 16 byte-fragments</code> instead of 8. You can change the default value by using <code>--mtu</code>. However, you should always choose a multiple of 8 bytes.</p>
+<p>In other words, the 24 bytes of the TCP header, in this case, would be divided over two IP fragments, the first containing 16 bytes and the second containing 8 bytes of the TCP header.</p>
+<p>The data that we will fragment across multiple packets is highlighted in red. To aid in the reassembly on the recipient side, IP uses the identification (ID) and fragment offset, shown on the second row of the figure below.</p>
+<p>On the other hand, if you prefer to increase the size of your packets to make them look innocuous, you can use the option <code>--data-length NUM</code>, where num specifies the number of bytes you want to append to your packets.</p>
+<p><img alt="IP Header fragment" src="https://tryhackme-images.s3.amazonaws.com/user-uploads/5f04259cf9bf5b57aed2c476/room-content/5e55834e2638ba7ec9e84a0900b68ccb.png" /></p>
+<h3 id="idlezombie-scan">Idle/Zombie Scan<a class="headerlink" href="#idlezombie-scan" title="Permanent link">&para;</a></h3>
+<p>Spoofing will only work in specific network setups. It requires you to be in a position where you can monitor the traffic. Considering these limitations, spoofing your IP address can have little use; however, we can give it an upgrade with the idle scan.</p>
+<p>The idle scan, or zombie scan, <code>requires an idle system connected to the network that you can communicate with</code>. Nmap will make <code>each probe appear as if coming from the idle (zombie) host</code>, then it will <code>check for indicators whether the idle (zombie) host received any response</code> to the spoofed probe.</p>
+<p>This is accomplished by checking the IP identification (IP ID) value in the IP header. The idle (zombie) scan requires the following three steps to discover whether a port is open:</p>
+<ol>
+<li>Trigger the idle host to respond so that you can record the current IP ID on the idle host.</li>
+<li>Send a SYN packet to a TCP port on the target. The packet should be spoofed to appear as if it was coming from the idle host (zombie) IP address.</li>
+<li>Trigger the idle machine again to respond so that you can compare the new IP ID with the one received earlier.</li>
+</ol>
+<p><img alt="Finding idle IP ID" src="https://tryhackme-images.s3.amazonaws.com/user-uploads/5f04259cf9bf5b57aed2c476/room-content/a93e181f0effe000554a8b307448bbb2.png" /></p>
+<p><img alt="Spoofed IP ID scan" src="https://tryhackme-images.s3.amazonaws.com/user-uploads/5f04259cf9bf5b57aed2c476/room-content/2b0de492e2154a30760852e07cebae0e.png" /></p>
+<h2 id="nmap-post-port-scans">Nmap Post port scans<a class="headerlink" href="#nmap-post-port-scans" title="Permanent link">&para;</a></h2>
+<h3 id="service-detection">Service detection<a class="headerlink" href="#service-detection" title="Permanent link">&para;</a></h3>
+<p>Once you discover open ports, you can probe the available port to detect the running service.
+<code>-sV</code> will force Nmap to proceed with the TCP 3-way handshake and establish the connection in order to discover versions, etc.</p>
+<h3 id="os-detection">OS detection<a class="headerlink" href="#os-detection" title="Permanent link">&para;</a></h3>
+<p>Nmap can detect the Operating System (OS) based on its behaviour and any telltale signs in its responses.</p>
+<h3 id="traceroute">Traceroute<a class="headerlink" href="#traceroute" title="Permanent link">&para;</a></h3>
+<p>Traceroute finds the routers between you and the target. Note that Nmap’s traceroute works slightly different than the <code>traceroute</code> command found on Linux and macOS or <code>tracert</code> found on MS Windows.</p>
+<p>Standard traceroute starts with a packet of low TTL (Time to Live) and keeps increasing until it reaches the target. Remember, TTL refers to the <code>amount of time or “hops” that a packet is set to exist</code> inside a network before being discarded by a router.</p>
+<h3 id="nmap-scripting-engine">Nmap scripting engine<a class="headerlink" href="#nmap-scripting-engine" title="Permanent link">&para;</a></h3>
+<p>Scripts make it possible to add custom functionality that do not exist via the built-in commands. Nmap provides support for scripts using the <code>Lua</code> language. <code>Nmap Scripting Engine (NSE) is a Lua interpreter</code> that allows Nmap to execute Nmap scripts written in Lua language.</p>
+<p>However, we don’t need to learn Lua to make use of Nmap scripts. Your Nmap default installation can easily contain close to 600 scripts.</p>
+<p>You can specify to use any or a group of these installed scripts; moreover, you can install other user’s scripts and use them for your scans. Let’s begin with the default scripts. You can choose to run the scripts in the default category using <code>--script=default</code> or simply adding <code>-sC</code>.</p>
+<p>In addition to default, categories include:
+- auth
+- broadcast
+- brute
+- default
+- discovery
+- dos
+- exploit
+- external
+- fuzzer
+- intrusive
+- malware
+- safe
+- version
+- vuln</p>
+<h3 id="saving-the-scan-results">Saving the scan results<a class="headerlink" href="#saving-the-scan-results" title="Permanent link">&para;</a></h3>
+<p>Whenever you run a Nmap scan, it is only reasonable to save the results in a file. </p>
+<p>The three main formats are:
+1. <strong>Normal format:</strong> similar to the output you get on the screen when scanning a target.
+2. <strong>Grepable format:</strong> makes filtering the scan output for specific keywords or terms efficient.
+3. <strong>XML format:</strong> most convenient to process the output in other programs.</p>
+<p>There is a fourth one that we <strong>cannot recommend</strong>: Script Kiddie.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; Grimy86, 2024 - 2025
+    </div>
+  
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+    <a href="mailto:grimy86@proton.me" target="_blank" rel="noopener" title="" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M48 64C21.5 64 0 85.5 0 112c0 15.1 7.1 29.3 19.2 38.4l217.6 163.2c11.4 8.5 27 8.5 38.4 0l217.6-163.2c12.1-9.1 19.2-23.3 19.2-38.4 0-26.5-21.5-48-48-48zM0 176v208c0 35.3 28.7 64 64 64h384c35.3 0 64-28.7 64-64V176L294.4 339.2a63.9 63.9 0 0 1-76.8 0z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/grimy86" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8M97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.path", "navigation.prune", "navigation.indexes", "navigation.top", "navigation.footer"], "search": "../../../assets/javascripts/workers/search.f8cc74c7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.c8b220af.min.js"></script>
+      
+    
+  </body>
+</html>

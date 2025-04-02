@@ -1,0 +1,1182 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://grimy86.github.io/Cybersecurity/Maintaining%20Access/LinPrivesc/">
+      
+      
+      
+      
+      <link rel="icon" href="/assets/Key3.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.11">
+    
+    
+      
+        <title>Priveledge escalation - Cybersecurity & Code Insights '25</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.4af4bdda.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#priveledge-escalation" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="Cybersecurity &amp; Code Insights &#39;25" class="md-header__button md-logo" aria-label="Cybersecurity & Code Insights '25" data-md-component="logo">
+      
+  <img src="/assets/Key.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Cybersecurity & Code Insights '25
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Priveledge escalation
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://grimy86.github.io/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    grimy86.github.io
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../study/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  How to study
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../CSharp/Level1/Basics/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  C#
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../Cpp/Cpp/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  C++
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../Assembly/Architecture/Introduction/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Assembly
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../Windows_Internals/Introduction/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Windows Internals
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../About/github/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  About Me
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="Cybersecurity &amp; Code Insights &#39;25" class="md-nav__button md-logo" aria-label="Cybersecurity & Code Insights '25" data-md-component="logo">
+      
+  <img src="/assets/Key.png" alt="logo">
+
+    </a>
+    Cybersecurity & Code Insights '25
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://grimy86.github.io/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    grimy86.github.io
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../study/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    How to study
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    <li class="md-nav__item md-nav__item--pruned md-nav__item--nested">
+      
+        
+  
+  
+  
+    
+  
+  
+  
+    <a href="../../../CSharp/Level1/Basics/" class="md-nav__link">
+      
+  
+  
+  <span class="md-ellipsis">
+    C#
+    
+  </span>
+  
+
+      
+        <span class="md-nav__icon md-icon"></span>
+      
+    </a>
+  
+
+  
+
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    <li class="md-nav__item md-nav__item--pruned md-nav__item--nested">
+      
+        
+  
+  
+  
+    <a href="../../../Cpp/Cpp/" class="md-nav__link">
+      
+  
+  
+  <span class="md-ellipsis">
+    C++
+    
+  </span>
+  
+
+      
+        <span class="md-nav__icon md-icon"></span>
+      
+    </a>
+  
+
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    <li class="md-nav__item md-nav__item--pruned md-nav__item--nested">
+      
+        
+  
+  
+  
+    
+  
+  
+  
+    <a href="../../../Assembly/Architecture/Introduction/" class="md-nav__link">
+      
+  
+  
+  <span class="md-ellipsis">
+    Assembly
+    
+  </span>
+  
+
+      
+        <span class="md-nav__icon md-icon"></span>
+      
+    </a>
+  
+
+  
+
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    <li class="md-nav__item md-nav__item--pruned md-nav__item--nested">
+      
+        
+  
+  
+  
+    <a href="../../../Windows_Internals/Introduction/" class="md-nav__link">
+      
+  
+  
+  <span class="md-ellipsis">
+    Windows Internals
+    
+  </span>
+  
+
+      
+        <span class="md-nav__icon md-icon"></span>
+      
+    </a>
+  
+
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    <li class="md-nav__item md-nav__item--pruned md-nav__item--nested">
+      
+        
+  
+  
+  
+    <a href="../../../About/github/" class="md-nav__link">
+      
+  
+  
+  <span class="md-ellipsis">
+    About Me
+    
+  </span>
+  
+
+      
+        <span class="md-nav__icon md-icon"></span>
+      
+    </a>
+  
+
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#system-info" class="md-nav__link">
+    <span class="md-ellipsis">
+      System info
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#user-info" class="md-nav__link">
+    <span class="md-ellipsis">
+      User info
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#network" class="md-nav__link">
+    <span class="md-ellipsis">
+      Network
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#find-command" class="md-nav__link">
+    <span class="md-ellipsis">
+      Find command
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#general-linux-command" class="md-nav__link">
+    <span class="md-ellipsis">
+      General linux command
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#automated-enumeration-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      Automated Enumeration Tools
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#kernel-exploits" class="md-nav__link">
+    <span class="md-ellipsis">
+      Kernel exploits
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sudo" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sudo
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#suid" class="md-nav__link">
+    <span class="md-ellipsis">
+      SUID
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#capabilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      Capabilities
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cron-jobs" class="md-nav__link">
+    <span class="md-ellipsis">
+      Cron Jobs
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#path" class="md-nav__link">
+    <span class="md-ellipsis">
+      PATH
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#nfs" class="md-nav__link">
+    <span class="md-ellipsis">
+      NFS
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="priveledge-escalation">Priveledge escalation<a class="headerlink" href="#priveledge-escalation" title="Permanent link">&para;</a></h1>
+<p>Ok, we have a shell. Now what? Most shells tend to be unstable and non-interactive. Time to exploit of a vulnerability, design flaw, or configuration oversight in an operating system or application to <code>gain unauthorized access</code> to resources that are usually restricted from the users.</p>
+<p>On Linux ideally we would be <code>looking for opportunities to gain access to a user account</code>. Some exploits will also allow you to add your own account. In particular something like <a href="https://dirtycow.ninja/"><code>Dirty C0w</code></a> or a writeable <code>/etc/shadow</code> or <code>/etc/passwd</code> would quickly give you SSH access to the machine, assuming SSH is open.</p>
+<h2 id="system-info">System info<a class="headerlink" href="#system-info" title="Permanent link">&para;</a></h2>
+<p>Note: any file containing system information <code>can be customized or changed</code>.</p>
+<ul>
+<li><code>hostname</code>: This value can easily be changed or have a relatively meaningless string BUT, in unedited cases it can provide some info about a system's role inside of a network.</li>
+</ul>
+<p>Example: <code>SQL-PROD-01</code> for a SQL production server.</p>
+<ul>
+<li><code>uname -a</code>: Additional details about the kernel used by the system. Useful when searching for any potential kernel vulnerabilities that could lead to privilege escalation.</li>
+<li><code>/proc/version</code>: Provides information about the target system processes. May give you information on the kernel version and additional data such as whether a compiler (e.g. GCC) is installed.</li>
+<li><code>/etc/issue</code> &amp; <code>lsb_release -a</code>: Operating system information can also be identified by looking at the /etc/issue file.</li>
+<li><code>ps</code>: Process Statis will output running processes.</li>
+<li><code>PID</code>: The process ID (unique to the process)</li>
+<li><code>TTY</code>: Terminal type used by the user</li>
+<li><code>Time</code>: Amount of CPU time used by the process (this is NOT the time this process has been running for)</li>
+<li><code>CMD</code>: The command or executable running (will NOT display any command line parameter)</li>
+</ul>
+<p>The “ps” command provides a few useful options:
+  - <code>ps -A</code>: View all running processes
+  - <code>ps axjf</code>: View process tree
+  - <code>ps aux</code>: The aux option will show processes for all users (a), display the user that launched the process (u), and show processes that are not attached to a terminal (x). Looking at the ps aux command output, we can have a better understanding of the system and potential vulnerabilities.
+- <code>systemctl list-units --type=service</code>: Lists systemctl services.
+- <code>env</code>: Show environmental variables, The <code>PATH</code> variable <code>may have a compiler or a scripting language</code> (e.g. Python) that could be used to run code on the target system.
+- <code>sudo -l</code>: List all commands your user can run using sudo.
+- <code>ls -la</code>: Remember to always use the ls command with the <code>-la</code> parameter as it shows hidden files.</p>
+<h2 id="user-info">User info<a class="headerlink" href="#user-info" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>whoami</code>: Shows the user you are using.</li>
+<li><code>Id</code>: General overview of the user’s privilege level and group memberships.</li>
+<li><code>groups</code>: Lists the groups.</li>
+<li><code>/etc/passwd</code>: discover users on the system. The output can be long and a bit intimidating but it can easily be cut and converted to a useful list for brute-force attacks.</li>
+</ul>
+<p>Remember that this will return all users, some of which are <code>system or service users</code> that would not be very useful. Another approach could be to <code>grep | home</code> as real users will most likely have their folders under the “home” directory.</p>
+<ul>
+<li><code>history</code>: Looking at earlier commands with the history command can give us some idea about the target system and, albeit rarely, have stored information such as passwords or usernames.</li>
+</ul>
+<h2 id="network">Network<a class="headerlink" href="#network" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>ifconfig</code>: The target system <code>may be a pivoting point to another network</code>. The ifconfig command will give us information about the <code>network interfaces of the system</code>.</li>
+</ul>
+<p>Example: Our attacking machine can reach the <code>eth0</code> interface but can not directly access the two other networks. This can be confirmed using the <code>ip route</code> command to see which network routes exist.
+- <code>netstat</code>: The netstat command can be used with several different options to gather information on <code>existing connections</code>.
+  - <code>netstat -a</code>: shows all <code>listening ports</code> and <code>established connections</code>.
+  - <code>netstat -at</code> or <code>netstat -au</code>: list TCP or UDP protocols respectively.
+  - <code>netstat -l</code>: list ports in “listening” mode.
+  - <code>netstat -lt</code>: list TCP ports in “listening” mode.
+  - <code>netstat -s</code>: list network usage statistics by protocol. This can also be used with the <code>-t</code> or <code>-u</code> options to limit the output to a specific protocol.
+  - <code>netstat -tp</code>: list connections with the service name and PID information. This can also be used with the <code>-l</code> option to list listening ports.
+  - <code>netstat -i</code>: Show inteface statistics.
+  - <code>netstat -ano</code>: <code>-a</code>: Display all sockets, <code>-n</code>: Do not resolve names &amp; <code>-o</code>: Display timers.
+  - <code>netstat -tuln</code>: Show open ports.
+- <code>ss -tuln</code>: List active connections.</p>
+<h2 id="find-command">Find command<a class="headerlink" href="#find-command" title="Permanent link">&para;</a></h2>
+<p>Searching the target system for important information and potential privilege escalation vectors can be fruitful. The built-in <code>find</code> command is useful and worth keeping in your arsenal.</p>
+<ul>
+<li><code>find . -name flag1.txt</code>: find the file named “flag1.txt” in the current directory</li>
+<li><code>find /home -name flag1.txt</code>: find the file names “flag1.txt” in the /home directory</li>
+<li><code>find / -type d -name config</code>: find the directory named config under “/”</li>
+<li><code>find / -type f -perm 0777</code>: find files with the 777 permissions (files readable, writable, and executable by all users)</li>
+<li><code>find / -perm a=x</code>: find executable files</li>
+<li><code>find /home -user frank</code>: find all files for user “frank” under “/home”</li>
+<li><code>find / -mtime 10</code>: find files that were modified in the last 10 days</li>
+<li><code>find / -atime 10</code>: find files that were accessed in the last 10 day</li>
+<li><code>find / -cmin -60</code>: find files changed within the last hour (60 minutes)</li>
+<li><code>find / -amin -60</code>: find files accesses within the last hour (60 minutes)</li>
+<li><code>find / -size 50M</code>: find files with a 50 MB size</li>
+</ul>
+<p>This command can also be used with <code>(+)</code> and <code>(-)</code> signs to specify a file that is larger or smaller than the given size.</p>
+<p>Folders and files that can be written to or executed from:
+- <code>find / -writable -type d 2&gt;/dev/null</code>: Find world-writeable folders
+- <code>find / -perm -222 -type d 2&gt;/dev/null</code>: Find world-writeable folders
+- <code>find / -perm -o w -type d 2&gt;/dev/null</code>: Find world-writeable folders
+- <code>find / -perm -o x -type d 2&gt;/dev/null</code>: Find world-executable folders</p>
+<p>The reason we see three different “find” commands that could potentially lead to the same result can be seen in the manual document.</p>
+<p>Find development tools and supported languages:
+- <code>find / -name perl*</code>
+- <code>find / -name python*</code>
+- <code>find / -name gcc*</code></p>
+<p>Find specific file permissions:
+Below is a short example used to find files that have the SUID bit set. The SUID bit allows the file to run with the privilege level of <code>the account that owns it, rather than the account which runs it</code>. This allows for an interesting privilege escalation.</p>
+<ul>
+<li><code>find / -perm -u=s -type f 2&gt;/dev/null</code>: Find files with the SUID bit, which allows us to run the file with a higher privilege level than the current user.</li>
+</ul>
+<h2 id="general-linux-command">General linux command<a class="headerlink" href="#general-linux-command" title="Permanent link">&para;</a></h2>
+<p>As we are in the Linux realm, familiarity with Linux commands, in general, will be very useful. Please spend some time getting comfortable with commands such as <code>find</code>, <code>less</code>, <code>locate</code>, <code>grep</code>, <code>cut</code>, <code>sort</code>, etc.</p>
+<h2 id="automated-enumeration-tools">Automated Enumeration Tools<a class="headerlink" href="#automated-enumeration-tools" title="Permanent link">&para;</a></h2>
+<p>Several tools can help you save time during the enumeration process. These tools should only be used to save time knowing they may miss some privilege escalation vectors:
+- <a href="https://github.com/carlospolop/privilege-escalation-awesome-scripts-suite/tree/master/linPEAS"><code>LinPeas</code></a>
+- <a href="https://github.com/rebootuser/LinEnum"><code>LinEnum</code></a>
+- <a href="https://github.com/mzet-/linux-exploit-suggester"><code>LES (Linux Exploit Suggester)</code></a>
+- <a href="https://github.com/diego-treitos/linux-smart-enumeration"><code>Linux Smart Enumeration</code></a>
+- <a href="https://github.com/linted/linuxprivchecker"><code>Linux Priv Checker</code></a></p>
+<h2 id="kernel-exploits">Kernel exploits<a class="headerlink" href="#kernel-exploits" title="Permanent link">&para;</a></h2>
+<p>The kernel on Linux systems <code>manages the communication between components such as the memory on the system and applications</code>. This critical function <code>requires the kernel to have specific privileges</code>; thus, a successful exploit will potentially lead to root privileges.</p>
+<p>A failed kernel exploit can lead to a system crash.</p>
+<p>The Kernel exploit methodology is simple;
+1. Identify the kernel version
+2. Search and find an exploit code for the kernel version of the target system
+3. Run the exploit</p>
+<p>Research sources:
+1. Based on your findings, you can use Google to search for an existing exploit code.
+2. Sources such as <a href="https://www.cvedetails.com/"><code>cvedetails</code></a> can also be useful.
+3. Another alternative would be to use a script like <code>LES (Linux Exploit Suggester)</code> but remember that these tools can generate false positives (report a kernel vulnerability that does not affect the target system) or false negatives (not report any kernel vulnerabilities although the kernel is vulnerable).</p>
+<p>Hints/Notes:
+1. Being too specific about the kernel version when searching for exploits on <code>Google</code>, <code>Exploit-db</code>, or <code>searchsploit</code>
+2. Be sure you understand how the exploit code works BEFORE you launch it. <code>Some exploit codes can make changes on the operating system that would make them unsecured in further use or make irreversible changes to the system</code>, creating problems later. Of course, these may not be great concerns within a lab or CTF environment, but these are absolute no-nos during a real penetration testing engagement.
+3. Some exploits <code>may require further interaction</code> once they are run. Read all comments and instructions provided with the exploit code.
+4. You can transfer the exploit code from your machine to the target system using the <code>SimpleHTTPServer Python module</code> and <code>wget</code> respectively.</p>
+<h2 id="sudo">Sudo<a class="headerlink" href="#sudo" title="Permanent link">&para;</a></h2>
+<p>The sudo command, by default, allows you to run a program with root privileges. Under some conditions, system administrators may need to give regular users some flexibility on their privileges.</p>
+<p>Any user can check its current situation related to root privileges using the <code>sudo -l</code> command.</p>
+<p><a href="https://gtfobins.github.io/"><code>GTFObins</code></a> is a valuable source that provides information on how any program, on which you may have sudo rights, can be used.</p>
+<p>Some applications will not have a known exploit within this context. Such an application you may see is the Apache2 server. n this case, we can use a "hack" to leak information leveraging a function of the application. As Apache2 has an option that supports loading alternative configuration files (-f : specify an alternate ServerConfigFile).</p>
+<p>Loading the /etc/shadow file using this option will result in an error message that includes the first line of the /etc/shadow file.</p>
+<h2 id="suid">SUID<a class="headerlink" href="#suid" title="Permanent link">&para;</a></h2>
+<p>Much of Linux privilege controls rely on controlling the users and files interactions. This is done with permissions. By now, you know that files can have read, write, and execute permissions. These are given to users within their privilege levels. This changes with <code>SUID (Set-user Identification)</code> and <code>SGID (Set-group Identification)</code>. These <code>allow files to be executed with the permission level of the file owner or the group owner</code>, respectively.</p>
+<p><code>find / -type f -perm -04000 -ls 2&gt;/dev/null</code> will list files that have SUID or SGID bits set.</p>
+<p>A good practice would be to compare <code>executables</code> on this list with <code>GTFOBins</code>. Clicking on the <code>SUID</code> button will filter binaries known to be exploitable when the SUID bit is set (you can also use <a href="https://gtfobins.github.io/#+suid">this link</a> for a pre-filtered list ).</p>
+<h2 id="capabilities">Capabilities<a class="headerlink" href="#capabilities" title="Permanent link">&para;</a></h2>
+<p>Another method system administrators can use to increase the privilege level of a process or binary is “Capabilities”. Capabilities <code>help manage privileges at a more granular level</code>. We can use the <code>getcap</code> tool to list enabled capabilities.</p>
+<p>For example, if the SOC analyst needs to use a tool that needs to initiate socket connections, a regular user would not be able to do that. If the system administrator does not want to give this user higher privileges, they can <code>change the capabilities of the binary</code>. As a result, the binary would get through its task without needing a higher privilege user.</p>
+<p>When run as an unprivileged user, <code>getcap -r / will generate a huge amount of errors</code>, so it is good practice to <code>redirect the error messages to /dev/null</code>. We do this by using <code>getcap -r / 2&gt;/dev/null</code>.</p>
+<p><code>GTFObins</code> has a good list of binaries that can be leveraged for privilege escalation if we find any set capabilities.</p>
+<h2 id="cron-jobs">Cron Jobs<a class="headerlink" href="#cron-jobs" title="Permanent link">&para;</a></h2>
+<p><code>Cron jobs</code> are used to <code>run scripts or binaries at specific times</code>. By default, they <code>run with the privilege of their owners</code> and not the current user. While properly configured cron jobs are not inherently vulnerable, they can provide a privilege escalation vector under some conditions.</p>
+<p>The idea is quite simple; if there is a scheduled task that runs with root privileges and we can change the script that will be run, then our script will run with root privileges.</p>
+<p>Cron job configurations are stored as <code>crontabs</code> (cron tables) to see the next time and date the task will run.</p>
+<p><code>Each user on the system have their crontab file</code> and can run specific tasks whether they are logged in or not. As you can expect, our goal will be to <code>find a cron job set by root and have it run our script</code>, ideally a shell.</p>
+<p>Any user can read the <code>system-wide file keeping</code> cron jobs under <code>/etc/crontab</code></p>
+<p>Basically, rewrite the script you find with something like a reverse shell in there and make sure it's executeable using: <code>chmod +x &lt;filename&gt;</code>.</p>
+<h2 id="path">PATH<a class="headerlink" href="#path" title="Permanent link">&para;</a></h2>
+<p>If a folder for which your user has write permission is located in the path, you could potentially hijack an application to run a script. <code>PATH</code> in Linux is an <code>environmental variable</code> that <code>tells the operating system where to search for executables</code>. For any <code>command that is not built into the shell</code> or that is <code>not defined with an absolute path</code>, Linux will start searching in folders defined under PATH.</p>
+<p>E.g: If we type <code>python</code> in the command line, the operating system will start searching in the paths defined in <code>echo $PATH</code> for the python binary.</p>
+<p>Typically the PATH will look like this: <code>echo $PATH</code>. To find the path of the program we could use: <code>where &lt;program_name&gt;</code>.</p>
+<p>As you will see, <code>this depends entirely on the existing configuration of the target system</code>, so be sure you can answer the questions:
+- What folders are located under $PATH
+- Does your current user have write privileges for any of these folders?
+- Can you modify $PATH?
+- Is there a script/application you can start that will be affected by this vulnerability?</p>
+<p>If any writable folder is listed under PATH we could create a binary named <code>example</code> under that directory and have our “path” script run it. As the <code>SUID</code> bit is set, this <code>binary will run with root privilege</code>.</p>
+<p>A simple search for writable folders can done using:
+-  <code>find / -writable 2&gt;/dev/null</code>: all writeable folders
+-  <code>find / -writable 2&gt;/dev/null | cut -d "/" -f 2 | sort -u</code>: cut and sorted
+-  <code>find / -writable 2&gt;/dev/null | grep usr | cut -d "/" -f 2,3 | sort -u</code>: targeting a folder like <code>/usr</code>.
+-  <code>find / -writable 2&gt;/dev/null | cut -d "/" -f 2,3 | grep -v proc | sort -u</code>: ridden of many results related to running processes</p>
+<p>We can also add a folder to the path like so: <code>export PATH=/tmp:$PATH</code>.</p>
+<p>PATH vulnerability example:</p>
+<p>You can <code>add the writable directory to your user's PATH</code> and <code>create a file named "somename"</code> that the "./test" executable will read. The "somename" <code>file can simply be a "cat" command that will read the flag file</code>.</p>
+<h2 id="nfs">NFS<a class="headerlink" href="#nfs" title="Permanent link">&para;</a></h2>
+<p>Privilege escalation vectors are not confined to internal access. <code>Shared folders and remote management interfaces</code> such as SSH and Telnet can also help you gain root access on the target system. Some cases will also require using both vectors, e.g. finding a root SSH private key on the target system and connecting via SSH with root privileges instead of trying to increase your current user’s privilege level.</p>
+<p>Another vector that is more relevant to CTFs and exams is a <code>misconfigured network shell</code>. This vector can sometimes be seen during penetration testing engagements when a <code>network backup system is present</code>.</p>
+<p><code>NFS</code> (Network File Sharing) configuration is kept in the <code>/etc/exports</code> file. This file is created during the NFS server installation and can usually be read by users.</p>
+<p>Start by enumerating mountable shares:
+1. <code>showmount -e &lt;MACHINE_IP&gt;</code>
+2. <code>mkdir /tmp/backupsonattackermachine</code>
+3. <code>mount -o rw &lt;MACHINE_IP&gt;:/backups /tmp/backupsonattackermachine</code>
+4. As we can set <code>SUID</code> bits, a simple executable that will run <code>/bin/bash</code> on the target system will do the job.
+5. On the target system execute the executable.</p>
+<p>Quick summary:
+- Kernel has high priveledges -&gt; exploit
+- Sudo priveledges on binaries / programs -&gt; gtfobins
+- SUID files are executable by the owner or group owner -&gt; gtfobins
+- Capabilities are partly priveledges on binaries -&gt; gtfobins??
+- Cron jobs are autorun scripts -&gt; modify root scripts (to a shell)
+- PATH </p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; Grimy86, 2024 - 2025
+    </div>
+  
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+    <a href="mailto:grimy86@proton.me" target="_blank" rel="noopener" title="" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M48 64C21.5 64 0 85.5 0 112c0 15.1 7.1 29.3 19.2 38.4l217.6 163.2c11.4 8.5 27 8.5 38.4 0l217.6-163.2c12.1-9.1 19.2-23.3 19.2-38.4 0-26.5-21.5-48-48-48zM0 176v208c0 35.3 28.7 64 64 64h384c35.3 0 64-28.7 64-64V176L294.4 339.2a63.9 63.9 0 0 1-76.8 0z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/grimy86" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8M97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.path", "navigation.prune", "navigation.indexes", "navigation.top", "navigation.footer"], "search": "../../../assets/javascripts/workers/search.f8cc74c7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.c8b220af.min.js"></script>
+      
+    
+  </body>
+</html>

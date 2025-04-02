@@ -1,0 +1,1227 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://grimy86.github.io/Reverse_Engineering/Anti_reversing/">
+      
+      
+      
+      
+      <link rel="icon" href="/assets/Key3.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.11">
+    
+    
+      
+        <title>Anti-reverse engineering - Cybersecurity & Code Insights '25</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.4af4bdda.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#anti-reverse-engineering" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Cybersecurity &amp; Code Insights &#39;25" class="md-header__button md-logo" aria-label="Cybersecurity & Code Insights '25" data-md-component="logo">
+      
+  <img src="/assets/Key.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Cybersecurity & Code Insights '25
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Anti-reverse engineering
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://grimy86.github.io/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    grimy86.github.io
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../study/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  How to study
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../CSharp/Level1/Basics/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  C#
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../Cpp/Cpp/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  C++
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../Assembly/Architecture/Introduction/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Assembly
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../Windows_Internals/Introduction/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Windows Internals
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../About/github/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  About Me
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Cybersecurity &amp; Code Insights &#39;25" class="md-nav__button md-logo" aria-label="Cybersecurity & Code Insights '25" data-md-component="logo">
+      
+  <img src="/assets/Key.png" alt="logo">
+
+    </a>
+    Cybersecurity & Code Insights '25
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://grimy86.github.io/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    grimy86.github.io
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../study/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    How to study
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    <li class="md-nav__item md-nav__item--pruned md-nav__item--nested">
+      
+        
+  
+  
+  
+    
+  
+  
+  
+    <a href="../../CSharp/Level1/Basics/" class="md-nav__link">
+      
+  
+  
+  <span class="md-ellipsis">
+    C#
+    
+  </span>
+  
+
+      
+        <span class="md-nav__icon md-icon"></span>
+      
+    </a>
+  
+
+  
+
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    <li class="md-nav__item md-nav__item--pruned md-nav__item--nested">
+      
+        
+  
+  
+  
+    <a href="../../Cpp/Cpp/" class="md-nav__link">
+      
+  
+  
+  <span class="md-ellipsis">
+    C++
+    
+  </span>
+  
+
+      
+        <span class="md-nav__icon md-icon"></span>
+      
+    </a>
+  
+
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    <li class="md-nav__item md-nav__item--pruned md-nav__item--nested">
+      
+        
+  
+  
+  
+    
+  
+  
+  
+    <a href="../../Assembly/Architecture/Introduction/" class="md-nav__link">
+      
+  
+  
+  <span class="md-ellipsis">
+    Assembly
+    
+  </span>
+  
+
+      
+        <span class="md-nav__icon md-icon"></span>
+      
+    </a>
+  
+
+  
+
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    <li class="md-nav__item md-nav__item--pruned md-nav__item--nested">
+      
+        
+  
+  
+  
+    <a href="../../Windows_Internals/Introduction/" class="md-nav__link">
+      
+  
+  
+  <span class="md-ellipsis">
+    Windows Internals
+    
+  </span>
+  
+
+      
+        <span class="md-nav__icon md-icon"></span>
+      
+    </a>
+  
+
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    <li class="md-nav__item md-nav__item--pruned md-nav__item--nested">
+      
+        
+  
+  
+  
+    <a href="../../About/github/" class="md-nav__link">
+      
+  
+  
+  <span class="md-ellipsis">
+    About Me
+    
+  </span>
+  
+
+      
+        <span class="md-nav__icon md-icon"></span>
+      
+    </a>
+  
+
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#anti-debugging" class="md-nav__link">
+    <span class="md-ellipsis">
+      Anti-debugging
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Anti-debugging">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#anti-debugging-techniques" class="md-nav__link">
+    <span class="md-ellipsis">
+      Anti-Debugging techniques
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#suspend-thread" class="md-nav__link">
+    <span class="md-ellipsis">
+      Suspend Thread
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#patching" class="md-nav__link">
+    <span class="md-ellipsis">
+      Patching
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vm-detection" class="md-nav__link">
+    <span class="md-ellipsis">
+      VM Detection
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="VM Detection">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#vm-detection-techniques" class="md-nav__link">
+    <span class="md-ellipsis">
+      VM Detection Techniques
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#anti-vm-detection" class="md-nav__link">
+    <span class="md-ellipsis">
+      Anti-VM Detection
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#packersoverview" class="md-nav__link">
+    <span class="md-ellipsis">
+      Packers(Overview)
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Packers(Overview)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#packers" class="md-nav__link">
+    <span class="md-ellipsis">
+      Packers
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#identifying-and-unpacking" class="md-nav__link">
+    <span class="md-ellipsis">
+      Identifying and Unpacking
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Identifying and Unpacking">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#automated-unpacking" class="md-nav__link">
+    <span class="md-ellipsis">
+      Automated unpacking
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#manual-unpacking-and-dumping" class="md-nav__link">
+    <span class="md-ellipsis">
+      Manual Unpacking and Dumping
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#process-hollowing-overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      Process Hollowing: Overview
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#process-masquerading-overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      Process Masquerading: Overview
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="anti-reverse-engineering">Anti-reverse engineering<a class="headerlink" href="#anti-reverse-engineering" title="Permanent link">&para;</a></h1>
+<p>alware authors are constantly looking for ways to evade detection and analysis to maintain the effectiveness of their malware. At the same time, security professionals are working to develop new methods and tools for detecting and mitigating the threat posed by malware. This ongoing "arms race" can lead to the development of increasingly sophisticated and effective malware defences as both sides seek to stay ahead of their counterparts.</p>
+<p>Reverse engineering is the process of studying a technology product, software, or hardware to learn how it works and extract its functionality or design information. In cybersecurity, reverse engineering is used to understand how malware works, extract indicators of compromise (IOCs), and develop adequate detections, protections, and countermeasures.</p>
+<p>As a response, malware authors are motivated to protect their malware from analysts. They use anti-reverse engineering techniques to make malware more challenging to analyze, so it can continue propagating and infecting more systems before security measures are implemented.</p>
+<p>This constant back and forth between malware analysts and authors can be aptly described as an "<code>arms race</code>". Malware authors develop new and sophisticated techniques to avoid detection and analysis, and security professionals respond by developing new methods and tools to detect and mitigate the threat posed by malware. As each side grows new techniques, the other responds with even more advanced ones, creating a cycle of escalation.</p>
+<p>We will explore some of the various anti-reverse engineering techniques malware uses. These include:</p>
+<ul>
+<li><code>VM Detection</code></li>
+<li><code>Obfuscation using Packers</code></li>
+<li><code>Anti-Debugging</code></li>
+</ul>
+<p>Many more techniques exist, but we will focus on these three for this room.</p>
+<h2 id="anti-debugging">Anti-debugging<a class="headerlink" href="#anti-debugging" title="Permanent link">&para;</a></h2>
+<p>Debugging is the process of examining software to understand its inner workings and identify potential vulnerabilities or issues. Debugging involves software tools called <code>debuggers</code> that allow analysts to <code>step through the code and monitor its execution</code>. </p>
+<p>Here are the commonly used debuggers for malware analysis nowadays:
+- x64dbg
+- Ollydbg
+- Ida Pro
+- Ghidra</p>
+<h3 id="anti-debugging-techniques">Anti-Debugging techniques<a class="headerlink" href="#anti-debugging-techniques" title="Permanent link">&para;</a></h3>
+<p>Some of the most common anti-debugging measures include, but are not limited to:
+- <code>Checking for the presence of debuggers</code>:</p>
+<div class="language-text highlight"><pre><span></span><code>Malware code looks for processes or files associated with debugging tools or hardware-based techniques, such as detecting hardware breakpoints. For example, a common anti-debugging technique uses the Windows API function `IsDebuggerPresent` to check if a debugger is running.
+</code></pre></div>
+<ul>
+<li>
+<p><code>Tampering with debug registers</code>:</p>
+<p>Malware may try to modify or corrupt debug logs, which debuggers use to control the execution of code. This prevents the debugger from functioning correctly.</p>
+</li>
+<li>
+<p><code>Using self-modifying code</code>:</p>
+<p>This is a sophisticated technique where malware modifies itself while running, making it difficult for a debugger to follow the code flow.</p>
+</li>
+</ul>
+<h3 id="suspend-thread">Suspend Thread<a class="headerlink" href="#suspend-thread" title="Permanent link">&para;</a></h3>
+<p><a href="https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-suspendthread">Suspend thread</a> is a Windows API function that is used to <code>pause the execution of a thread in a running process</code>. This function has legitimate uses but can also be <code>called from within a malware process to suspend any threads attempting to debug or analyze it</code>. In turn, making the debugger not work.</p>
+<p>Take a look at this <a href="/Reverse_Engineering/SuspendThread_POC.cpp">proof of concept</a>.</p>
+<p>If you don't want to be bothered with reading the source code, here is a short explanation of the steps used by this technique:</p>
+<ol>
+<li>The malware <code>goes through all</code> threads in the Windows system.</li>
+<li><code>For each</code> thread, it calls <code>EnumWindow</code> to go through each window displayed on the screen.</li>
+<li><code>If the name</code> of the window <code>has the strings debugger</code>, <code>dbg</code>, or <code>debug</code>, then the malware knows that a debugger is running.</li>
+<li><code>If</code> a <code>debugger is present</code>, the malware calls <code>SuspendThread</code>, which suspends the threads of the debugger, <code>making it crash</code>.</li>
+</ol>
+<h3 id="patching">Patching<a class="headerlink" href="#patching" title="Permanent link">&para;</a></h3>
+<p>Patching is one of the most critical skills required of an analyst. In cases like this we want to patch the function SuspendThread so that our debugger won't get suspended.</p>
+<p>A good way to patch this would be to go to the <code>entry point</code> and search the <code>current module</code> for <code>intermodular calls</code> (the SuspendThread call).
+Once we've found it we just fill the function call with <code>NOP</code> instructions and resume execution.</p>
+<blockquote>
+<p>[!NOTE]
+However,  if you try debugging again, you'll discover it will start crashing again. This is because our patches are reset and are now gone. To avoid re-applying patches in the future, we can export and import our patches for future use.</p>
+</blockquote>
+<h2 id="vm-detection">VM Detection<a class="headerlink" href="#vm-detection" title="Permanent link">&para;</a></h2>
+<p>Virtual Machines (VMs) are software platforms that simulate a computer environment inside another computer system.
+These are useful in reverse engineering because they provide a <code>cost-effective</code>, <code>controlled</code>, and <code>isolated environment</code> for monitoring and analyzing suspicious software or malware.
+VMs also allow for the creation of snapshots and checkpoints that can be used to restore the system to a previous state, which helps test different scenarios and maintain a history of the analysis process.</p>
+<p>When malware identifies that it is running on a VM, it may decide to respond differently; for example, it may change its behaviour by:
+- Executing only a <code>minimal subset of its functionality</code>
+- <code>Self-destructing</code> by deleting itself or overwriting parts of its code
+- <code>Cause damage</code> to the system by deleting or encrypting files; or
+- <code>Not run at all</code></p>
+<h3 id="vm-detection-techniques">VM Detection Techniques<a class="headerlink" href="#vm-detection-techniques" title="Permanent link">&para;</a></h3>
+<ul>
+<li>
+<p><code>Checking running processes</code>:</p>
+<p>VMs have easily identifiable processes; for example, VMWare runs a process called vmtools, while VirtualBox has vboxservice.
+Malware can use the EnumProcess Windows API to list all the processes running on the machine and look for the presence of these tools.</p>
+</li>
+<li>
+<p><code>Checking installed software</code>:</p>
+<p>Malware can look in the Windows Registry for a list of installed software under the SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall Registry key.
+From here, it can check for installed programs like debuggers, decompilers, forensics tools, etc.</p>
+</li>
+<li>
+<p><code>Network fingerprinting</code>:</p>
+<p>Malware can look for specific MAC and network addresses unique to VMs.
+For example, VMs autogenerate MAC addresses that start with any of the following numbers: 00-05-69, 00-0c-29, 00-1c-14 or 00-50-56.
+These numbers are unique and are specifically assigned to a VM vendor called the OUI (Organizationally Unique Identifier).</p>
+</li>
+<li>
+<p><code>Checking machine resources</code>:</p>
+<p>Malware can look at a machine's resources like RAM and CPU Utilization percentages.
+For example, a machine with RAM amounting to less than 8GB can indicate a virtual machine, as they are typically not assigned a significant amount.</p>
+</li>
+<li>
+<p><code>Detecting peripherals</code>:</p>
+<p>Some malware checks for connected printers because this is rarely configured properly on VMs, sometimes not even configured at all.</p>
+</li>
+<li>
+<p><code>Checking for domain membership</code>:</p>
+<p>Corporate networks are a usual target for malware.
+An easy way to determine this is by checking if the current machine is part of an Active Directory domain.
+This can quickly be done without the use of API calls by checking the LoggonServer and ComputerName environment variables.</p>
+</li>
+<li>
+<p><code>Timing-based attacks</code>:</p>
+<p>Malware can measure the time it takes to execute specific instructions or access particular machine resources.
+For example, some instructions can be faster on a physical machine compared to a virtual machine.</p>
+</li>
+<li>
+<p><code>Checking temperature</code>:</p>
+<p><code>Win32_TemperatureProbe</code> is a <code>Windows Management Instrumentation (WMI)</code> class that contains real-time temperature readings from the hardware through the <code>SMBIOS (System Management BIOS)</code> data structure. In a virtualized environment, the value returned is Not Supported, which is what malware looks for.</p>
+<p>Note: <code>Win32_TemperatureProbe</code> may also return Not Supported even on physical machines if the hardware doesn't support this SMBIOS feature. This makes it unreliable but valuable when used with the other techniques.</p>
+</li>
+</ul>
+<h2 id="anti-vm-detection">Anti-VM Detection<a class="headerlink" href="#anti-vm-detection" title="Permanent link">&para;</a></h2>
+<p>To prevent malware from using some of the techniques above, we can apply several changes to the system that will remove VM-related artefacts making the VM look less like a VM. For example, we can remove or modify the Registry entries that malware checks for installed programs to hide our debuggers, change the MAC addresses, or configure the VM to appear connected to a printer.</p>
+<p>But you can see how tedious this becomes. With the myriad of options available to malware, it would be challenging to cover all of them.</p>
+<p>Some researchers have made scripts  (See <a href="https://github.com/d4rksystem/VMwareCloak"><code>VMwareCloak</code></a> and <a href="https://github.com/d4rksystem/VBoxCloak"><code>VBoxCloak</code></a>) to help automate this process. Despite this, even if all the known techniques are addressed, minor architectural checks can still be made by malware, as you will see in the next task.</p>
+<p>Architectural checks like checking the temperature can be challenging to prevent. However, there are still ways around this. We can patch a function with nops to prevent it from executing. We can do the same thing here, but for the sake of giving you more tools to help you with reverse engineering, there's two other approaches:
+- Manipulating memory directly
+- Changing the execution flow with EIP</p>
+<h2 id="packersoverview">Packers(Overview)<a class="headerlink" href="#packersoverview" title="Permanent link">&para;</a></h2>
+<p>Obfuscation is a technique that aims to intentionally obscure data and code so that it is harder to understand or analyze. </p>
+<p>The most common obfuscation techniques used by malware authors include:
+- <code>Using encoding techniques</code>:</p>
+<div class="language-text highlight"><pre><span></span><code>This involves `encoding data` (i.e. command line strings, domain names, etc.) using popular encoding techniques like XOR or Base64. You may have seen a Base64 encoded strings that look like this VGhpcyBpcyBhbiBCQVNFNjQgZW5jb2RlZCBzdHJpbmcu==.
+</code></pre></div>
+<ul>
+<li>
+<p><code>Using encryption techniques</code>:</p>
+<p>This involves encrypting data such as communications to a command and control server, file formats, and network traffic. The most common types used are <code>symmetric key and public key encryption</code>.</p>
+</li>
+<li>
+<p><code>Code obfuscation</code>:</p>
+<p>This involves various techniques such as manipulating the code to <code>alter its syntax and structure</code>, <code>renaming functions</code>, or <code>splitting code across multiple files or code segments</code>.</p>
+</li>
+</ul>
+<h3 id="packers">Packers<a class="headerlink" href="#packers" title="Permanent link">&para;</a></h3>
+<p>Packers are tools that <code>compress and encrypt executable files</code>. It compresses the target executable <code>and embeds it within a new executable file</code> that serves as a wrapper or container. This dramatically reduces the size of the file, making it ideal for easy distribution and installation. Also, some packers offer additional features, such as code obfuscation, runtime packing, and anti-debugging techniques. And it is because of these features that made Packers a popular tool for malware authors.</p>
+<p>There are a lot of Packers available. Each has a unique approach and algorithm for packing. Here is a list of some that were seen used in the wild:
+- <a href="https://www.alternate-tools.com/pages/c_exepacker.php?lang=ENG">Alternate EXE Packer</a>
+- <a href="http://www.aspack.com/">ASPack</a>
+- <a href="https://unprotect.it/technique/exestealth/">ExeStealth</a>
+- <a href="https://github.com/akuafif/hXOR-Packer">hXOR-Packer</a>
+- <a href="https://github.com/nelfo/Milfuscator">Milfuscator</a>
+- <a href="https://www.autohotkey.com/mpress/mpress_web.htm">MPress</a>
+- <a href="https://www.pelock.com/products/pelock">PELock</a>
+- <a href="https://www.oreans.com/Themida.php">Themida</a>
+- <a href="https://upx.github.io/">UPX: the Ultimate Packer for eXecutables</a>
+- <a href="https://vmpsoft.com/">VMProtect</a></p>
+<p>It is essential to state that not all packed programs are malicious. Packers are also used by legitimate software to protect their programs, like for protecting their intellectual property from theft. For example, the Packer tool "Themida" is widely used to prevent video game cheating.</p>
+<p>Because Packers encrypts and obfuscates a program, it would be impossible to know the malware's capabilities without running it. Because of this, we cannot reliably depend on static analysis and signature-based detection techniques to determine its capabilities. The only information we could glean from a malware sample at this state is the Packer tool used. This can still be a good starting point for an investigation, which we will see in the next task.</p>
+<h2 id="identifying-and-unpacking">Identifying and Unpacking<a class="headerlink" href="#identifying-and-unpacking" title="Permanent link">&para;</a></h2>
+<p>The first step in dealing with packed programs is identifying the Packer used. Thankfully, there are tools that we can use for this. The most accessible tools are <a href="https://github.com/horsicq/Detect-It-Easy">DetectItEasy (DIE)</a> and PEStudio, which are already included in the VM attached to this room.</p>
+<p>Entropy measures the level of disorder or uncertainty in a system. Packed malware tends to have high entropy due to the randomness of the packing process.</p>
+<p>Another tool is <code>PEStudio</code> which lists information on PE files. This is important because there are specific Packers that will still leave clues.</p>
+<p>Usually, the section names of a standard PE file are .text, .data and .rsrc. The strings <code>UPX0</code>, <code>UPX1</code>, and <code>UPX2</code> are one of those identifiable pieces of information that Packers like UPX leave behind. Not all Packers change this value, but usually, this is the most accessible first place to look.</p>
+<p>Because different Packer tools use various methodologies in packing executables, sometimes tools like DetectItEasy could not identify all types of Packers.</p>
+<h3 id="automated-unpacking">Automated unpacking<a class="headerlink" href="#automated-unpacking" title="Permanent link">&para;</a></h3>
+<p>Once the Packer for a packed malware is identified, it is possible to use an <code>unpacker</code> to get back the original file. Some are readily available, like in the case of UPX, where you can use the same packing program for unpacking. For other commercial tools like Themida, you may have to rely on <code>unpacker scripts</code> made by 3<sup>rd</sup> parties.</p>
+<p>Here is a short list of scripts that you could use for specific Unpacker tools:
+- <a href="https://github.com/Hendi48/Magicmida">Themida</a>
+- <a href="https://github.com/ThomasThelen/OllyDbg-Scripts/blob/master/Enigma/Enigma%20Protector%201.90%20-%203.xx%20Alternativ%20Unpacker%20v1.0.txt">Enigma Protector</a>
+- <a href="https://github.com/avast/retdec/blob/master/src/unpackertool/plugins/mpress/mpress.cpp">Mpress unpacker</a></p>
+<p>If you chance upon malware packed with an obscure tool or modified to thwart available scripts, things might be more difficult.</p>
+<p>Thankfully, there are services like <code>unpac.me</code> where you can upload a sample. It will try to identify and unpack the malware for you using <code>custom unpacking and artefact extraction</code> processes. While this service is excellent, it can still fail.</p>
+<h2 id="manual-unpacking-and-dumping">Manual Unpacking and Dumping<a class="headerlink" href="#manual-unpacking-and-dumping" title="Permanent link">&para;</a></h2>
+<p>Ultimately, the <code>best way to unpack malware is to execute it</code>.</p>
+<p>When a packed malware is executed, the wrapper or container code performs decryption and deobfuscation. Once fully unpacked, the malware can proceed with its true intentions. At this point, the Packer is useless, and we can thoroughly analyze the malware by debugging it while it's in memory using a debugger.</p>
+<p>We can also dump this unpacked version as a separate executable. </p>
+<h2 id="process-hollowing-overview">Process Hollowing: Overview<a class="headerlink" href="#process-hollowing-overview" title="Permanent link">&para;</a></h2>
+<p>A process injection technique, mostly used to evade detection. Another technique used by malware to hide in plain sight is Process Hollowing.
+In this technique, the malware binary hollows an already running legitimate process by removing all its code from its memory and injecting malicious code in place of the legitimate code. </p>
+<p>Used to inject malicious code into a legitimate process running on a victim's computer.</p>
+<p>The malware <code>creates a suspended process and replaces its memory space with its own code</code>. Then it <code>resumes the process</code>, causing it to execute the injected code.</p>
+<ol>
+<li>Create a new process using the <code>CreateProcessA()</code> API. This <code>process will act as a legitimate process</code> and will be hollowed out.</li>
+<li><code>NtSuspendProcess()</code> is then used to <code>suspend the new process</code>.</li>
+<li><code>Allocate memory</code> in the suspended process using the <code>VirtualAllocEx()</code> API. This memory will be used to hold the malicious code.</li>
+<li>Write the malicious <code>code to the allocated memory</code> using the <code>WriteProcessMemory()</code> API.</li>
+<li><code>Modify the entry point of the process to point to the address of the malicious code</code> using the <code>SetThreadContext()</code> and <code>GetThreadContext()</code> APIs.</li>
+<li>Resume the suspended process using the <code>NtResumeProcess()</code> API. This will cause the process to <code>execute the malicious code</code>.</li>
+</ol>
+<p>This allows the malware to <code>bypass security measures</code> that may be in place, as the malicious code is executed within the context of a legitimate process.</p>
+<p><a href="/Reverse_Engineering/Hollowing_POC.cpp">Process hollowing proof of concept</a></p>
+<h2 id="process-masquerading-overview">Process Masquerading: Overview<a class="headerlink" href="#process-masquerading-overview" title="Permanent link">&para;</a></h2>
+<p>As seen in the above screenshot, the properties function shows us a lot of information about a process in its different tabs. Malware authors sometimes use process names similar to Windows processes or commonly used software to hide from an analyst's prying eyes. The 'Image' tab, as shown in the above screenshot, helps an analyst defeat this technique. By clicking the 'Verify' button on this tab, an analyst can identify if the executable for the running process is signed by the relevant organization, which will be Microsoft in the case of Windows binaries. In this particular screenshot, we can see that the Verify option has already been clicked. Furthermore, we can see the text '(No signature was present in the subject) Microsoft Corporation' at the top. This means that although the executable claims to be from Microsoft, it is not digitally signed by Microsoft and is masquerading as a Microsoft process. This can be an indication of a malicious process.</p>
+<p>We must note here that this verification process only applies to the Image of the process stored on the disk. If a signed process has been hollowed and its code has been replaced with malicious code in the memory, we might still get a verified signature for that process. To identify hollowed processes, we have to look somewhere else.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; Grimy86, 2024 - 2025
+    </div>
+  
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+    <a href="mailto:grimy86@proton.me" target="_blank" rel="noopener" title="" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M48 64C21.5 64 0 85.5 0 112c0 15.1 7.1 29.3 19.2 38.4l217.6 163.2c11.4 8.5 27 8.5 38.4 0l217.6-163.2c12.1-9.1 19.2-23.3 19.2-38.4 0-26.5-21.5-48-48-48zM0 176v208c0 35.3 28.7 64 64 64h384c35.3 0 64-28.7 64-64V176L294.4 339.2a63.9 63.9 0 0 1-76.8 0z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/grimy86" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8M97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.path", "navigation.prune", "navigation.indexes", "navigation.top", "navigation.footer"], "search": "../../assets/javascripts/workers/search.f8cc74c7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.c8b220af.min.js"></script>
+      
+    
+  </body>
+</html>

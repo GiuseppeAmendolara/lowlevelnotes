@@ -1,0 +1,1215 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://grimy86.github.io/Reverse_Engineering/Intro/">
+      
+      
+      
+      
+      <link rel="icon" href="/assets/Key3.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.11">
+    
+    
+      
+        <title>Intro to (Malware) Analysis - Cybersecurity & Code Insights '25</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.4af4bdda.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#intro-to-malware-analysis" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Cybersecurity &amp; Code Insights &#39;25" class="md-header__button md-logo" aria-label="Cybersecurity & Code Insights '25" data-md-component="logo">
+      
+  <img src="/assets/Key.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Cybersecurity & Code Insights '25
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Intro to (Malware) Analysis
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://grimy86.github.io/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    grimy86.github.io
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../study/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  How to study
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../CSharp/Level1/Basics/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  C#
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../Cpp/Cpp/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  C++
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../Assembly/Architecture/Introduction/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Assembly
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../Windows_Internals/Introduction/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Windows Internals
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../About/github/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  About Me
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Cybersecurity &amp; Code Insights &#39;25" class="md-nav__button md-logo" aria-label="Cybersecurity & Code Insights '25" data-md-component="logo">
+      
+  <img src="/assets/Key.png" alt="logo">
+
+    </a>
+    Cybersecurity & Code Insights '25
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://grimy86.github.io/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    grimy86.github.io
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../study/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    How to study
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    <li class="md-nav__item md-nav__item--pruned md-nav__item--nested">
+      
+        
+  
+  
+  
+    
+  
+  
+  
+    <a href="../../CSharp/Level1/Basics/" class="md-nav__link">
+      
+  
+  
+  <span class="md-ellipsis">
+    C#
+    
+  </span>
+  
+
+      
+        <span class="md-nav__icon md-icon"></span>
+      
+    </a>
+  
+
+  
+
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    <li class="md-nav__item md-nav__item--pruned md-nav__item--nested">
+      
+        
+  
+  
+  
+    <a href="../../Cpp/Cpp/" class="md-nav__link">
+      
+  
+  
+  <span class="md-ellipsis">
+    C++
+    
+  </span>
+  
+
+      
+        <span class="md-nav__icon md-icon"></span>
+      
+    </a>
+  
+
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    <li class="md-nav__item md-nav__item--pruned md-nav__item--nested">
+      
+        
+  
+  
+  
+    
+  
+  
+  
+    <a href="../../Assembly/Architecture/Introduction/" class="md-nav__link">
+      
+  
+  
+  <span class="md-ellipsis">
+    Assembly
+    
+  </span>
+  
+
+      
+        <span class="md-nav__icon md-icon"></span>
+      
+    </a>
+  
+
+  
+
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    <li class="md-nav__item md-nav__item--pruned md-nav__item--nested">
+      
+        
+  
+  
+  
+    <a href="../../Windows_Internals/Introduction/" class="md-nav__link">
+      
+  
+  
+  <span class="md-ellipsis">
+    Windows Internals
+    
+  </span>
+  
+
+      
+        <span class="md-nav__icon md-icon"></span>
+      
+    </a>
+  
+
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    <li class="md-nav__item md-nav__item--pruned md-nav__item--nested">
+      
+        
+  
+  
+  
+    <a href="../../About/github/" class="md-nav__link">
+      
+  
+  
+  <span class="md-ellipsis">
+    About Me
+    
+  </span>
+  
+
+      
+        <span class="md-nav__icon md-icon"></span>
+      
+    </a>
+  
+
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#malware-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      Malware analysis
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Malware analysis">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-purpose-behind-malware-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      The purpose behind Malware Analysis
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#safety-first" class="md-nav__link">
+    <span class="md-ellipsis">
+      Safety first!
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#techniques-of-malware-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      Techniques of malware analysis
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Techniques of malware analysis">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#static-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      Static Analysis
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dynamic-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      Dynamic Analysis
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#basic-static-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      Basic static analysis
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Basic static analysis">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examining-the-file-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examining the file type
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#examining-strings" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examining Strings
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#calculating-hashes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Calculating Hashes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#av-scans-and-virustotal" class="md-nav__link">
+    <span class="md-ellipsis">
+      AV scans and VirusTotal
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pe-header" class="md-nav__link">
+    <span class="md-ellipsis">
+      PE Header
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#basic-dynamic-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      Basic dynamic analysis
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#introduction-to-sandboxes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Introduction to Sandboxes
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Introduction to Sandboxes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#open-source-sandboxes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Open-Source sandboxes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#anti-analysis-techniques" class="md-nav__link">
+    <span class="md-ellipsis">
+      Anti-analysis techniques
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Anti-analysis techniques">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#packing-and-obfuscation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Packing and Obfuscation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sandbox-evasion" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sandbox evasion
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="intro-to-malware-analysis">Intro to (Malware) Analysis<a class="headerlink" href="#intro-to-malware-analysis" title="Permanent link">&para;</a></h1>
+<p>Notice how malware is in brackets, this is because analysis of other software in order to reverse it later on happens the same way.</p>
+<p>E.g: A game cheat could also be classified as <code>malware</code>. In order to write the code for the anti-cheat we'd have to do some analysis on the cheat as well.</p>
+<blockquote>
+<p>[!IMPORTANT]
+Don't perform malware analysis on a live machine not purpose-built for malware analysis.</p>
+</blockquote>
+<h2 id="malware-analysis">Malware analysis<a class="headerlink" href="#malware-analysis" title="Permanent link">&para;</a></h2>
+<p>The word malware is derived from the term <code>MALicious softWARE</code>. Therefore, any software that has a malicious purpose can be considered malware. Malware is further classified into different categories based on its behavior. </p>
+<p>Here we will ponder the steps we will take if we suspect that we found malware in a machine.</p>
+<h3 id="the-purpose-behind-malware-analysis">The purpose behind Malware Analysis<a class="headerlink" href="#the-purpose-behind-malware-analysis" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>Security Operations</code> teams analyze malware to write detections for malicious activity in their networks.</li>
+<li><code>Incident Response</code> teams analyze malware to determine what damage has been done to an environment to remediate and revert that damage.</li>
+<li><code>Threat Hunt</code> teams analyze malware to identify IOCs, which they use to hunt for malware in a network.</li>
+<li><code>Malware Researchers</code> in security product vendor teams analyze malware to add detections for them in their security products.</li>
+<li><code>Threat Research</code> teams in OS Vendors like Microsoft and Google analyze malware to discover the vulnerabilities exploited and add more security features to the OS/applications.</li>
+</ul>
+<h3 id="safety-first">Safety first!<a class="headerlink" href="#safety-first" title="Permanent link">&para;</a></h3>
+<p>Please note that malware is like a weapon because it <code>can produce great harm if not handled with care</code>. For this reason, always take the following precautions while analyzing malware:</p>
+<ul>
+<li>Never analyze malware or suspected malware on a machine that does not have the <code>sole purpose of analyzing malware</code>.</li>
+<li>When not analyzing or moving malware samples around to different locations, always <code>keep them in password-protected zip/rar or other archives so that we can avoid accidental detonation</code>.</li>
+<li>Only extract the malware from this password-protected archive inside the <code>isolated environment</code>, and <code>only when analyzing</code> it.</li>
+<li><code>Create an isolated VM</code> specifically for malware analysis, which has the <code>capability of being reverted to a clean slate</code> once you are done.</li>
+<li>Ensure that all <code>internet connections are closed</code> or at least monitored.</li>
+<li>Once you are done with malware analysis, <code>revert the VM to its clean slate for the next malware analysis session</code> to avoid residue from a previous malware execution corrupting the next one.</li>
+</ul>
+<h2 id="techniques-of-malware-analysis">Techniques of malware analysis<a class="headerlink" href="#techniques-of-malware-analysis" title="Permanent link">&para;</a></h2>
+<p>Malware Analysis is like solving a puzzle. Different tools and techniques are used to find the pieces of this puzzle.</p>
+<p>Most of the time, you will have an executable file (also called a binary or a PE file. PE stands for Portable Executable), a malicious document file, or a Network Packet Capture (Pcap). </p>
+<p>The Portable Executable is the most prevalent type of file analyzed while performing Malware Analysis.</p>
+<p>To find the different puzzle pieces, you will often use various tools, tricks, and shortcuts. These techniques can be grouped into the following two categories:
+- Static Analysis
+- Dynamic Analysis</p>
+<h3 id="static-analysis">Static Analysis<a class="headerlink" href="#static-analysis" title="Permanent link">&para;</a></h3>
+<p>When malware is analyzed <code>without being executed</code>, it is called Static Analysis.</p>
+<p>In this case, the different properties of the <code>PE file</code> are analyzed without running it. Similarly, in the case of a <code>malicious document</code>, exploring the document's properties without analyzing it will be considered Static Analysis.</p>
+<p>Examples of static analysis include:
+- Checking for <code>strings</code> in malware
+- Checking the <code>PE header</code> for information related to different <code>sections</code>
+- Looking at the code using a <code>disassembler</code>. </p>
+<p>Malware <code>often uses techniques to avoid static analysis</code>:
+- <code>obfuscation</code>
+- <code>packing</code>
+- <code>other means of hiding its properties</code></p>
+<p>To circumvent these techniques, we often use <code>dynamic analysis</code>.</p>
+<h3 id="dynamic-analysis">Dynamic Analysis<a class="headerlink" href="#dynamic-analysis" title="Permanent link">&para;</a></h3>
+<p>Malware faces a dilemma. It has to execute to fulfil its purpose, and no matter how much obfuscation is added to the code, it becomes an easy target for detection once it runs.</p>
+<p>Sometimes we might need to run the malware in a controlled environment to observe what it does in these cases.</p>
+<p>Dynamic analysis techniques include:
+- Running the malware in a VM
+  - In a <code>manual</code> fashion with tools installed to monitor the malware's activity
+  - In the form of sandboxes that perform this task <code>automatically</code>.</p>
+<p>Once we run the malware in a controlled environment, we can use our knowledge from the <code>Windows Forensics</code> rooms to <code>identify what it did in our environment</code>.</p>
+<p>The advantage here is that since we control the environment, we can configure it to avoid noise, like activity from a legitimate user or Windows Services. Thus, everything we observe in such an environment points to malware activity, making it easier to identify what the malware did in this scenario.</p>
+<blockquote>
+<p>[!NOTE]
+This is specific to malware reversal, Windows forensics and the Windows environment. </p>
+<p>However let's say you're reversing / analyzing a "safe" program then don't mind this part above.</p>
+</blockquote>
+<p>Malware, however, often uses techniques to prevent an analyst from performing dynamic analysis. Since most dynamic analysis is performed in a controlled environment.</p>
+<p>Most methods to bypass dynamic analysis include <code>detecting the environment</code> in which it is being run. Therefore, in these cases, the <code>malware uses a different, benign code path if it identifies that it is being run in a controlled environment</code>.</p>
+<h2 id="basic-static-analysis">Basic static analysis<a class="headerlink" href="#basic-static-analysis" title="Permanent link">&para;</a></h2>
+<p>When analyzing a new piece of malware, the first step is usually performing basic static analysis. Basic static analysis can be considered sizing up the malware, trying to find its properties before diving deep into analysis. It provides us with an overview of what we are dealing with. Sometimes it might give us some critical information, for example, what API calls the malware is making or whether it's packed or not. However, other times, it might only give us information to help us size the malware up and give us an idea of the effort required to analyze it.</p>
+<p>So without further ado, let's see some of the techniques we can use to perform basic static analysis.</p>
+<p>We will be using the attached Remnux VM. <code>Remnux</code> (<code>Reverse Engineering Malware Linux</code>) is a Linux distribution purpose-built for malware analysis. It has many tools required for malware analysis already installed on it.</p>
+<h3 id="examining-the-file-type">Examining the file type<a class="headerlink" href="#examining-the-file-type" title="Permanent link">&para;</a></h3>
+<p>Though often the file type of malware is visible in the file extension and is obvious, sometimes malware authors try to trick users by using <code>misleading file extensions</code>.</p>
+<h3 id="examining-strings">Examining Strings<a class="headerlink" href="#examining-strings" title="Permanent link">&para;</a></h3>
+<p>Another really important command that provides us with useful information about a file is the <code>strings</code> command. This command lists down the strings present in a file.</p>
+<p>Looking at strings in a file can often give <code>clues related to the behavior</code> of malware. </p>
+<p>E.g: <code>URLDownloadToFile</code> in the output of the strings command will mean that this malware is doing something with the URLDownloadToFile <code>Windows API</code>. Most likely, it is <code>downloading a file from the internet and saving it on the disk</code>.</p>
+<p>Similarly, strings might also provide <code>contextual information</code> that helps us later during malware analysis.</p>
+<h3 id="calculating-hashes">Calculating Hashes<a class="headerlink" href="#calculating-hashes" title="Permanent link">&para;</a></h3>
+<p>File Hashing provides us with a fixed-size unique number that identifies a file. A File Hash can therefore be considered a unique identifier for a file.</p>
+<p>This identifier can be shared with other analysts or searched online for information sharing purposes.</p>
+<p>Please note that a single bit of difference in two files will result in different hashes, so changing the hash of a file is as simple as changing one bit in it.</p>
+<p>Commonly, <code>md5sum</code>, <code>sha1sum</code> and <code>sha256sum</code> hashes are used for file hashing.</p>
+<h3 id="av-scans-and-virustotal">AV scans and VirusTotal<a class="headerlink" href="#av-scans-and-virustotal" title="Permanent link">&para;</a></h3>
+<p>Scanning a file using AVs or searching for a hash on VirusTotal can also provide useful information about the classification of malware performed by security researchers. However, when using an online scanner, it is recommended to <code>search for the malware's hash instead of uploading</code> online to avoid leaking sensitive information online. </p>
+<p>Only upload a sample if you are sure of what you are doing.</p>
+<h3 id="pe-header">PE Header<a class="headerlink" href="#pe-header" title="Permanent link">&para;</a></h3>
+<p>The PE File Header contains the metadata about a Portable Executable file. This data can help us find a lot of helpful information to help us in our analysis.</p>
+<p>However, some of the vital information found in the PE header is explained below:
+- Imports/Exports
+- Sections
+- Analyzing other PE header info</p>
+<h2 id="basic-dynamic-analysis">Basic dynamic analysis<a class="headerlink" href="#basic-dynamic-analysis" title="Permanent link">&para;</a></h2>
+<p>Many of the properties of a malware sample can be hidden when it's not running. However, when we perform dynamic analysis, we can lay these properties bare and learn more about the behavior of a malware sample.</p>
+<blockquote>
+<p>[!IMPORTANT]
+Dynamic analysis requires running live malware samples that can be destructive. It is highly recommended that you perform malware analysis in an isolated Virtual Machine. </p>
+<p>You can create a clean snapshot of your Virtual Machine before performing any malware analysis and revert it to start from a clean state again after every analysis. </p>
+<p>Don't perform malware analysis on a live machine not purpose-built for malware analysis.</p>
+</blockquote>
+<h2 id="introduction-to-sandboxes">Introduction to Sandboxes<a class="headerlink" href="#introduction-to-sandboxes" title="Permanent link">&para;</a></h2>
+<p>Sandbox is a term borrowed from the military. A sandbox is a box of sand, as the name suggests, modeling the terrain where an operation has to take place, in which a military team dry runs their scenarios to identify possible outcomes.</p>
+<p>In malware analysis, a sandbox is an isolated environment mimicking the actual target environment of a malware, where an analyst runs a sample to learn more about it. <code>Malware analysis sandboxes heavily rely on Virtual Machines</code>, their ability to take snapshots and revert to a clean state when required.</p>
+<h3 id="open-source-sandboxes">Open-Source sandboxes<a class="headerlink" href="#open-source-sandboxes" title="Permanent link">&para;</a></h3>
+<p>Though it is good to understand what a good sandbox is made of, building a sandbox from scratch is not always necessary. One can always set up Open Source Sandboxes. These sandboxes provide the framework for performing basic dynamic analysis and are also customizable to a significant extent to help those with a more adventurous mindset.</p>
+<ul>
+<li><a href="https://github.com/cuckoosandbox/cuckoo">Cuckoo's sandbox</a></li>
+<li><a href="https://github.com/kevoreilly/CAPEv2">CAPE sandbox</a></li>
+<li>Online sandboxes</li>
+<li><a href="https://cuckoo.cert.ee/">Online Cuckoo sandbox</a></li>
+<li><a href="https://any.run/">Any.run</a></li>
+<li><a href="https://analyze.intezer.com/">Intezer</a></li>
+<li><a href="https://hybrid-analysis.com/">Hybrid Analysis</a></li>
+</ul>
+<h2 id="anti-analysis-techniques">Anti-analysis techniques<a class="headerlink" href="#anti-analysis-techniques" title="Permanent link">&para;</a></h2>
+<p>While the security researchers are devising techniques and tools to analyze malware, the malware authors are working on rendering these tools and techniques ineffective. We find a great deal of information if we use the previous techniques.</p>
+<p>However, there are ways malware authors can make our life difficult.</p>
+<h3 id="packing-and-obfuscation">Packing and Obfuscation<a class="headerlink" href="#packing-and-obfuscation" title="Permanent link">&para;</a></h3>
+<p>Malware authors often use packing and obfuscation to make an analyst's life difficult. A packer obfuscates, compresses, or encrypts the contents of malware. These techniques make it difficult to analyze malware statically. Specifically, a packed malware will not show important information when running a string search against it.</p>
+<p>Read <a href="/Windows_Internals/PE.md#packing-and-identifying-packed-executables">packing and identifying packed executables</a>.</p>
+<h3 id="sandbox-evasion">Sandbox evasion<a class="headerlink" href="#sandbox-evasion" title="Permanent link">&para;</a></h3>
+<p>As we learned about previously, we can always run a sample in a sandbox to analyze it. In many cases, that might help us analyze samples that evade our basic static analysis techniques. </p>
+<p>However, malware authors have some tricks up their sleeves that hamper that effort. </p>
+<p>Some of these techniques are as follows:
+- <code>Long sleep calls</code>: Malware authors know that <code>sandboxes run for a limited time</code>. Therefore, they program the malware not to <code>perform any activity for a long time after execution</code>. This is often <code>accomplished through long sleep calls</code>. The purpose of this technique is to <code>time out the sandbox</code>.
+- <code>User activity detection</code>: Some malware samples will <code>wait for user activity</code> before performing malicious activity. The premise of this technique is that <code>there will be no user in a sandbox</code>. Therefore there will be no <code>mouse movement</code> or <code>typing on the keyboard</code>. Advanced malware also detects <code>patterns in mouse movements that are often used in automated sandboxes</code>. This technique is designed to <code>bypass automated sandbox detection</code>.
+- <code>Footprinting user activity</code>: Some malware checks for <code>user files or activity</code>, like if there are any files in the <code>MS Office history</code> or <code>internet browsing history</code>. If no or little activity is found, the malware will consider the machine as a sandbox and quit.
+- <code>Detecting VMs</code>: Sandboxes run on virtual machines. <code>Virtual machines leave artifacts</code> that can be identified by malware. For example, some <code>drivers installed in VMs</code> being run on VMWare or Virtualbox give away the fact that the machine is a VM. <code>Malware authors often associate VMs with sandboxes</code> and would <code>terminate the malware if a VM is detected</code>.</p>
+<p>The above list is not exhaustive but gives us an idea of what to expect when analyzing malware.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; Grimy86, 2024 - 2025
+    </div>
+  
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+    <a href="mailto:grimy86@proton.me" target="_blank" rel="noopener" title="" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M48 64C21.5 64 0 85.5 0 112c0 15.1 7.1 29.3 19.2 38.4l217.6 163.2c11.4 8.5 27 8.5 38.4 0l217.6-163.2c12.1-9.1 19.2-23.3 19.2-38.4 0-26.5-21.5-48-48-48zM0 176v208c0 35.3 28.7 64 64 64h384c35.3 0 64-28.7 64-64V176L294.4 339.2a63.9 63.9 0 0 1-76.8 0z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/grimy86" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8M97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.path", "navigation.prune", "navigation.indexes", "navigation.top", "navigation.footer"], "search": "../../assets/javascripts/workers/search.f8cc74c7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.c8b220af.min.js"></script>
+      
+    
+  </body>
+</html>

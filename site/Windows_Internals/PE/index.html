@@ -1,0 +1,2068 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://grimy86.github.io/Windows_Internals/PE/">
+      
+      
+        <link rel="prev" href="../Processor_Modes/">
+      
+      
+        <link rel="next" href="../../About/github/">
+      
+      
+      <link rel="icon" href="/assets/Key3.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.11">
+    
+    
+      
+        <title>Portable Executable file format (PE) - Cybersecurity & Code Insights '25</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.4af4bdda.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#portable-executable-file-format" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Cybersecurity &amp; Code Insights &#39;25" class="md-header__button md-logo" aria-label="Cybersecurity & Code Insights '25" data-md-component="logo">
+      
+  <img src="/assets/Key.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Cybersecurity & Code Insights '25
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Portable Executable file format (PE)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://grimy86.github.io/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    grimy86.github.io
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../study/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  How to study
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../CSharp/Level1/Basics/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  C#
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../Cpp/Cpp/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  C++
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../Assembly/Architecture/Introduction/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Assembly
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../Introduction/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Windows Internals
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../About/github/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  About Me
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Cybersecurity &amp; Code Insights &#39;25" class="md-nav__button md-logo" aria-label="Cybersecurity & Code Insights '25" data-md-component="logo">
+      
+  <img src="/assets/Key.png" alt="logo">
+
+    </a>
+    Cybersecurity & Code Insights '25
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://grimy86.github.io/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    grimy86.github.io
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../study/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    How to study
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    <li class="md-nav__item md-nav__item--pruned md-nav__item--nested">
+      
+        
+  
+  
+  
+    
+  
+  
+  
+    <a href="../../CSharp/Level1/Basics/" class="md-nav__link">
+      
+  
+  
+  <span class="md-ellipsis">
+    C#
+    
+  </span>
+  
+
+      
+        <span class="md-nav__icon md-icon"></span>
+      
+    </a>
+  
+
+  
+
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    <li class="md-nav__item md-nav__item--pruned md-nav__item--nested">
+      
+        
+  
+  
+  
+    <a href="../../Cpp/Cpp/" class="md-nav__link">
+      
+  
+  
+  <span class="md-ellipsis">
+    C++
+    
+  </span>
+  
+
+      
+        <span class="md-nav__icon md-icon"></span>
+      
+    </a>
+  
+
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    <li class="md-nav__item md-nav__item--pruned md-nav__item--nested">
+      
+        
+  
+  
+  
+    
+  
+  
+  
+    <a href="../../Assembly/Architecture/Introduction/" class="md-nav__link">
+      
+  
+  
+  <span class="md-ellipsis">
+    Assembly
+    
+  </span>
+  
+
+      
+        <span class="md-nav__icon md-icon"></span>
+      
+    </a>
+  
+
+  
+
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+      
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Windows Internals
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Windows Internals
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Introduction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Introduction
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Terminology/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Terminology
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Dotnet_Framework/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    .NET Framework
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DLLs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Dynamic Link Libraries (DLLs)
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Processes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Processes, Threads, Fibers, UMS Threads, Handles, Jobs and more
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Virtual_Memory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Virtual Memory
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API_Introduction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Introduction to API's
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Windows_API/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Windows API, IPC and WinRT
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Processor_Modes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Processor modes, Privileges, Syscalls, the Kernel and more
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Portable Executable file format (PE)
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Portable Executable file format (PE)
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#introduction" class="md-nav__link">
+    <span class="md-ellipsis">
+      Introduction
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overview
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#basic-file-info" class="md-nav__link">
+    <span class="md-ellipsis">
+      Basic file info
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#image_dos_header" class="md-nav__link">
+    <span class="md-ellipsis">
+      IMAGE_DOS_HEADER
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dos_stub" class="md-nav__link">
+    <span class="md-ellipsis">
+      DOS_STUB
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#image_nt_headers" class="md-nav__link">
+    <span class="md-ellipsis">
+      IMAGE_NT_HEADERS
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="IMAGE_NT_HEADERS">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#image_nt_headers-nt_headers" class="md-nav__link">
+    <span class="md-ellipsis">
+      IMAGE_NT_HEADERS: NT_HEADERS
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="IMAGE_NT_HEADERS: NT_HEADERS">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#signature" class="md-nav__link">
+    <span class="md-ellipsis">
+      Signature
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#image_file_header" class="md-nav__link">
+    <span class="md-ellipsis">
+      (IMAGE_)FILE_HEADER
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#optional_header" class="md-nav__link">
+    <span class="md-ellipsis">
+      OPTIONAL_HEADER
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-directory-dictionary-section" class="md-nav__link">
+    <span class="md-ellipsis">
+      Data directory / dictionary section
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#image_nt_headers-image_section_header-or-section-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      IMAGE_NT_HEADERS: IMAGE_SECTION_HEADER or Section table
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="IMAGE_NT_HEADERS: IMAGE_SECTION_HEADER or Section table">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pe-base-relocations" class="md-nav__link">
+    <span class="md-ellipsis">
+      PE Base relocations
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#image_nt_headers-image_import_descriptor" class="md-nav__link">
+    <span class="md-ellipsis">
+      IMAGE_NT_HEADERS: IMAGE_IMPORT_DESCRIPTOR
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#packing-and-identifying-packed-executables" class="md-nav__link">
+    <span class="md-ellipsis">
+      Packing and Identifying packed executables
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Packing and Identifying packed executables">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-to-identify-if-a-pe-file-is-packed" class="md-nav__link">
+    <span class="md-ellipsis">
+      How to identify if a PE file is packed
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="How to identify if a PE file is packed">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#strings" class="md-nav__link">
+    <span class="md-ellipsis">
+      Strings
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#section-header-names" class="md-nav__link">
+    <span class="md-ellipsis">
+      Section header names
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dllmain-and-tls-callbacks" class="md-nav__link">
+    <span class="md-ellipsis">
+      DllMain and TLS Callbacks
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#section-entropy" class="md-nav__link">
+    <span class="md-ellipsis">
+      Section entropy
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#section-permissions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Section permissions
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sizeofrawdata-misc_virtualsize" class="md-nav__link">
+    <span class="md-ellipsis">
+      SizeOfRawData &amp; Misc_VirtualSize
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#from-import-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      From import functions
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tools
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    <li class="md-nav__item md-nav__item--pruned md-nav__item--nested">
+      
+        
+  
+  
+  
+    <a href="../../About/github/" class="md-nav__link">
+      
+  
+  
+  <span class="md-ellipsis">
+    About Me
+    
+  </span>
+  
+
+      
+        <span class="md-nav__icon md-icon"></span>
+      
+    </a>
+  
+
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#introduction" class="md-nav__link">
+    <span class="md-ellipsis">
+      Introduction
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overview
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#basic-file-info" class="md-nav__link">
+    <span class="md-ellipsis">
+      Basic file info
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#image_dos_header" class="md-nav__link">
+    <span class="md-ellipsis">
+      IMAGE_DOS_HEADER
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dos_stub" class="md-nav__link">
+    <span class="md-ellipsis">
+      DOS_STUB
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#image_nt_headers" class="md-nav__link">
+    <span class="md-ellipsis">
+      IMAGE_NT_HEADERS
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="IMAGE_NT_HEADERS">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#image_nt_headers-nt_headers" class="md-nav__link">
+    <span class="md-ellipsis">
+      IMAGE_NT_HEADERS: NT_HEADERS
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="IMAGE_NT_HEADERS: NT_HEADERS">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#signature" class="md-nav__link">
+    <span class="md-ellipsis">
+      Signature
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#image_file_header" class="md-nav__link">
+    <span class="md-ellipsis">
+      (IMAGE_)FILE_HEADER
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#optional_header" class="md-nav__link">
+    <span class="md-ellipsis">
+      OPTIONAL_HEADER
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-directory-dictionary-section" class="md-nav__link">
+    <span class="md-ellipsis">
+      Data directory / dictionary section
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#image_nt_headers-image_section_header-or-section-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      IMAGE_NT_HEADERS: IMAGE_SECTION_HEADER or Section table
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="IMAGE_NT_HEADERS: IMAGE_SECTION_HEADER or Section table">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pe-base-relocations" class="md-nav__link">
+    <span class="md-ellipsis">
+      PE Base relocations
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#image_nt_headers-image_import_descriptor" class="md-nav__link">
+    <span class="md-ellipsis">
+      IMAGE_NT_HEADERS: IMAGE_IMPORT_DESCRIPTOR
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#packing-and-identifying-packed-executables" class="md-nav__link">
+    <span class="md-ellipsis">
+      Packing and Identifying packed executables
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Packing and Identifying packed executables">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-to-identify-if-a-pe-file-is-packed" class="md-nav__link">
+    <span class="md-ellipsis">
+      How to identify if a PE file is packed
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="How to identify if a PE file is packed">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#strings" class="md-nav__link">
+    <span class="md-ellipsis">
+      Strings
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#section-header-names" class="md-nav__link">
+    <span class="md-ellipsis">
+      Section header names
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dllmain-and-tls-callbacks" class="md-nav__link">
+    <span class="md-ellipsis">
+      DllMain and TLS Callbacks
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#section-entropy" class="md-nav__link">
+    <span class="md-ellipsis">
+      Section entropy
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#section-permissions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Section permissions
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sizeofrawdata-misc_virtualsize" class="md-nav__link">
+    <span class="md-ellipsis">
+      SizeOfRawData &amp; Misc_VirtualSize
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#from-import-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      From import functions
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tools
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="portable-executable-file-format">Portable executable file format<a class="headerlink" href="#portable-executable-file-format" title="Permanent link">&para;</a></h1>
+<h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
+<p>Executables and applications are a large portion of how Windows internals operate at a higher level. You might have often seen files with extension <code>.exe</code> which stands for <code>executable (file)</code>.</p>
+<p>These files are <code>portable because they can be taken to any system with the same Operating System and dependencies</code>, and they will perform the same task on that system. Therefore, these files are called Portable Executables (PE files).</p>
+<p>As the name suggests, an executable file contains code that can be executed. Therefore, anything that needs to be run on a Windows Operating System is executed using an executable file, also called a <code>Portable Executable file (PE file)</code>, as it can be run on any Windows system.</p>
+<p>The PE files consist of a <code>sequence of bits</code> stored on the disk. This sequence is in a <code>specific format</code>. The initial bits define the characteristics of the PE file and explain how to read the rest of the data. <code>This initial part of the PE file is called a PE header</code>. </p>
+<p>The <code>PE</code> (Portable Executable) format <code>defines the information about the executable and stored data</code>. The PE format <code>also defines the structure of how data components are stored</code>.</p>
+<p>The PE (Portable Executable) format is an overarching <code>structure for executable and object files</code>. The <code>PE</code> (Portable Executable) and <code>COFF</code> (Common Object File Format) files make up the <code>PE format</code>.</p>
+<p>The COFF consists of:</p>
+<ul>
+<li>Windows <code>PE files</code></li>
+<li><code>DLLs</code></li>
+<li><code>Shared objects in Linux</code></li>
+<li><code>ELF files</code></li>
+</ul>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Before dissecting any PE headers familiarize yourself with the concept of <a href="https://en.wikipedia.org/wiki/Endianness"><code>endianness</code></a> and <code>hex</code> (hexadecimal).</p>
+</div>
+<p>PE data is most commonly seen in the <code>hex dump</code> of an executable file. Below we will break down a hex dump of <code>calc.exe</code> and other programs into the sections of PE data.</p>
+<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
+<p>On disk, a PE executable looks the same as any other form of digital data, i.e., a combination of bits.</p>
+<p>If we open a PE file in a Hex editor, we will see a random bunch of Hex characters. This bunch of Hex characters are the instructions a Windows OS needs to execute this binary file.</p>
+<p>Some of the important headers that we will discuss are:</p>
+<ul>
+<li>IMAGE_DOS_HEADER</li>
+<li>IMAGE_NT_HEADERS</li>
+<li>FILE_HEADER</li>
+<li>OPTIONAL_HEADER</li>
+<li>IMAGE_SECTION_HEADER</li>
+<li>IMAGE_IMPORT_DESCRIPTOR</li>
+</ul>
+<p>All of these headers are of the data type <code>STRUCT</code>. A struct is a user-defined data type that combines several different types of data elements in a single variable. Since it is user-defined, we need to see the documentation to understand the type for each STRUCT variable. The documentation for each header can be found on <a href="https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-image_nt_headers32">Microsoft learn</a>, where you can find the data types of the different fields inside these headers.</p>
+<p><img alt="PE structure" src="/Windows_Internals/Images/PE_structure.png" /></p>
+<h2 id="basic-file-info">Basic file info<a class="headerlink" href="#basic-file-info" title="Permanent link">&para;</a></h2>
+<p>Below properties are common to find, note that they are always relevant to the section you are looking at. In this case since we're looking at information about the PE file they're applied to the entire PE file.</p>
+<p>The higher the value of Entropy, the more random the data is. We will learn about the utility of Entropy as we learn more about malware analysis.</p>
+<ul>
+<li>Size: denotes the <code>size of the section in bytes</code>.</li>
+<li>Hashes: unique identifiers to check the validity of the program</li>
+<li>Entropy: the amount of randomness found in data</li>
+<li>Architecture: refers to the CPU architecture the program is compiled for</li>
+<li>Compile date: the data on which the code was compiled into the executeable</li>
+</ul>
+<p>The header starts below this information, with the heading IMAGE_DOS_HEADER.</p>
+<h2 id="image_dos_header">IMAGE_DOS_HEADER<a class="headerlink" href="#image_dos_header" title="Permanent link">&para;</a></h2>
+<p>The IMAGE_DOS_HEADER consists of the first 64 bytes of the PE file. The first two bytes say <code>4D 5A</code>. They translate to the <code>MZ</code> characters in ASCII.</p>
+<p>The MZ characters denote the <code>initials</code> of <a href="https://en.wikipedia.org/wiki/Mark_Zbikowski">Mark Zbikowski</a>, one of the Microsoft architects who created the MS-DOS file format. The MZ characters are an <code>identifier of the Portable Executable format</code>. When these two bytes are present at the start of a file, the Windows <code>OS considers it a Portable Executable format file</code>.</p>
+<ul>
+<li>e_magic: 0x5a4d or MZ</li>
+<li>e_lfanew: denotes the address from where the IMAGE_NT_HEADERS start.</li>
+</ul>
+<p>The IMAGE_DOS_HEADER is generally not of much use apart from these fields, especially during malware reverse engineering. The only reason it's there is backward compatibility between MS-DOS and Windows.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Offset(h) 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>00000000  4D 5A 90 00 03 00 00 00 04 00 00 00 FF FF 00 00  MZ..........ÿÿ..
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>00000010  B8 00 00 00 00 00 00 00 40 00 00 00 00 00 00 00  ¸.......@.......
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>00000020  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>00000030  00 00 00 00 00 00 00 00 00 00 00 00 E8 00 00 00  ............è...
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>00000040  0E 1F BA 0E 00 B4 09 CD 21 B8 01 4C CD 21 54 68  ..º..´.Í!¸.LÍ!Th
+</span></code></pre></div>
+<h2 id="dos_stub">DOS_STUB<a class="headerlink" href="#dos_stub" title="Permanent link">&para;</a></h2>
+<p>The <code>DOS Stub</code> is a program run by default at the beginning of a file that prints a <code>compatibility message</code>. This does not affect any functionality of the file for most users.</p>
+<p>The message it contains that we also see in a Hex Editor is: <code>!This program cannot be run in DOS mode</code>.</p>
+<p>Note that the <code>size</code>, <code>hashes</code>, and <code>Entropy</code> found here are not related to the PE file. Instead, it is for the particular section we are analyzing. These values are calculated based on the data in a specific header.</p>
+<p>The <code>size</code> value denotes the <code>size of the section in bytes</code>. Then we see different hashes for the section. 
+Entropy is the amount of randomness found in data. The higher the value of Entropy, the more random the data is. We will learn about the utility of Entropy as we learn more about malware analysis.</p>
+<p>The DOS STUB is a small piece of code that only runs if the PE file is incompatible with the system it is being run on. It displays the message: <code>!This program cannot be run in DOS mode</code>, mentioned above.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>00000040  0E 1F BA 0E 00 B4 09 CD 21 B8 01 4C CD 21 54 68  ..º..´.Í!¸.LÍ!Th
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>00000050  69 73 20 70 72 6F 67 72 61 6D 20 63 61 6E 6E 6F  is program canno
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>00000060  74 20 62 65 20 72 75 6E 20 69 6E 20 44 4F 53 20  t be run in DOS 
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>00000070  6D 6F 64 65 2E 0D 0D 0A 24 00 00 00 00 00 00 00  mode....$.......
+</span></code></pre></div>
+<h2 id="image_nt_headers">IMAGE_NT_HEADERS<a class="headerlink" href="#image_nt_headers" title="Permanent link">&para;</a></h2>
+<p>We can find details of <a href="https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-image_nt_headers32">IMAGE_NT_HEADERS</a> in Microsoft Documentation.</p>
+<p>The <code>IMAGE_NT_HEADERS</code> is the section with the least human-readable output. It also contains most of the vital information related to the PE file. The IMAGE_NT_HEADERS section provides <code>PE header information of the binary</code>. </p>
+<p>You can identify the start of the PE file header from the <code>PE stub</code> in the hex dump section below.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>000000E0  00 00 00 00 00 00 00 00 50 45 00 00 64 86 06 00  ........PE..d†..
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>000000F0  10 C4 40 03 00 00 00 00 00 00 00 00 F0 00 22 00  .Ä@.........ð.&quot;.
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>00000100  0B 02 0E 14 00 0C 00 00 00 62 00 00 00 00 00 00  .........b......
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>00000110  70 18 00 00 00 10 00 00 00 00 00 40 01 00 00 00  p..........@....
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>00000120  00 10 00 00 00 02 00 00 0A 00 00 00 0A 00 00 00  ................
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>00000130  0A 00 00 00 00 00 00 00 00 B0 00 00 00 04 00 00  .........°......
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>00000140  63 41 01 00 02 00 60 C1 00 00 08 00 00 00 00 00  cA....`Á........
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>00000150  00 20 00 00 00 00 00 00 00 00 10 00 00 00 00 00  . ..............
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>00000160  00 10 00 00 00 00 00 00 00 00 00 00 10 00 00 00  ................
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>00000170  00 00 00 00 00 00 00 00 94 27 00 00 A0 00 00 00  ........”&#39;.. ...
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>00000180  00 50 00 00 10 47 00 00 00 40 00 00 F0 00 00 00  .P...G...@..ð...
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>00000190  00 00 00 00 00 00 00 00 00 A0 00 00 2C 00 00 00  ......... ..,...
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>000001A0  20 23 00 00 54 00 00 00 00 00 00 00 00 00 00 00   #..T...........
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>000001B0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>000001C0  10 20 00 00 18 01 00 00 00 00 00 00 00 00 00 00  . ..............
+</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>000001D0  28 21 00 00 40 01 00 00 00 00 00 00 00 00 00 00  (!..@...........
+</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>000001E0  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+</span></code></pre></div>
+<h3 id="image_nt_headers-nt_headers">IMAGE_NT_HEADERS: NT_HEADERS<a class="headerlink" href="#image_nt_headers-nt_headers" title="Permanent link">&para;</a></h3>
+<p>Defines the <code>format</code> of the file, contains the <code>signature</code> and <code>image file header</code>, and <code>other information headers</code>.</p>
+<p>The PE file header is the section with the least human-readable output. You can identify the start of the PE file header from the <code>PE stub</code> in the hex dump section below.</p>
+<p>Before diving into the details of <code>NT_HEADERS</code>, let's get an overview of the NT_HEADERS.</p>
+<p>Remember, the starting address of IMAGE_NT_HEADERS is found in <code>e_lfanew</code> from the IMAGE_DOS_HEADER.</p>
+<p>The NT_HEADERS consist of the following:</p>
+<ul>
+<li>Signature</li>
+<li>FILE_HEADER</li>
+<li>OPTIONAL_HEADER</li>
+</ul>
+<h4 id="signature">Signature<a class="headerlink" href="#signature" title="Permanent link">&para;</a></h4>
+<p>The Signature is the first 4 bytes that denote the start of the NT_HEADER.</p>
+<h4 id="image_file_header">(IMAGE_)FILE_HEADER<a class="headerlink" href="#image_file_header" title="Permanent link">&para;</a></h4>
+<ul>
+<li>
+<p><code>Machine</code>: Type of architecture for which the PE file is written. </p>
+<p>E.g: We can see that the architecture is i386 which means that this PE file is compatible with 32-bit Intel architecture.</p>
+</li>
+<li>
+<p><code>NumberOfSections</code>: A PE file contains different sections where <code>code</code>, <code>variables</code>, and <code>other resources</code> are stored. This field of the IMAGE_FILE_HEADER mentions the <code>number of sections</code> the PE file has.</p>
+</li>
+<li><code>TimeDateStamp</code>: The time and date of the binary compilation.</li>
+<li><code>PointerToSymbolTable and NumberOfSymbols</code>: These fields are not generally related to PE files. Instead, they are here due to the COFF file headers.</li>
+<li><code>SizeOfOptionalHeader</code>: The size of the optional header.</li>
+<li>
+<p><code>Characteristics</code>: Mentions the different characteristics of a PE file.</p>
+<p>E.g: In our case (example program), this field tells us that:</p>
+<ul>
+<li>PE file has <code>stripped relocation information</code></li>
+<li>PE file has <code>stripped line numbers</code></li>
+<li>PE file has <code>stripped local symbol information</code></li>
+<li>It is an executable image</li>
+<li>It is compatible with a 32-bit machine</li>
+</ul>
+</li>
+</ul>
+<p>To learn more about the <a href="https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-image_file_header">FILE_HEADER</a>, you can check out Microsoft Documentation for it.</p>
+<h4 id="optional_header">OPTIONAL_HEADER<a class="headerlink" href="#optional_header" title="Permanent link">&para;</a></h4>
+<p>The OPTIONAL_HEADER is also a part of the NT_HEADERS. It has a deceiving name and contains some of the most important information present in the PE headers.</p>
+<ul>
+<li>
+<p><code>Magic</code>: The Magic number tells whether the PE file is a 32-bit or 64-bit application.</p>
+<ul>
+<li><code>0x010B</code>: denotes a 32-bit application</li>
+<li><code>0x020B</code>: denotes a 64-bit application</li>
+</ul>
+</li>
+<li>
+<p><code>AddressOfEntryPoint</code>: This is the address from where Windows will begin execution. In other words, the first instruction to be executed is present at this address.</p>
+<p>This is a <code>Relative Virtual Address (RVA)</code>, meaning it is at an <code>offset relative to the base address of the image</code> (<code>ImageBase</code>) once loaded into memory.</p>
+</li>
+<li>
+<p><code>BaseOfCode</code>: Address of the <code>code section</code>, relative to <code>ImageBase</code></p>
+</li>
+<li><code>BaseOfData</code>: Address of the <code>data section</code>, relative to <code>ImageBase</code></li>
+<li>
+<p><code>ImageBase</code>: The ImageBase is the <code>preferred loading address of the PE file in memory</code>.</p>
+<p>Generally, the ImageBase for .exe files is <code>0x00400000</code>. Since Windows can't load all PE files at this preferred address, some relocations are in order when the file is loaded in memory. These <code>relocations are then performed relative to the ImageBase</code>.</p>
+</li>
+<li>
+<p><code>Subsystem</code>: The Subsystem required to run the image.</p>
+<p>The Subsystem can be Windows Native, GUI (Graphical User Interface), CUI (Commandline User Interface), or some other Subsystem. We can find the complete list in <a href="https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-image_optional_header32">Microsoft Documentation</a>.</p>
+</li>
+</ul>
+<h4 id="data-directory-dictionary-section">Data directory / dictionary section<a class="headerlink" href="#data-directory-dictionary-section" title="Permanent link">&para;</a></h4>
+<p>The <code>DataDirectory</code> is a structure that contains import and export information of the PE file (called <code>Import Address Table</code> and <code>Export Address Table</code>). This information is handy as it gives a glimpse of what the PE file might be trying to do.</p>
+<p>Each data directory entry consists of:
+- A Virtual Address (RVA) pointing to the corresponding structure
+- The Size of that structure</p>
+<p>The data directories provide offsets and sizes for important parts of the PE file, such as:</p>
+<ul>
+<li>Import Table</li>
+<li>Export Table</li>
+<li>Resource Table</li>
+<li>Base Relocation Table</li>
+</ul>
+<h3 id="image_nt_headers-image_section_header-or-section-table">IMAGE_NT_HEADERS: IMAGE_SECTION_HEADER or Section table<a class="headerlink" href="#image_nt_headers-image_section_header-or-section-table" title="Permanent link">&para;</a></h3>
+<p>The data that a PE file needs to perform its functions, like code, icons, images, User Interface elements, etc., are stored in different Sections. We can find information about these Sections in the <code>IMAGE_SECTION_HEADER</code>.</p>
+<p>As we can see, the IMAGE_SECTION_HEADER has different sections:</p>
+<table>
+<thead>
+<tr>
+<th>Section</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>.text</code></td>
+<td><code>Contains executable code</code> for the application and entry point.</td>
+</tr>
+<tr>
+<td><code>.data</code></td>
+<td><code>Contains initialized data</code> (strings, variables, etc.).</td>
+</tr>
+<tr>
+<td><code>.ndata</code></td>
+<td>Contains <code>uninitialized data</code>.</td>
+</tr>
+<tr>
+<td><code>.rdata</code> or <code>.idata</code></td>
+<td>Contains <code>import information</code> (Windows API) and DLLs of the PE file. Import information helps a PE file import functions from other files or Windows API.</td>
+</tr>
+<tr>
+<td><code>.reloc</code></td>
+<td>Contains <code>relocation information</code>.</td>
+</tr>
+<tr>
+<td><code>.rsrc</code></td>
+<td>Contains application resources like <code>icons</code>, <code>images</code>, or <code>other resources</code> required for the application UI.</td>
+</tr>
+<tr>
+<td><code>.debug</code></td>
+<td>Contains debug information</td>
+</tr>
+</tbody>
+</table>
+<p>All of these different types of sections commonly include important information:</p>
+<ul>
+<li><code>VirtualAddress</code>: Contains <code>this section's Relative Virtual Address (RVA)</code> in the memory.</li>
+<li><code>VirtualSize</code>: Contains the <code>section's size once loaded into the memory</code>.</li>
+<li><code>SizeOfRawData</code>: Contains the s<code>ection size as stored on the disk before the PE file is loaded in memory</code>.</li>
+<li>
+<p><code>Characteristics</code>: Contains the <code>permissions</code> that the section has.</p>
+<p>E.g: <code>CODE | EXECUTE | READ</code>, meaning that this section contains executable code, which <code>can be read but can't be written to</code>.</p>
+</li>
+</ul>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>000001F0  2E 74 65 78 74 00 00 00 D0 0B 00 00 00 10 00 00  .text...Ð.......
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>00000200  00 0C 00 00 00 04 00 00 00 00 00 00 00 00 00 00  ................
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>00000210  00 00 00 00 20 00 00 60 2E 72 64 61 74 61 00 00  .... ..`.rdata..
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>00000220  76 0C 00 00 00 20 00 00 00 0E 00 00 00 10 00 00  v.... ..........
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>00000230  00 00 00 00 00 00 00 00 00 00 00 00 40 00 00 40  ............@..@
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>00000240  2E 64 61 74 61 00 00 00 B8 06 00 00 00 30 00 00  .data...¸....0..
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>00000250  00 02 00 00 00 1E 00 00 00 00 00 00 00 00 00 00  ................
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>00000260  00 00 00 00 40 00 00 C0 2E 70 64 61 74 61 00 00  ....@..À.pdata..
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>00000270  F0 00 00 00 00 40 00 00 00 02 00 00 00 20 00 00  ð....@....... ..
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>00000280  00 00 00 00 00 00 00 00 00 00 00 00 40 00 00 40  ............@..@
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>00000290  2E 72 73 72 63 00 00 00 10 47 00 00 00 50 00 00  .rsrc....G...P..
+</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>000002A0  00 48 00 00 00 22 00 00 00 00 00 00 00 00 00 00  .H...&quot;..........
+</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>000002B0  00 00 00 00 40 00 00 40 2E 72 65 6C 6F 63 00 00  ....@..@.reloc..
+</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>000002C0  2C 00 00 00 00 A0 00 00 00 02 00 00 00 6A 00 00  ,.... .......j..
+</span><span id="__span-3-15"><a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>000002D0  00 00 00 00 00 00 00 00 00 00 00 00 40 00 00 42  ............@..B
+</span></code></pre></div>
+<h4 id="pe-base-relocations">PE Base relocations<a class="headerlink" href="#pe-base-relocations" title="Permanent link">&para;</a></h4>
+<h3 id="image_nt_headers-image_import_descriptor">IMAGE_NT_HEADERS: IMAGE_IMPORT_DESCRIPTOR<a class="headerlink" href="#image_nt_headers-image_import_descriptor" title="Permanent link">&para;</a></h3>
+<p>PE files don't contain all the code they need to perform their functions. In a Windows Operating System, PE files leverage code from the Windows API to perform many functions.</p>
+<p>The <code>IMAGE_IMPORT_DESCRIPTOR</code> structure contains information about the different <code>Windows APIs that the PE file loads when executed</code>.</p>
+<p>This information is handy in identifying the potential activity that a PE file might perform.</p>
+<p>E.g: if a PE file imports CreateFile API, it indicates that it might create a file when executed.</p>
+<p>These files are <code>dynamically linked libraries (DLL's)</code> that export Windows functions or APIs for other PE files.</p>
+<p>We can also see that inside of the dll's section there are the values <code>OriginalFirstThunk</code> and <code>FirstThunk</code>. The Operating System uses these values to build the <code>Import Address Table (IAT)</code> of the PE file.</p>
+<h2 id="packing-and-identifying-packed-executables">Packing and Identifying packed executables<a class="headerlink" href="#packing-and-identifying-packed-executables" title="Permanent link">&para;</a></h2>
+<p>Since a PE file's information can be easily extracted using a <code>Hex editor</code> or a tool like <code>pe-tree</code>, it becomes undesirable for people who don't want their code to be reverse-engineered.</p>
+<p>This is where the <code>packers</code> come in. A packer is a <code>tool to obfuscate the data in a PE file</code> so that it can't be read without unpacking it. In simple words, packers <code>pack the PE file in a layer of obfuscation</code> to avoid reverse engineering and <code>render a PE file's static analysis useless</code>. When the PE file is executed, it runs the unpacking routine to extract the original code and then executes it.</p>
+<p>Legitimate software developers use packing to address piracy concerns, and malware authors use it to avoid detection.</p>
+<h3 id="how-to-identify-if-a-pe-file-is-packed">How to identify if a PE file is packed<a class="headerlink" href="#how-to-identify-if-a-pe-file-is-packed" title="Permanent link">&para;</a></h3>
+<h4 id="strings">Strings<a class="headerlink" href="#strings" title="Permanent link">&para;</a></h4>
+<p>A packed malware will not show important information when running a string search against it.</p>
+<p>Notice that the sample below contains mainly garbage strings that don't provide much value to us:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>!This program cannot be run in DOS mode.
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>RichH
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>.rsrc
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>.data
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>.adata
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>dApB
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>Qtq5
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>wn;3b:TC,n
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>*tVlr
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>D6j[
+</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>^sZ&quot;4V
+</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>JIoL
+</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>j~AI
+</span><span id="__span-4-14"><a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>tYFu
+</span><span id="__span-4-15"><a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>7^V1
+</span><span id="__span-4-16"><a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>vYB09
+</span><span id="__span-4-17"><a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a>&quot;PeHy
+</span><span id="__span-4-18"><a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>M4AF#
+</span><span id="__span-4-19"><a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a>3134
+</span><span id="__span-4-20"><a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a>%}W\+
+</span><span id="__span-4-21"><a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a>3A;a5
+</span><span id="__span-4-22"><a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a>dLq&lt;
+</span><span id="__span-4-23"><a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a>.
+</span><span id="__span-4-24"><a id="__codelineno-4-24" name="__codelineno-4-24" href="#__codelineno-4-24"></a>.
+</span><span id="__span-4-25"><a id="__codelineno-4-25" name="__codelineno-4-25" href="#__codelineno-4-25"></a>.
+</span><span id="__span-4-26"><a id="__codelineno-4-26" name="__codelineno-4-26" href="#__codelineno-4-26"></a>.
+</span><span id="__span-4-27"><a id="__codelineno-4-27" name="__codelineno-4-27" href="#__codelineno-4-27"></a>.
+</span><span id="__span-4-28"><a id="__codelineno-4-28" name="__codelineno-4-28" href="#__codelineno-4-28"></a>.
+</span></code></pre></div>
+<h4 id="section-header-names">Section header names<a class="headerlink" href="#section-header-names" title="Permanent link">&para;</a></h4>
+<p>A PE file has a .text section, a .data section, and a .rsrc section, where only the .text section has the execute flag set because it contains the code. Now take the example of the file named zmsuz3pinwl. When we open this file in pe-tree, we find that it has <code>unconventional section names</code> (<code>or no names</code>, in this case).</p>
+<p><img alt="Packed PE file" src="/CCI25/Windows_Internals/Images/Packed.png" /></p>
+<p>We might think this has something to do with the tool we use to analyze the file. Therefore, let's check it using another PE analysis tool called <code>pecheck</code>. The pecheck tool provides the same information we have been gathering from the pe-tree tool, but it is a command-line tool.</p>
+<p>Let's see the information in the PE Sections heading in the output:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>----------PE Sections----------
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>[IMAGE_SECTION_HEADER]
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>0x1F0      0x0   Name:                          
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>0x1F8      0x8   Misc:                          0x3F4000  
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>0x1F8      0x8   Misc_PhysicalAddress:          0x3F4000  
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>0x1F8      0x8   Misc_VirtualSize:              0x3F4000  
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>0x1FC      0xC   VirtualAddress:                0x1000    
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>0x200      0x10  SizeOfRawData:                 0xD3400   
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>0x204      0x14  PointerToRawData:              0x400     
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>0x208      0x18  PointerToRelocations:          0x0       
+</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>0x20C      0x1C  PointerToLinenumbers:          0x0       
+</span><span id="__span-5-13"><a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>0x210      0x20  NumberOfRelocations:           0x0       
+</span><span id="__span-5-14"><a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>0x212      0x22  NumberOfLinenumbers:           0x0       
+</span><span id="__span-5-15"><a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>0x214      0x24  Characteristics:               0xE0000040
+</span><span id="__span-5-16"><a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>Flags: IMAGE_SCN_CNT_INITIALIZED_DATA, IMAGE_SCN_MEM_EXECUTE, IMAGE_SCN_MEM_READ, IMAGE_SCN_MEM_WRITE
+</span><span id="__span-5-17"><a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a>Entropy: 7.999788 (Min=0.0, Max=8.0)
+</span><span id="__span-5-18"><a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a>MD5     hash: fa9814d3aeb1fbfaa1557bac61136ba7
+</span><span id="__span-5-19"><a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a>SHA-1   hash: 8db955c622c5bea3ec63bd917db9d41ce038c3f7
+</span><span id="__span-5-20"><a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a>SHA-256 hash: 24f922c1cd45811eb5f3ab6f29872cda11db7d2251b7a3f44713627ad3659ac9
+</span><span id="__span-5-21"><a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a>SHA-512 hash: e122e4600ea201058352c97bb7549163a0a5bcfb079630b197fe135ae732e64f5a6daff328f789e7b2285c5f975bce69414e55adba7d59006a1f0280bf64971c
+</span></code></pre></div>
+<p>We see here that the section name is empty, and it is not a glitch in the tool we used to analyze the PE file.</p>
+<h4 id="dllmain-and-tls-callbacks">DllMain and TLS Callbacks<a class="headerlink" href="#dllmain-and-tls-callbacks" title="Permanent link">&para;</a></h4>
+<ul>
+<li>
+<p><code>DllMain</code> is just an entry point function inside the DLL’s .text (code) section:</p>
+<ul>
+<li>When a DLL is loaded, Windows calls DllMain, if it exists, to handle events like process/thread attach/detach.</li>
+<li>The address of DllMain is stored in the PE's <code>Optional Header</code> → <code>AddressOfEntryPoint</code> field.</li>
+<li>The actual function code for DllMain is stored in the <code>.text</code> section of the DLL.</li>
+<li>In memory, DllMain is simply an executable function within the DLL’s .text section.</li>
+</ul>
+</li>
+<li>
+<p>TLS (Thread Local Storage) callbacks are special functions that execute when a thread is created or terminated:</p>
+<ul>
+<li>Their addresses are stored in the <code>TLS directory</code> of the PE file.</li>
+<li>The TLS directory is located in the PE's data directory (<code>IMAGE_DIRECTORY_ENTRY_TLS</code>).</li>
+<li>Inside this directory, there is a <code>pointer to an array of TLS callback function addresses</code>.</li>
+<li>The actual callback functions are located in the .text section, just like DllMain.</li>
+</ul>
+</li>
+</ul>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Reads about <a href="https://learn.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-best-practices">DllMain Loader Locks</a>.</p>
+</div>
+<h4 id="section-entropy">Section entropy<a class="headerlink" href="#section-entropy" title="Permanent link">&para;</a></h4>
+<p>Another thing that we might notice here is that the Entropy of the .data section and three of the four unnamed sections is <code>higher than seven and is approaching 8</code>. As we discussed in a previous task, higher Entropy represents a <code>higher level of randomness in data</code>. Random data is generally generated when the original data is obfuscated, indicating that these values <code>might indicate a packed executable</code>.</p>
+<h4 id="section-permissions">Section permissions<a class="headerlink" href="#section-permissions" title="Permanent link">&para;</a></h4>
+<p>Apart from the section names, another indicator of a packed executable is the permissions of each section. For the PE file in the above terminal, we can see that the section <code>contains initialized data and has READ, WRITE and EXECUTE permissions</code>. Similarly, some <code>other sections also have READ, WRITE and EXECUTE permissions</code>. This is also usually <code>not found in an ordinary unpacked PE file</code>, where only the .text section has EXECUTE permissions.</p>
+<h4 id="sizeofrawdata-misc_virtualsize">SizeOfRawData &amp; Misc_VirtualSize<a class="headerlink" href="#sizeofrawdata-misc_virtualsize" title="Permanent link">&para;</a></h4>
+<p>Another valuable piece of information from the section headers to identify a packed executable is the <code>SizeOfRawData</code> and <code>Misc_VirtualSize</code>. In a packed executable, the <code>SizeOfRawData will always be significantly smaller than the Misc_VirtualSize in sections with WRITE and EXECUTE permissions</code>. This is because when the PE file unpacks during execution, it writes data to this section, increasing its size in the memory compared to the size on disk, and then executes it.</p>
+<h4 id="from-import-functions">From import functions<a class="headerlink" href="#from-import-functions" title="Permanent link">&para;</a></h4>
+<p>The last important indicator of a packed executable we discuss here is its import functions. The redline PE file we analyzed earlier imported lots of functions, indicating the activity it potentially performs. However, for the PE file zmsuz3pinwl, <code>we will see only a handful of imports</code>, especially the GetProcAddress, GetModuleHandleA, and <code>LoadLibraryA</code>. These functions are often <code>some of the only few imports of a packed PE file because these functions provide the functionality to unpack the PE file during runtime</code>.</p>
+<h3 id="tools">Tools<a class="headerlink" href="#tools" title="Permanent link">&para;</a></h3>
+<ul>
+<li><a href="https://www.wxhexeditor.org/">wxHexEditor</a></li>
+<li><a href="https://github.com/blackberry/pe_tree">pe-tree</a></li>
+<li><a href="https://github.com/DidierStevens/DidierStevensSuite/blob/master/pecheck.py">pecheck</a></li>
+<li><a href="https://github.com/horsicq/Detect-It-Easy">Detect it easy</a></li>
+<li><a href="https://ntcore.com/explorer-suite/">NTCore: Explorer Suite or CFF explorer</a></li>
+<li><a href="https://github.com/hasherezade/pe-bear">PE-bear</a></li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../Processor_Modes/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Processor modes, Privileges, Syscalls, the Kernel and more">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Processor modes, Privileges, Syscalls, the Kernel and more
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../../About/github/" class="md-footer__link md-footer__link--next" aria-label="Next: GitHub">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                GitHub
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; Grimy86, 2024 - 2025
+    </div>
+  
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+    <a href="mailto:grimy86@proton.me" target="_blank" rel="noopener" title="" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M48 64C21.5 64 0 85.5 0 112c0 15.1 7.1 29.3 19.2 38.4l217.6 163.2c11.4 8.5 27 8.5 38.4 0l217.6-163.2c12.1-9.1 19.2-23.3 19.2-38.4 0-26.5-21.5-48-48-48zM0 176v208c0 35.3 28.7 64 64 64h384c35.3 0 64-28.7 64-64V176L294.4 339.2a63.9 63.9 0 0 1-76.8 0z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/grimy86" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8M97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.path", "navigation.prune", "navigation.indexes", "navigation.top", "navigation.footer"], "search": "../../assets/javascripts/workers/search.f8cc74c7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.c8b220af.min.js"></script>
+      
+    
+  </body>
+</html>
