@@ -64,6 +64,7 @@ C:\Users\Administrator\Desktop>strings <path to binary>
 Several other tools included in the FLARE VM can be used for string search.
 
 For example:
+
 - `CyberChef` (Desktop>FLARE>Utilities>Cyberchef) has a recipe for basic string search as well.
 - `PEstudio` (Desktop>FLARE>Utilities>pestudio) also provides a string search utility.
 
@@ -103,6 +104,7 @@ Besides identifying files, hashes are also used to store passwords to authentica
 
 ### Commonly used methods of calculating File hashes
 For identification of files, a hash of the complete file is taken. There are various methods to take the hash. The most commonly used methods are:
+
 - Md5sum
 - Sha1sum
 - Sha256sum
@@ -227,8 +229,8 @@ We can see that Capa has mapped the identified capabilities according to the `MI
 So far we have covered techniques that work regardless of the file type of the malware. However, those techniques are a little `hit-and-miss`, as they don't always provide us with deterministic information about the malware. The `PE headers provide a little more deterministic characteristics` of the sample, which tells us much more about the sample.
 
 ### The PE header
->[!NOTE]
->If you're unsure what this is, make sure to read about [Portable executable file format](/Windows_Internals/PE.md).
+!!! warning
+    If you're unsure what this is, make sure to read about [Portable executable file format](/Windows_Internals/PE).
 
 Several tools in the FLARE VM can help us analyze PE headers. `PEStudio` is one of them.
 

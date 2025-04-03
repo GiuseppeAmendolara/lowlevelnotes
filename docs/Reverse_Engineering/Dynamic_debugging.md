@@ -10,6 +10,7 @@ Analyzing malware is like a cat-and-mouse game. Malware analysts keep devising n
 Malware often hides or tries to look like legitimate software to evade the prying eyes of a malware analyst. Because we are not executing the malware during static analysis, the main focus of evading static analysis is to obfuscate the true functionality of the program until the program is executed. 
 
 The following techniques can be commonly used to achieve this:
+
 - `Changing the hash`: We have learned previously that every file has a unique hash. Malware authors exploit this functionality by `slightly changing their malware`. This way, the malware's hash changes, bypassing the hash-based detection mechanism. Hashes can change even if one bit of the malware is changed (unless we are talking Context-Triggered Piecewise Hashes or fuzzy hashes), so `just adding a NOP instruction or other such change can defeat the hash-based detection` techniques.
 
 - `Defeating AV signatures`: Anti-virus signatures and other signature-based detection often depend on static patterns found inside malware. Malware authors `change those patterns to try to evade signatures`. This technique is often `accompanied by general obfuscation` of malware code.
@@ -59,24 +60,21 @@ For this example, we will be using `x32dbg` and `x64dbg`. Upon opening the appli
 
 To open a file in the debugger, we can navigate to File > Open and open our desired file. We are currently seeing the CPU tab in the interface.
 
->[!NOTE]
-> Please note that we must use x32dbg for 32-bit samples and x64dbg for 64-bit samples.
+!!! warning
+    Please note that we must use x32dbg for 32-bit samples and x64dbg for 64-bit samples.
 
 ![x64dbg CPU inteface](/Reverse_Engineering/Images/x64dbgCPU.png)
 
 As we can see in the bottom left corner, the execution of the program is paused because a `System breakpoint` has been reached. We can control whether to execute one instruction at a time or the whole program. But before that, let's take a look at the screenshot above. Here, we can see Disassembly in the middle pane, with the Instruction pointer pointing to the next instruction executed if we start the program. In the right pane, we can see the registers and their values. We can note that the value in EIP is the address EIP is pointing to in the disassembly pane. Similarly, on the bottom pane, we can see the stack view (right), the dump view (left), and the timer showing the time we spent debugging the sample (right corner). 
 
-[!NOTE]
-> x32-x64dbg is programmed to break execution on [TLS callbacks](https://hex-rays.com/blog/tls-callbacks)
->
-> We can set where to put automatic breakpoints on a program by going to the Options > Preferences menu.
+!!! warning
+    x32-x64dbg is programmed to break execution on [TLS callbacks](https://hex-rays.com/blog/tls-callbacks)
+
+    We can set where to put automatic breakpoints on a program by going to the Options > Preferences menu.
 
 Let's look at some of the other tabs. The breakpoints tab shows the current status of breakpoints. Breakpoints are points where the execution of the program is paused for the analyst to analyze the registers and memory. A breakpoint on a specific instruction can be enabled by clicking the dot in front of that instruction in the CPU tab.
 
-The Memory Map shows the memory of the program.
-
-We can also take a look the Call stack of the program.
-
-The threads running in the program are shown in the threads tab.
-
-Any handles to files, processes, or other resources the process accesses are shown in the handles tab.
+- The Memory Map shows the memory of the program.
+- We can also take a look the Call stack of the program.
+- The threads running in the program are shown in the threads tab.
+- Any handles to files, processes, or other resources the process accesses are shown in the handles tab.

@@ -4,6 +4,7 @@
 Advanced static analysis is a technique used to analyze the code and structure of malware without executing it. This can help us identify the malware's behavior and weaknesses and develop signatures for antivirus software to detect it. By analyzing the code and structure of malware, researchers can also better understand how it works and develop new techniques for defending against it.
 
 ## Malware analysis overview
+
 | Technique | Description |
 |-|-|
 | Basic static analysis | Aims to understand the malware's `structure`. Involves examining the malware's `code`, `file headers`, and `other static properties`. |
@@ -15,6 +16,7 @@ Advanced static analysis is a technique used to analyze the code and structure o
 To perform advanced static analysis, `disassemblers` such as `IDA Pro`, `Binary Ninja`, and `radare2` are commonly used. These disassemblers allow the analyst to explore the malware's code and `identify its functions and data structures`.
 
 The steps involved in performing advanced static analysis of malware are as follows:
+
 -  Identify the `entry point` of the malware and the `system calls` it makes.
 -  Identify the malware's `code sections` and analyze them using available tools such as `debuggers` and `hex editors`.
 -  Analyze the malware's `control flow` graph to identify its `execution path`.
@@ -24,12 +26,13 @@ The steps involved in performing advanced static analysis of malware are as foll
 ## Ghidra
 Many `disassemblers` like Cutter, radare2, Ghidra, and IDA Pro can be used to disassemble malware. However, we will explore Ghidra because it's `free`, `open-source`, and has `many features` that can be utilized to get proficient in reverse engineering.
 
->[!NOTE]
-> The objective is to get comfortable with the main usage of a disassembler and use that knowledge to use any disassembler.
+!!! warning
+    The objective is to get comfortable with the main usage of a disassembler and use that knowledge to use any disassembler.
 
 `Ghidra` is a software reverse engineering tool that allows users to analyze compiled code to understand its functionality. It is designed to help analysts and developers understand how the software works by providing a platform to `decompile`, `disassemble`, and `debug binaries`.
 
 Ghidra includes many features that make it a powerful reverse engineering tool. Some of these features include:
+
 - `Decompilation`: Ghidra can `decompile` binaries `into readable C code`, making it easier for developers to understand how the software works.
 - `Disassembly`: Ghidra can `disassemble` binaries `into assembly language`, allowing analysts to examine the low-level operations of the code.
 - `Debugging`: Ghidra has a built-in `debugger` that allows users to `step through` code and examine its behavior.
@@ -92,10 +95,10 @@ Analyzing the assembly code of the compiled binary can be overwhelming for begin
 Understanding the assembly instructions and how various programming components are translated/reflected into the assembly is important.
 Here, we will examine various C constructs and their corresponding assembly code. This will help us identify and focus on the key parts of the malware during analysis.
 
-> [!NOTE]
-> Different compilers add their own code for various checks while compiling.
-> 
-> Therefore expect some garbage assembly code that does not make sense.
+!!! warning
+    Different compilers add their own code for various checks while compiling.
+
+    Therefore expect some garbage assembly code that does not make sense.
 
 There are different approaches to begin analyzing the disassembled code:
 
@@ -106,7 +109,7 @@ There are different approaches to begin analyzing the disassembled code:
 ### Hello World example
 
 C code:
-```C
+```C linenums="1"
 #include <stdio.h>
 
 int main()
@@ -140,7 +143,7 @@ This program defines a string "HELLO WORLD!!" in the .data section and then uses
 If we look at the disassembled code in the Listings View, we can see instructions to push HELLO WORLD!! to the stack before calling the print function.
 
 ### For loop example
-```C
+```C linenums="1"
 int main()
 {
     for (int i = 1; i <= 5; i++)
@@ -150,7 +153,8 @@ int main()
     return 0;
 }
 ```
-```asm
+
+```asm linenums="1"
 main:
     ; initialize loop counter to 1
     mov ecx, 1
@@ -173,14 +177,15 @@ loop:
 ```
 
 ### Function example
-```C
+```C linenums="1"
 int add(int a, int b)
 {
     int result = a + b;
     return result;
 }
 ```
-```asm
+
+```asm linenums="1"
 add:
     push ebp          ; save the current base pointer value
     mov ebp, esp      ; set base pointer to current stack pointer value
@@ -208,7 +213,7 @@ The `CreateProcessA` function creates a new process and its primary thread. The 
 
 Here is an example of C code that uses the CreateProcessA function to launch a new process:
 
-```C
+```C linenums="1"
 #include <windows.h>
 
 int main()
@@ -236,7 +241,7 @@ int main()
 ```
 
 When compiled into assembly code, the CreateProcessA function call looks like this:
-```asm
+```asm linenums="1"
 push 0
 lea eax, [esp+10h+StartupInfo]
 push eax
@@ -329,9 +334,8 @@ Our objective of advanced static analysis would be to:
 - Find `interesting or malicious functions`.
 - Examine the disassembled/decompiled code to `find as much information as possible`.
 
-> [!NOTE]
->
-> It's important to mention that starting to search for the CreateProcessA function right away is not how an analyst would start analyzing an unknown binary. This whole example is just to get comfertable with Ghidra.
+!!! warning
+    It's important to mention that starting to search for the CreateProcessA function right away is not how an analyst would start analyzing an unknown binary. This whole example is just to get comfertable with Ghidra.
 
 ### CreateProcess
 The suspicious process creates a victim process in the suspended state.
@@ -350,6 +354,7 @@ Clicking on the Display Function Graph in the toolbar will show the graph view o
 ![Function graph](/Reverse_Engineering/Images/Function_graph.png)
 
 In the above case, if the program:
+
 - Fails to create a victim process in the suspended state, it will move to block 1. The `red arrow represents the failure` to meet the condition mentioned above.
 - Successfully creates the victim process, it will move to block 2. The `green arrow represents the success` of the jump condition.
 

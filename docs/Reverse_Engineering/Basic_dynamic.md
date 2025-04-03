@@ -10,14 +10,14 @@ In the [Intro to Malware Analysis](/Reverse_Engineering/Intro.md), we learned ab
 
 ## Virtualization
 A lot of commercial and free tools are available for virtualization:
+
 - Oracle's VirtualBox
 - VMware's Player and Workstation
 
 These three tools allow us to create Virtual Machines isolated from our local machine. 
 
->[!NOTE]
->
-> However, `VMWare Player can't create snapshots`.
+!!! warning
+    However, `VMWare Player can't create snapshots`.
  
 For dynamic analysis of malware, `snapshot creation is a critical requirement`, which makes VMWare Player unsuitable for malware analysis. VMWare Workstation and VirtualBox have the snapshot creation option and are, therefore, suitable for malware analysis.
 

@@ -1,5 +1,5 @@
 # Anti-reverse engineering
-alware authors are constantly looking for ways to evade detection and analysis to maintain the effectiveness of their malware. At the same time, security professionals are working to develop new methods and tools for detecting and mitigating the threat posed by malware. This ongoing "arms race" can lead to the development of increasingly sophisticated and effective malware defences as both sides seek to stay ahead of their counterparts.
+Malware authors are constantly looking for ways to evade detection and analysis to maintain the effectiveness of their malware. At the same time, security professionals are working to develop new methods and tools for detecting and mitigating the threat posed by malware. This ongoing "arms race" can lead to the development of increasingly sophisticated and effective malware defences as both sides seek to stay ahead of their counterparts.
 
 Reverse engineering is the process of studying a technology product, software, or hardware to learn how it works and extract its functionality or design information. In cybersecurity, reverse engineering is used to understand how malware works, extract indicators of compromise (IOCs), and develop adequate detections, protections, and countermeasures.
 
@@ -19,6 +19,7 @@ Many more techniques exist, but we will focus on these three for this room.
 Debugging is the process of examining software to understand its inner workings and identify potential vulnerabilities or issues. Debugging involves software tools called `debuggers` that allow analysts to `step through the code and monitor its execution`. 
 
 Here are the commonly used debuggers for malware analysis nowadays:
+
 - x64dbg
 - Ollydbg
 - Ida Pro
@@ -56,8 +57,8 @@ Patching is one of the most critical skills required of an analyst. In cases lik
 A good way to patch this would be to go to the `entry point` and search the `current module` for `intermodular calls` (the SuspendThread call).
 Once we've found it we just fill the function call with `NOP` instructions and resume execution.
 
-> [!NOTE]
-> However,  if you try debugging again, you'll discover it will start crashing again. This is because our patches are reset and are now gone. To avoid re-applying patches in the future, we can export and import our patches for future use.
+!!! warning
+    However,  if you try debugging again, you'll discover it will start crashing again. This is because our patches are reset and are now gone. To avoid re-applying patches in the future, we can export and import our patches for future use.
 
 ## VM Detection
 Virtual Machines (VMs) are software platforms that simulate a computer environment inside another computer system.
@@ -65,6 +66,7 @@ These are useful in reverse engineering because they provide a `cost-effective`,
 VMs also allow for the creation of snapshots and checkpoints that can be used to restore the system to a previous state, which helps test different scenarios and maintain a history of the analysis process.
 
 When malware identifies that it is running on a VM, it may decide to respond differently; for example, it may change its behaviour by:
+
 - Executing only a `minimal subset of its functionality`
 - `Self-destructing` by deleting itself or overwriting parts of its code
 - `Cause damage` to the system by deleting or encrypting files; or
@@ -144,6 +146,7 @@ The most common obfuscation techniques used by malware authors include:
 Packers are tools that `compress and encrypt executable files`. It compresses the target executable `and embeds it within a new executable file` that serves as a wrapper or container. This dramatically reduces the size of the file, making it ideal for easy distribution and installation. Also, some packers offer additional features, such as code obfuscation, runtime packing, and anti-debugging techniques. And it is because of these features that made Packers a popular tool for malware authors.
 
 There are a lot of Packers available. Each has a unique approach and algorithm for packing. Here is a list of some that were seen used in the wild:
+
 - [Alternate EXE Packer](https://www.alternate-tools.com/pages/c_exepacker.php?lang=ENG)
 - [ASPack](http://www.aspack.com/)
 - [ExeStealth](https://unprotect.it/technique/exestealth/)
