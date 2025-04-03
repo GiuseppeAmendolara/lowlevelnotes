@@ -1,8 +1,9 @@
-copyright: Copyright &copy; Grimy86, 2024 - 2025
+copyright: >
+   <a href="https://github.com/grimy86/grimy86.github.io/blob/main/LICENSE">Copyright &copy; since 2024</a>
 site_name: Cybersecurity & Code Insights '25
 site_url: https://grimy86.github.io/
 repo_name: grimy86.github.io
-repo_url: https://grimy86.github.io/
+repo_url: https://github.com/grimy86/grimy86.github.io
 theme:
   name: material
   logo: /assets/Key.png
@@ -53,12 +54,6 @@ extra:
 
 plugins:
   - search
-  # Git-committers dependencies causing deployment issues
-  # - git-committers:
-  #     repository: grimy86/CCI25
-  #     branch: main
-  # https://github.com/ojacques/mkdocs-git-committers-plugin-2
-  # https://github.com/timvink/mkdocs-git-authors-plugin/
 
 markdown_extensions:
 
@@ -193,6 +188,7 @@ nav:
       - Debugging: Reverse_Engineering/Dynamic_debugging.md
     - Anti-reverse engineering: Reverse_Engineering/Anti_reversing.md
 
-  - About Me:
-    - GitHub: About/github.md
+  - About:
+    - About Me: About/github.md
     - Portfolio: About/portfolio.md
+    - License: https://github.com/grimy86/grimy86.github.io/blob/main/LICENSE
