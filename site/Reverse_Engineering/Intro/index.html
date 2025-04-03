@@ -1676,10 +1676,10 @@
 <h1 id="intro-to-malware-analysis">Intro to (Malware) Analysis<a class="headerlink" href="#intro-to-malware-analysis" title="Permanent link">&para;</a></h1>
 <p>Notice how malware is in brackets, this is because analysis of other software in order to reverse it later on happens the same way.</p>
 <p>E.g: A game cheat could also be classified as <code>malware</code>. In order to write the code for the anti-cheat we'd have to do some analysis on the cheat as well.</p>
-<blockquote>
-<p>[!IMPORTANT]
-Don't perform malware analysis on a live machine not purpose-built for malware analysis.</p>
-</blockquote>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Don't perform malware analysis on a live machine not purpose-built for malware analysis.</p>
+</div>
 <h2 id="malware-analysis">Malware analysis<a class="headerlink" href="#malware-analysis" title="Permanent link">&para;</a></h2>
 <p>The word malware is derived from the term <code>MALicious softWARE</code>. Therefore, any software that has a malicious purpose can be considered malware. Malware is further classified into different categories based on its behavior. </p>
 <p>Here we will ponder the steps we will take if we suspect that we found malware in a machine.</p>
@@ -1705,35 +1705,43 @@ Don't perform malware analysis on a live machine not purpose-built for malware a
 <p>Malware Analysis is like solving a puzzle. Different tools and techniques are used to find the pieces of this puzzle.</p>
 <p>Most of the time, you will have an executable file (also called a binary or a PE file. PE stands for Portable Executable), a malicious document file, or a Network Packet Capture (Pcap). </p>
 <p>The Portable Executable is the most prevalent type of file analyzed while performing Malware Analysis.</p>
-<p>To find the different puzzle pieces, you will often use various tools, tricks, and shortcuts. These techniques can be grouped into the following two categories:
-- Static Analysis
-- Dynamic Analysis</p>
+<p>To find the different puzzle pieces, you will often use various tools, tricks, and shortcuts. These techniques can be grouped into the following two categories:</p>
+<ul>
+<li>Static Analysis</li>
+<li>Dynamic Analysis</li>
+</ul>
 <h3 id="static-analysis">Static Analysis<a class="headerlink" href="#static-analysis" title="Permanent link">&para;</a></h3>
 <p>When malware is analyzed <code>without being executed</code>, it is called Static Analysis.</p>
 <p>In this case, the different properties of the <code>PE file</code> are analyzed without running it. Similarly, in the case of a <code>malicious document</code>, exploring the document's properties without analyzing it will be considered Static Analysis.</p>
-<p>Examples of static analysis include:
-- Checking for <code>strings</code> in malware
-- Checking the <code>PE header</code> for information related to different <code>sections</code>
-- Looking at the code using a <code>disassembler</code>. </p>
-<p>Malware <code>often uses techniques to avoid static analysis</code>:
-- <code>obfuscation</code>
-- <code>packing</code>
-- <code>other means of hiding its properties</code></p>
+<p>Examples of static analysis include:</p>
+<ul>
+<li>Checking for <code>strings</code> in malware</li>
+<li>Checking the <code>PE header</code> for information related to different <code>sections</code></li>
+<li>Looking at the code using a <code>disassembler</code>. </li>
+</ul>
+<p>Malware <code>often uses techniques to avoid static analysis</code>:</p>
+<ul>
+<li><code>obfuscation</code></li>
+<li><code>packing</code></li>
+<li><code>other means of hiding its properties</code></li>
+</ul>
 <p>To circumvent these techniques, we often use <code>dynamic analysis</code>.</p>
 <h3 id="dynamic-analysis">Dynamic Analysis<a class="headerlink" href="#dynamic-analysis" title="Permanent link">&para;</a></h3>
 <p>Malware faces a dilemma. It has to execute to fulfil its purpose, and no matter how much obfuscation is added to the code, it becomes an easy target for detection once it runs.</p>
 <p>Sometimes we might need to run the malware in a controlled environment to observe what it does in these cases.</p>
-<p>Dynamic analysis techniques include:
-- Running the malware in a VM
-  - In a <code>manual</code> fashion with tools installed to monitor the malware's activity
-  - In the form of sandboxes that perform this task <code>automatically</code>.</p>
+<p>Dynamic analysis techniques include:</p>
+<ul>
+<li>Running the malware in a VM</li>
+<li>In a <code>manual</code> fashion with tools installed to monitor the malware's activity</li>
+<li>In the form of sandboxes that perform this task <code>automatically</code>.</li>
+</ul>
 <p>Once we run the malware in a controlled environment, we can use our knowledge from the <code>Windows Forensics</code> rooms to <code>identify what it did in our environment</code>.</p>
 <p>The advantage here is that since we control the environment, we can configure it to avoid noise, like activity from a legitimate user or Windows Services. Thus, everything we observe in such an environment points to malware activity, making it easier to identify what the malware did in this scenario.</p>
-<blockquote>
-<p>[!NOTE]
-This is specific to malware reversal, Windows forensics and the Windows environment. </p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This is specific to malware reversal, Windows forensics and the Windows environment. </p>
 <p>However let's say you're reversing / analyzing a "safe" program then don't mind this part above.</p>
-</blockquote>
+</div>
 <p>Malware, however, often uses techniques to prevent an analyst from performing dynamic analysis. Since most dynamic analysis is performed in a controlled environment.</p>
 <p>Most methods to bypass dynamic analysis include <code>detecting the environment</code> in which it is being run. Therefore, in these cases, the <code>malware uses a different, benign code path if it identifies that it is being run in a controlled environment</code>.</p>
 <h2 id="basic-static-analysis">Basic static analysis<a class="headerlink" href="#basic-static-analysis" title="Permanent link">&para;</a></h2>
@@ -1757,18 +1765,20 @@ This is specific to malware reversal, Windows forensics and the Windows environm
 <p>Only upload a sample if you are sure of what you are doing.</p>
 <h3 id="pe-header">PE Header<a class="headerlink" href="#pe-header" title="Permanent link">&para;</a></h3>
 <p>The PE File Header contains the metadata about a Portable Executable file. This data can help us find a lot of helpful information to help us in our analysis.</p>
-<p>However, some of the vital information found in the PE header is explained below:
-- Imports/Exports
-- Sections
-- Analyzing other PE header info</p>
+<p>However, some of the vital information found in the PE header is explained below:</p>
+<ul>
+<li>Imports/Exports</li>
+<li>Sections</li>
+<li>Analyzing other PE header info</li>
+</ul>
 <h2 id="basic-dynamic-analysis">Basic dynamic analysis<a class="headerlink" href="#basic-dynamic-analysis" title="Permanent link">&para;</a></h2>
 <p>Many of the properties of a malware sample can be hidden when it's not running. However, when we perform dynamic analysis, we can lay these properties bare and learn more about the behavior of a malware sample.</p>
-<blockquote>
-<p>[!IMPORTANT]
-Dynamic analysis requires running live malware samples that can be destructive. It is highly recommended that you perform malware analysis in an isolated Virtual Machine. </p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Dynamic analysis requires running live malware samples that can be destructive. It is highly recommended that you perform malware analysis in an isolated Virtual Machine. </p>
 <p>You can create a clean snapshot of your Virtual Machine before performing any malware analysis and revert it to start from a clean state again after every analysis. </p>
 <p>Don't perform malware analysis on a live machine not purpose-built for malware analysis.</p>
-</blockquote>
+</div>
 <h2 id="introduction-to-sandboxes">Introduction to Sandboxes<a class="headerlink" href="#introduction-to-sandboxes" title="Permanent link">&para;</a></h2>
 <p>Sandbox is a term borrowed from the military. A sandbox is a box of sand, as the name suggests, modeling the terrain where an operation has to take place, in which a military team dry runs their scenarios to identify possible outcomes.</p>
 <p>In malware analysis, a sandbox is an isolated environment mimicking the actual target environment of a malware, where an analyst runs a sample to learn more about it. <code>Malware analysis sandboxes heavily rely on Virtual Machines</code>, their ability to take snapshots and revert to a clean state when required.</p>
@@ -1792,11 +1802,13 @@ Dynamic analysis requires running live malware samples that can be destructive. 
 <h3 id="sandbox-evasion">Sandbox evasion<a class="headerlink" href="#sandbox-evasion" title="Permanent link">&para;</a></h3>
 <p>As we learned about previously, we can always run a sample in a sandbox to analyze it. In many cases, that might help us analyze samples that evade our basic static analysis techniques. </p>
 <p>However, malware authors have some tricks up their sleeves that hamper that effort. </p>
-<p>Some of these techniques are as follows:
-- <code>Long sleep calls</code>: Malware authors know that <code>sandboxes run for a limited time</code>. Therefore, they program the malware not to <code>perform any activity for a long time after execution</code>. This is often <code>accomplished through long sleep calls</code>. The purpose of this technique is to <code>time out the sandbox</code>.
-- <code>User activity detection</code>: Some malware samples will <code>wait for user activity</code> before performing malicious activity. The premise of this technique is that <code>there will be no user in a sandbox</code>. Therefore there will be no <code>mouse movement</code> or <code>typing on the keyboard</code>. Advanced malware also detects <code>patterns in mouse movements that are often used in automated sandboxes</code>. This technique is designed to <code>bypass automated sandbox detection</code>.
-- <code>Footprinting user activity</code>: Some malware checks for <code>user files or activity</code>, like if there are any files in the <code>MS Office history</code> or <code>internet browsing history</code>. If no or little activity is found, the malware will consider the machine as a sandbox and quit.
-- <code>Detecting VMs</code>: Sandboxes run on virtual machines. <code>Virtual machines leave artifacts</code> that can be identified by malware. For example, some <code>drivers installed in VMs</code> being run on VMWare or Virtualbox give away the fact that the machine is a VM. <code>Malware authors often associate VMs with sandboxes</code> and would <code>terminate the malware if a VM is detected</code>.</p>
+<p>Some of these techniques are as follows:</p>
+<ul>
+<li><code>Long sleep calls</code>: Malware authors know that <code>sandboxes run for a limited time</code>. Therefore, they program the malware not to <code>perform any activity for a long time after execution</code>. This is often <code>accomplished through long sleep calls</code>. The purpose of this technique is to <code>time out the sandbox</code>.</li>
+<li><code>User activity detection</code>: Some malware samples will <code>wait for user activity</code> before performing malicious activity. The premise of this technique is that <code>there will be no user in a sandbox</code>. Therefore there will be no <code>mouse movement</code> or <code>typing on the keyboard</code>. Advanced malware also detects <code>patterns in mouse movements that are often used in automated sandboxes</code>. This technique is designed to <code>bypass automated sandbox detection</code>.</li>
+<li><code>Footprinting user activity</code>: Some malware checks for <code>user files or activity</code>, like if there are any files in the <code>MS Office history</code> or <code>internet browsing history</code>. If no or little activity is found, the malware will consider the machine as a sandbox and quit.</li>
+<li><code>Detecting VMs</code>: Sandboxes run on virtual machines. <code>Virtual machines leave artifacts</code> that can be identified by malware. For example, some <code>drivers installed in VMs</code> being run on VMWare or Virtualbox give away the fact that the machine is a VM. <code>Malware authors often associate VMs with sandboxes</code> and would <code>terminate the malware if a VM is detected</code>.</li>
+</ul>
 <p>The above list is not exhaustive but gives us an idea of what to expect when analyzing malware.</p>
 
 
