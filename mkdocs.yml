@@ -187,6 +187,12 @@ nav:
       - Basic: Reverse_Engineering/Basic_dynamic.md
       - Debugging: Reverse_Engineering/Dynamic_debugging.md
     - Anti-reverse engineering: Reverse_Engineering/Anti_reversing.md
+    - Tool cheat sheets:
+      - CAPA: Reverse_Engineering/CAPA.md
+      - REMnux & FLARE VM: Reverse_Engineering/VMs.md
+
+  - Networks: Networks/Networking.md
+
 
   - About:
     - About Me: About/github.md

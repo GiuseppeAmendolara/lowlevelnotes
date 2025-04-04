@@ -8,4 +8,4 @@
     - This repository is catered towards **Windows reverse engineering**, not as much to cybersecurity operations / red teaming or blue teaming.
     - No prior knowledge is needed.
 
-If you've found this learning resource to be useful and you appreciate the effort behind it, **consider following the [GitHub repository](https://github.com/grimy86/grimy86.github.io)**.
+If you've found this learning resource to be useful and you appreciate the effort behind it, **consider following the [GitHub repository](https://github.com/grimy86/grimy86.github.io)** ❤️.

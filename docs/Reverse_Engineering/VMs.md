@@ -15,13 +15,7 @@ REMnux is a Linux distribution designed for reverse engineering and analyzing ma
 | `floss`                      | A tool for extracting strings from executables that are obfuscated. | `floss malware.exe`                                        | Analyzing obfuscated strings      |
 | `peframe`                    | A tool to analyze PE files for potential indicators of compromise. | `peframe malware.exe`                                      | Analyzing PE file headers          |
 
-## Common REMnux Workflow
-1. **Extract Strings from a Binary**
-   ```bash
-   strings malware.bin
-
 # FLARE VM Cheat Sheet
-
 FLARE VM is a Windows-based environment for reverse engineering and malware analysis, offering a wide array of tools for static and dynamic analysis.
 
 | Tool                        | Description                                                | Example                                                   | Used For                           |
@@ -37,9 +31,3 @@ FLARE VM is a Windows-based environment for reverse engineering and malware anal
 | `ApateDNS`                   | A DNS server manipulation tool for redirection.            | `ApateDNS.exe`                                             | Manipulating DNS requests          |
 | `Volatility`                 | A tool for memory forensics to analyze memory dumps.        | `volatility -f memory.dmp --profile=Win7SP1x64 pslist`     | Memory forensics                   |
 | `RegShot`                    | A registry comparison tool to track changes between two snapshots. | `regshot`                                                | Registry analysis                  |
-
-## Common FLARE VM Workflow
-
-1. **Run a Basic Malware Analysis (x64dbg)**
-   ```bash
-   x64dbg malware.exe

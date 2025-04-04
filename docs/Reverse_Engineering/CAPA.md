@@ -13,7 +13,7 @@
 
 ---
 
-## Common CAPA Workflows
+## Common CAPA Workflow
 ### Basic Analysis of a Malware Binary
 ```bash
 # Basic Analysis of a Malware Binary
