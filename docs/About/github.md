@@ -1,4 +1,7 @@
+
 # Hello, world!
+<img src="/About/Images/ProfilePicture.png" style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover;" />
+
 I'm Grimy86, passionate about low-level programming and cybersecurity. I contribute to the open-source community by sharing notes to help newcomers learn and grow.
 
 ## Current Projects
