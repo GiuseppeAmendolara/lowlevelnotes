@@ -96,75 +96,73 @@ markdown_extensions:
   - pymdownx.smartsymbols
 
 nav:
-  - Home: index.md
+  - Home:
+    - Home: index.md
+    - How to study: study.md
 
-  - How to study: study.md
-
-  - C#:
-    - Level 1:
-      - Entry-point, variables, data types & operators: CSharp/Level1/Basics.md
-      - Control Flow: CSharp/Level1/Control_Flow.md
-      - Functions & Methods: CSharp/Level1/Functions.md
-      - Type conversion & parsing: CSharp/Level1/Conversion_Parsing.md
-      - Data Collections: CSharp/Level1/Collections.md
-      - Exception handling: CSharp/Level1/Exceptions.md
-      - Preprocessor directives: CSharp/Level1/Preprocessor_Directives.md
-      - Object-Oriented Programming (OOP): CSharp/Level1/OOP.md
-    - Level 2:
-      - Operator Overloading: CSharp/Level2/Operator_Overloading.md
-      - Nullable value types: CSharp/Level2/Nullable_Types.md
-      - Pass by reference: CSharp/Level2/Pass_By_Reference.md
-      - Generics: CSharp/Level2/Generics.md
-      - Partial Classes & Partial Methods: CSharp/Level2/Partials.md
-      - Tuples & Value Tuples: CSharp/Level2/Tuples.md
-      - Extension Methods: CSharp/Level2/Extension_Methods.md
-      - Indexers: CSharp/Level2/Indexers.md
-      - Lambda expressions (Anonymous Functions): CSharp/Level2/Lambda.md
-      - Delegates, Anonymous Methods, etc.: CSharp/Level2/Delegates.md
-      - Expression Bodies: CSharp/Level2/Expression_Bodies.md
-      - Method Hiding: CSharp/Level2/Method_Hiding.md
-    - Level 3:
-      - Events: CSharp/Level3/Events.md
-      - Language Integrated Query (LINQ): CSharp/Level3/LINQ.md
-      - The `IDisposable` interface: CSharp/Level3/IDisposable.md
-      - Mulithreading & Async: CSharp/Level3/Multithread_Async.md
-      - Attributes & Reflection: CSharp/Level3/Attributes_Reflection.md
-    - Level 4:
-      - Dependency Injection (DI): CSharp/Level4/Dependency_Injection.md
-      - Unsafe: CSharp/Level4/Unsafe.md
-
-  - C++:
-    - C/C++ Summary: Cpp/Cpp.md
-
-  - Assembly:
-    - Architecture:
-      - Introduction: Assembly/Architecture/Introduction.md
-      - x86 & x86_64 Architecture: Assembly/Architecture/x86_Architecture.md
-      - Modes of Operation: Assembly/Architecture/Operating_Modes.md
-      - Memory: Assembly/Architecture/Memory.md
-      - CPU Registers: Assembly/Architecture/CPU_Registers.md
-      - E_Flags: Assembly/Architecture/E_Flags.md
-      - Sizes / Words: Assembly/Architecture/Sizes.md
-      - The stack: Assembly/Architecture/Stack.md
-      - Instructions / opcodes: Assembly/Architecture/Instructions.md
-      - Procedures: Assembly/Architecture/Procedures.md
-      - Binary operations: Assembly/Architecture/Binary_Operations.md
-      - Calling Conventions: Assembly/Architecture/Calling_Conventions.md
-    - Syntax:
-      - Reserved words: Assembly/Syntax/Reserved_Words.md
-      - Radix characters: Assembly/Syntax/Radix_Characters.md
-      - Character constants: Assembly/Syntax/Character_Constants.md
-      - Identifiers: Assembly/Syntax/Identifiers.md
-      - Declaring variables: Assembly/Syntax/Declaring_Variables.md
-      - Operator Presedence: Assembly/Syntax/Operator_Presedence.md
-    - How to compile: Assembly/Compiling.md
-
-  - Software Architecture & Patterns:
-    - Code Pattern Matching: Architecture/Pattern_matching.md
-    - SOLID Principles: Architecture/SOLID.md
-    - Class Relationships: Architecture/Class_Relationships.md
-    - Design Patterns: Architecture/Design_Patterns.md
-    - Common Architectures: Architecture/Common_Architectures.md
+  - Learn Programming:
+    - C#:
+      - Level 1:
+        - Entry-point, variables, data types & operators: CSharp/Level1/Basics.md
+        - Control Flow: CSharp/Level1/Control_Flow.md
+        - Functions & Methods: CSharp/Level1/Functions.md
+        - Type conversion & parsing: CSharp/Level1/Conversion_Parsing.md
+        - Data Collections: CSharp/Level1/Collections.md
+        - Exception handling: CSharp/Level1/Exceptions.md
+        - Preprocessor directives: CSharp/Level1/Preprocessor_Directives.md
+        - Object-Oriented Programming (OOP): CSharp/Level1/OOP.md
+      - Level 2:
+        - Operator Overloading: CSharp/Level2/Operator_Overloading.md
+        - Nullable value types: CSharp/Level2/Nullable_Types.md
+        - Pass by reference: CSharp/Level2/Pass_By_Reference.md
+        - Generics: CSharp/Level2/Generics.md
+        - Partial Classes & Partial Methods: CSharp/Level2/Partials.md
+        - Tuples & Value Tuples: CSharp/Level2/Tuples.md
+        - Extension Methods: CSharp/Level2/Extension_Methods.md
+        - Indexers: CSharp/Level2/Indexers.md
+        - Lambda expressions (Anonymous Functions): CSharp/Level2/Lambda.md
+        - Delegates, Anonymous Methods, etc.: CSharp/Level2/Delegates.md
+        - Expression Bodies: CSharp/Level2/Expression_Bodies.md
+        - Method Hiding: CSharp/Level2/Method_Hiding.md
+      - Level 3:
+        - Events: CSharp/Level3/Events.md
+        - Language Integrated Query (LINQ): CSharp/Level3/LINQ.md
+        - The `IDisposable` interface: CSharp/Level3/IDisposable.md
+        - Mulithreading & Async: CSharp/Level3/Multithread_Async.md
+        - Attributes & Reflection: CSharp/Level3/Attributes_Reflection.md
+      - Level 4:
+        - Dependency Injection (DI): CSharp/Level4/Dependency_Injection.md
+        - Unsafe: CSharp/Level4/Unsafe.md
+    - C++:
+      - C/C++ Summary: Cpp/Cpp.md
+    - Assembly:
+      - Architecture:
+        - Introduction: Assembly/Architecture/Introduction.md
+        - x86 & x86_64 Architecture: Assembly/Architecture/x86_Architecture.md
+        - Modes of Operation: Assembly/Architecture/Operating_Modes.md
+        - Memory: Assembly/Architecture/Memory.md
+        - CPU Registers: Assembly/Architecture/CPU_Registers.md
+        - E_Flags: Assembly/Architecture/E_Flags.md
+        - Sizes / Words: Assembly/Architecture/Sizes.md
+        - The stack: Assembly/Architecture/Stack.md
+        - Instructions / opcodes: Assembly/Architecture/Instructions.md
+        - Procedures: Assembly/Architecture/Procedures.md
+        - Binary operations: Assembly/Architecture/Binary_Operations.md
+        - Calling Conventions: Assembly/Architecture/Calling_Conventions.md
+      - Syntax:
+        - Reserved words: Assembly/Syntax/Reserved_Words.md
+        - Radix characters: Assembly/Syntax/Radix_Characters.md
+        - Character constants: Assembly/Syntax/Character_Constants.md
+        - Identifiers: Assembly/Syntax/Identifiers.md
+        - Declaring variables: Assembly/Syntax/Declaring_Variables.md
+        - Operator Presedence: Assembly/Syntax/Operator_Presedence.md
+      - How to compile: Assembly/Compiling.md
+    - Software Architecture & Patterns:
+      - Pattern Matching: Architecture/Pattern_matching.md
+      - SOLID Principles: Architecture/SOLID.md
+      - Class Relationships: Architecture/Class_Relationships.md
+      - Design Patterns: Architecture/Design_Patterns.md
+      - Common Architectures: Architecture/Common_Architectures.md
 
   - Windows Internals:
     - Introduction: Windows_Internals/Introduction.md
@@ -191,11 +189,13 @@ nav:
       - CAPA: Reverse_Engineering/CAPA.md
       - REMnux & FLARE VM: Reverse_Engineering/VMs.md
 
-  - Networks: Networks/Networking.md
-
+  - Networks & CyberSecurity:
+    - Networks: Networks/Networking.md
+    - Cybersecurity: Cybersecurity/General/PentestingFundamentals.md
 
   - About:
+    - Changelog: About/changelog.md
+    - Contribution & Style Guide: About/contribute.md
     - About Me: About/github.md
     - Portfolio: About/portfolio.md
-    - Contribution & Style Guide: About/contribute.md
     - License: https://github.com/grimy86/grimy86.github.io/blob/main/LICENSE

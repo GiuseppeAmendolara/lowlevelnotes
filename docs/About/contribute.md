@@ -17,17 +17,34 @@ This project is statically generated using [MkDocs-Material](https://squidfunk.g
 - Ensure that any code samples use proper Markdown syntax highlighting. Use `linenums="1"` for better readability of the code.
 - For optimal rendering, make sure your Markdown files follow the correct structure and formatting. You can test the website locally by following the [MkDocs-Material Installation Guide](https://squidfunk.github.io/mkdocs-material/getting-started/).
 
-!!! Example
+!!! example
     === "C#"
 
-        ```cs linenums="1"
-        Console.WriteLine("Hello, World!");
+        ```cs title="main.cs" linenums="1"
+        using System;
+
+        namespace ConsoleProject
+        {
+            class Program
+            {
+                static void Main(string[] args)
+                {
+                    Console.WriteLine("Hello world!");
+                }
+            }
+        }
         ```
 
     === "C++"
 
-        ```cpp linenums="1"
-        std::cout << "Hello, World!" << std::endl;
+        ```cpp title="main.cpp" linenums="1"
+        #include <iostream>
+
+        int main()
+        {
+            std::cout << "Hello world!" << std::endl;
+            return 0;
+        }
         ```
 
 ## Pull Request Guidelines
