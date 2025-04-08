@@ -1,5 +1,11 @@
 # Changelog
 ## Past
+### 3.5.2 <small>Apr 8, 2025</small>
+Added:
+
+- [References](/About/References)
+- Networks content
+
 ### 3.5.1 <small>Apr 7, 2025</small>
 Added:
 

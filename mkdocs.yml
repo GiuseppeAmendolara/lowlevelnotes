@@ -190,8 +190,12 @@ nav:
       - REMnux & FLARE VM: Reverse_Engineering/VMs.md
 
   - Networks & CyberSecurity:
-    - Networks: Networks/Networking.md
-    - Cybersecurity: Cybersecurity/General/PentestingFundamentals.md
+    - Networks:
+      - 1. What is a network?: Networks/Networks.md
+      - 2. What are network devices?: Networks/Devices.md
+      - 3. Cisco Packet Tracer Install: Packet_Tracer.md
+    - Cybersecurity:
+      - Pentesting fundamentals: Cybersecurity/General/PentestingFundamentals.md
 
   - About:
     - Changelog: About/changelog.md
@@ -199,3 +203,4 @@ nav:
     - About Me: About/github.md
     - Portfolio: About/portfolio.md
     - License: https://github.com/grimy86/grimy86.github.io/blob/main/LICENSE
+    - References: About/references.md
