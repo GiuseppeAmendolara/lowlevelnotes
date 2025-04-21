@@ -1,10 +1,15 @@
 # Changelog
 ## Past
+### 3.5.3 <small>Apr 21, 2025</small>
+Added:
+
+- Changes to the About me page.
+- Changes to the Portfolio page.
+
 ### 3.5.2 <small>Apr 8, 2025</small>
 Added:
 
-- [References](/About/References)
-- Networks content
+- [References](/About/references)
 
 ### 3.5.1 <small>Apr 7, 2025</small>
 Added:

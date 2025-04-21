@@ -97,12 +97,17 @@
 </div>
 
 <div style="text-align: center; border: 2px solid grey; border-radius: 5px; padding: 20px; margin: 25px;">
-<p>Microsoft's Sticky Notes clone with WPF</p>
-<img src="/About/Images/StickyNotes.png" alt="StickyNotes">
-</div>
-
-<div style="text-align: center; border: 2px solid grey; border-radius: 5px; padding: 20px; margin: 25px;">
 <p>Hosting Markdown docs as static webpages for web code documentation.</p>
 <img src="https://img.shields.io/badge/Jekyll-C00?logo=jekyll&logoColor=fff&style=flat-square" alt="Jekyll Badge">
 <img src="https://img.shields.io/badge/Material%20for%20MkDocs-526CFE?logo=materialformkdocs&logoColor=fff&style=flat-square" alt="Material for MkDocs Badge">
+</div>
+
+<div style="text-align: center; border: 2px solid grey; border-radius: 5px; padding: 20px; margin: 25px;">
+<p>Business App Project in WPF & ADO.NET</p>
+<p>- Responsible for GitHub: Version Control System, Code Reviewing, Documentation, etc.</p>
+<img src="/About/Images/Code_Frequency.png" alt="DevOps">
+<p>- Sticky Notes Overlay Window</p>
+<img src="/About/Images/StickyNotes.gif" alt="StickyNotes">
+<p>- App-wide Exception Handling, Logging, Mailing & Exporting data</p>
+<img src="/About/Images/Exceptions.gif" alt="Exceptions">
 </div>
