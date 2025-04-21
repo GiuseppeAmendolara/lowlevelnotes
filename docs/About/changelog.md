@@ -5,6 +5,10 @@ Added:
 
 - Changes to the About me page.
 - Changes to the Portfolio page.
+- Started working on the unified programming guide
+  - Added phasing model
+  - Phase I: Introduction
+  - Phase I: Software
 
 ### 3.5.2 <small>Apr 8, 2025</small>
 Added:

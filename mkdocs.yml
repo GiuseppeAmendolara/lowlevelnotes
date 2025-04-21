@@ -135,34 +135,50 @@ nav:
         - Unsafe: CSharp/Level4/Unsafe.md
     - C++:
       - C/C++ Summary: Cpp/Cpp.md
-    - Assembly:
-      - Architecture:
-        - Introduction: Assembly/Architecture/Introduction.md
-        - x86 & x86_64 Architecture: Assembly/Architecture/x86_Architecture.md
-        - Modes of Operation: Assembly/Architecture/Operating_Modes.md
-        - Memory: Assembly/Architecture/Memory.md
-        - CPU Registers: Assembly/Architecture/CPU_Registers.md
-        - E_Flags: Assembly/Architecture/E_Flags.md
-        - Sizes / Words: Assembly/Architecture/Sizes.md
-        - The stack: Assembly/Architecture/Stack.md
-        - Instructions / opcodes: Assembly/Architecture/Instructions.md
-        - Procedures: Assembly/Architecture/Procedures.md
-        - Binary operations: Assembly/Architecture/Binary_Operations.md
-        - Calling Conventions: Assembly/Architecture/Calling_Conventions.md
-      - Syntax:
-        - Reserved words: Assembly/Syntax/Reserved_Words.md
-        - Radix characters: Assembly/Syntax/Radix_Characters.md
-        - Character constants: Assembly/Syntax/Character_Constants.md
-        - Identifiers: Assembly/Syntax/Identifiers.md
-        - Declaring variables: Assembly/Syntax/Declaring_Variables.md
-        - Operator Presedence: Assembly/Syntax/Operator_Presedence.md
-      - How to compile: Assembly/Compiling.md
-    - Software Architecture & Patterns:
-      - Pattern Matching: Architecture/Pattern_matching.md
-      - SOLID Principles: Architecture/SOLID.md
-      - Class Relationships: Architecture/Class_Relationships.md
-      - Design Patterns: Architecture/Design_Patterns.md
-      - Common Architectures: Architecture/Common_Architectures.md
+    
+    - Programming:
+      - "Phase I: Foundations":
+          - Introduction: Programming/P1/Introduction.md
+          - Software building & Windows Processes: Programming/P1/Software.md
+#      - Memory basics: Programming/P1/Memory.md
+#      - Data Types & NULL: Programming/P1/Data_Types.md
+#      - Operators: Programming/P1/Operators.md
+#      - Application Entry-Point & Functions: Programming/P1/Functions.md
+#      - Type Conversion & Parsing: Programming/P1/Conversion.md
+#      - Collections & Arrays: Programming/P1/Collections.md
+#      - Exception Handling: Programming/P1/Exceptions.md
+#      - Preprocessor Directives: Programming/P1/Preprocessor_Directives.md
+#      - Programming Paradigms: Programming/P1/Paradigms.md
+#    - "Phase II: Core Competencies"
+#    - "Phase III: Advanced concepts"
+      - "Phase IV: Code Design":
+        - Pattern Matching: Architecture/Pattern_matching.md
+        - SOLID Principles: Architecture/SOLID.md
+        - Class Relationships: Architecture/Class_Relationships.md
+        - Design Patterns: Architecture/Design_Patterns.md
+        - Common Architectures: Architecture/Common_Architectures.md
+      - "Phase V: Assembly":
+        - Architecture:
+          - Introduction: Assembly/Architecture/Introduction.md
+          - x86 & x86_64 Architecture: Assembly/Architecture/x86_Architecture.md
+          - Modes of Operation: Assembly/Architecture/Operating_Modes.md
+          - Memory: Assembly/Architecture/Memory.md
+          - CPU Registers: Assembly/Architecture/CPU_Registers.md
+          - E_Flags: Assembly/Architecture/E_Flags.md
+          - Sizes / Words: Assembly/Architecture/Sizes.md
+          - The stack: Assembly/Architecture/Stack.md
+          - Instructions / opcodes: Assembly/Architecture/Instructions.md
+          - Procedures: Assembly/Architecture/Procedures.md
+          - Binary operations: Assembly/Architecture/Binary_Operations.md
+          - Calling Conventions: Assembly/Architecture/Calling_Conventions.md
+        - Syntax:
+          - Reserved words: Assembly/Syntax/Reserved_Words.md
+          - Radix characters: Assembly/Syntax/Radix_Characters.md
+          - Character constants: Assembly/Syntax/Character_Constants.md
+          - Identifiers: Assembly/Syntax/Identifiers.md
+          - Declaring variables: Assembly/Syntax/Declaring_Variables.md
+          - Operator Presedence: Assembly/Syntax/Operator_Presedence.md
+        - How to compile: Assembly/Compiling.md
 
   - Windows Internals:
     - Introduction: Windows_Internals/Introduction.md
