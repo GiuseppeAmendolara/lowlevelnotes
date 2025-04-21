@@ -1,5 +1,5 @@
 /.cache/
 /.obsidian/
-site
+/site/
 mkdocs.yml
 settings.json
