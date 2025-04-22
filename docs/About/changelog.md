@@ -7,6 +7,10 @@ Added:
 - Phase I: Memory
 - Phase I: Statements
 
+Removed until reconstruction:
+- Reverse Engineering
+- Networks & CyberSecurity
+
 ### 3.5.3 <small>Apr 21, 2025</small>
 Added:
 

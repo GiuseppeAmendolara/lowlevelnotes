@@ -194,26 +194,26 @@ nav:
     - Processor modes, Privileges, Syscalls, the Kernel and more: Windows_Internals/Processor_Modes.md
     - Portable Executable file format (PE): Windows_Internals/PE.md
 
-  - Reverse Engineering: 
-    - Introduction to analysis: Reverse_Engineering/Intro.md
-    - Static analysis:
-      - Basic: Reverse_Engineering/Basic_static.md
-      - Advanced: Reverse_Engineering/Advanced_static.md
-    - Dynamic analysis:
-      - Basic: Reverse_Engineering/Basic_dynamic.md
-      - Debugging: Reverse_Engineering/Dynamic_debugging.md
-    - Anti-reverse engineering: Reverse_Engineering/Anti_reversing.md
-    - Tool cheat sheets:
-      - CAPA: Reverse_Engineering/CAPA.md
-      - REMnux & FLARE VM: Reverse_Engineering/VMs.md
-
-  - Networks & CyberSecurity:
-    - Networks:
-      - 1. What is a network?: Networks/Networks.md
-      - 2. What are network devices?: Networks/Devices.md
-      - 3. Cisco Packet Tracer Install: Packet_Tracer.md
-    - Cybersecurity:
-      - Pentesting fundamentals: Cybersecurity/General/PentestingFundamentals.md
+#  - Reverse Engineering: 
+#    - Introduction to analysis: Reverse_Engineering/Intro.md
+#    - Static analysis:
+#      - Basic: Reverse_Engineering/Basic_static.md
+#      - Advanced: Reverse_Engineering/Advanced_static.md
+#    - Dynamic analysis:
+#      - Basic: Reverse_Engineering/Basic_dynamic.md
+#      - Debugging: Reverse_Engineering/Dynamic_debugging.md
+#    - Anti-reverse engineering: Reverse_Engineering/Anti_reversing.md
+#    - Tool cheat sheets:
+#      - CAPA: Reverse_Engineering/CAPA.md
+#      - REMnux & FLARE VM: Reverse_Engineering/VMs.md
+#
+#  - Networks & CyberSecurity:
+#    - Networks:
+#      - 1. What is a network?: Networks/Networks.md
+#      - 2. What are network devices?: Networks/Devices.md
+#      - 3. Cisco Packet Tracer Install: Packet_Tracer.md
+#    - Cybersecurity:
+#      - Pentesting fundamentals: Cybersecurity/General/PentestingFundamentals.md
 
   - About:
     - Changelog: About/changelog.md
