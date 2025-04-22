@@ -140,7 +140,9 @@ nav:
       - "Phase I: Foundations":
           - Introduction: Programming/P1/Introduction.md
           - Software building & Windows Processes: Programming/P1/Software.md
-#      - Memory basics: Programming/P1/Memory.md
+          - IDE's & build configurations: Programming/P1/Configuration.md
+          - Memory: Programming/P1/Memory.md
+          - Statements: Programming/P1/Statements.md
 #      - Data Types & NULL: Programming/P1/Data_Types.md
 #      - Operators: Programming/P1/Operators.md
 #      - Application Entry-Point & Functions: Programming/P1/Functions.md

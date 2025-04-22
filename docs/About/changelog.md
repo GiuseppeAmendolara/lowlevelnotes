@@ -1,5 +1,12 @@
 # Changelog
 ## Past
+### 3.5.4 <small>Apr 22, 2025</small>
+Added:
+
+- Phase I: IDE's & build configurations
+- Phase I: Memory
+- Phase I: Statements
+
 ### 3.5.3 <small>Apr 21, 2025</small>
 Added:
 
@@ -48,11 +55,3 @@ Released my notes / summary on x86 Assembly using NASM and MASM compilers.
 
 ### 0.1.0 <small>Aug, 2024</small>
 Released my notes / summary on LearnCpp's C-Style / C++ chapters.
-
-## Future
-- Unify C# and C++ into a singular "programming" course.
-- Re-structure x86_64 Assembly course to have a better structure and feel less sloppy.
-- Complete Software Architecture by reading book
-- Complete Windows Internals by reading book
-- Complete Networks by following a CCNA course
-- Complete CyberSecurity slowly by being more active on TryHackMe or HackTheBox
