@@ -186,7 +186,7 @@ nav:
     - Introduction: Windows_Internals/Introduction.md
     - Terminology: Windows_Internals/Terminology.md
     - .NET Framework: Windows_Internals/Dotnet_Framework.md
-    - Dynamic Link Libraries (DLLs): Windows_Internals/DLLs.md
+    - Code Libraries: Windows_Internals/Code_Libraries.md
     - Processes, Threads, Fibers, UMS Threads, Handles, Jobs and more: Windows_Internals/Processes.md
     - Virtual Memory: Windows_Internals/Virtual_Memory.md
     - Introduction to API's: Windows_Internals/API_Introduction.md

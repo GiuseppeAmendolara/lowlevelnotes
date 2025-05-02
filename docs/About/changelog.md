@@ -1,5 +1,10 @@
 # Changelog
 ## Past
+### 3.5.5 <small>May 2, 2025</small>
+Added:
+
+- Changes to Windows Internals: DLL's
+
 ### 3.5.4 <small>Apr 22, 2025</small>
 Added:
 

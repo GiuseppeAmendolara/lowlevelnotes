@@ -11,10 +11,6 @@
         <link rel="canonical" href="https://grimy86.github.io/Reverse_Engineering/Intro/">
       
       
-        <link rel="prev" href="../../Windows_Internals/PE/">
-      
-      
-        <link rel="next" href="../Basic_static/">
       
       
       <link rel="icon" href="/assets/Key3.png">
@@ -22,7 +18,7 @@
     
     
       
-        <title>Introduction to analysis - Cybersecurity & Code Insights '25</title>
+        <title>Intro to (Malware) Analysis - Cybersecurity & Code Insights '25</title>
       
     
     
@@ -107,7 +103,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Introduction to analysis
+              Intro to (Malware) Analysis
             
           </span>
         </div>
@@ -245,17 +241,27 @@
   
     
     
+      
+  
+  
+  
+  
+    
+    
       <li class="md-tabs__item">
-        <a href="../../Programming/P1/Introduction/" class="md-tabs__link">
+        <a href="../../CSharp/Level1/Basics/" class="md-tabs__link">
           
   
   
     
   
-  Programming
+  Learn Programming
 
         </a>
       </li>
+    
+  
+
     
   
 
@@ -281,62 +287,6 @@
 
         </a>
       </li>
-    
-  
-
-      
-        
-  
-  
-  
-    
-  
-  
-    
-    
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="./" class="md-tabs__link">
-          
-  
-  
-    
-  
-  Reverse Engineering
-
-        </a>
-      </li>
-    
-  
-
-      
-        
-  
-  
-  
-  
-    
-    
-      
-  
-  
-  
-  
-    
-    
-      <li class="md-tabs__item">
-        <a href="../../Networks/Networks/" class="md-tabs__link">
-          
-  
-  
-    
-  
-  Networks & CyberSecurity
-
-        </a>
-      </li>
-    
-  
-
     
   
 
@@ -478,14 +428,6 @@
       
         
       
-        
-      
-        
-      
-        
-      
-        
-      
     
     
     
@@ -510,12 +452,16 @@
   
   
   
-    <a href="../../Programming/P1/Introduction/" class="md-nav__link">
+    
+  
+  
+  
+    <a href="../../CSharp/Level1/Basics/" class="md-nav__link">
       
   
   
   <span class="md-ellipsis">
-    Programming
+    Learn Programming
     
   </span>
   
@@ -524,6 +470,8 @@
         <span class="md-nav__icon md-icon"></span>
       
     </a>
+  
+
   
 
   
@@ -596,739 +544,6 @@
         <span class="md-nav__icon md-icon"></span>
       
     </a>
-  
-
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-    
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-        
-        
-      
-      
-        
-      
-    
-    
-      
-    
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
-        
-          
-          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
-            
-  
-  
-  <span class="md-ellipsis">
-    Reverse Engineering
-    
-  </span>
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_4">
-            <span class="md-nav__icon md-icon"></span>
-            Reverse Engineering
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-    
-  
-  
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    Introduction to analysis
-    
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
-        
-  
-  
-  <span class="md-ellipsis">
-    Introduction to analysis
-    
-  </span>
-  
-
-      </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#malware-analysis" class="md-nav__link">
-    <span class="md-ellipsis">
-      Malware analysis
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Malware analysis">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#the-purpose-behind-malware-analysis" class="md-nav__link">
-    <span class="md-ellipsis">
-      The purpose behind Malware Analysis
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#safety-first" class="md-nav__link">
-    <span class="md-ellipsis">
-      Safety first!
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#techniques-of-malware-analysis" class="md-nav__link">
-    <span class="md-ellipsis">
-      Techniques of malware analysis
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Techniques of malware analysis">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#static-analysis" class="md-nav__link">
-    <span class="md-ellipsis">
-      Static Analysis
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#dynamic-analysis" class="md-nav__link">
-    <span class="md-ellipsis">
-      Dynamic Analysis
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#basic-static-analysis" class="md-nav__link">
-    <span class="md-ellipsis">
-      Basic static analysis
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Basic static analysis">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#examining-the-file-type" class="md-nav__link">
-    <span class="md-ellipsis">
-      Examining the file type
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#examining-strings" class="md-nav__link">
-    <span class="md-ellipsis">
-      Examining Strings
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#calculating-hashes" class="md-nav__link">
-    <span class="md-ellipsis">
-      Calculating Hashes
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#av-scans-and-virustotal" class="md-nav__link">
-    <span class="md-ellipsis">
-      AV scans and VirusTotal
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pe-header" class="md-nav__link">
-    <span class="md-ellipsis">
-      PE Header
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#basic-dynamic-analysis" class="md-nav__link">
-    <span class="md-ellipsis">
-      Basic dynamic analysis
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#introduction-to-sandboxes" class="md-nav__link">
-    <span class="md-ellipsis">
-      Introduction to Sandboxes
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Introduction to Sandboxes">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#open-source-sandboxes" class="md-nav__link">
-    <span class="md-ellipsis">
-      Open-Source sandboxes
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#anti-analysis-techniques" class="md-nav__link">
-    <span class="md-ellipsis">
-      Anti-analysis techniques
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Anti-analysis techniques">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#packing-and-obfuscation" class="md-nav__link">
-    <span class="md-ellipsis">
-      Packing and Obfuscation
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#sandbox-evasion" class="md-nav__link">
-    <span class="md-ellipsis">
-      Sandbox evasion
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-          
-          
-        
-      
-    
-    
-      
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2" >
-        
-          
-          <label class="md-nav__link" for="__nav_4_2" id="__nav_4_2_label" tabindex="">
-            
-  
-  
-  <span class="md-ellipsis">
-    Static analysis
-    
-  </span>
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_2">
-            <span class="md-nav__icon md-icon"></span>
-            Static analysis
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../Basic_static/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Basic
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../Advanced_static/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Advanced
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-          
-          
-        
-      
-    
-    
-      
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_3" >
-        
-          
-          <label class="md-nav__link" for="__nav_4_3" id="__nav_4_3_label" tabindex="">
-            
-  
-  
-  <span class="md-ellipsis">
-    Dynamic analysis
-    
-  </span>
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_3">
-            <span class="md-nav__icon md-icon"></span>
-            Dynamic analysis
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../Basic_dynamic/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Basic
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../Dynamic_debugging/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Debugging
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../Anti_reversing/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Anti-reverse engineering
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-          
-          
-        
-      
-    
-    
-      
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_5" >
-        
-          
-          <label class="md-nav__link" for="__nav_4_5" id="__nav_4_5_label" tabindex="">
-            
-  
-  
-  <span class="md-ellipsis">
-    Tool cheat sheets
-    
-  </span>
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_5">
-            <span class="md-nav__icon md-icon"></span>
-            Tool cheat sheets
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../CAPA/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    CAPA
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../VMs/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    REMnux & FLARE VM
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-      
-        
-        
-      
-    
-    <li class="md-nav__item md-nav__item--pruned md-nav__item--nested">
-      
-        
-  
-  
-  
-    
-  
-  
-  
-    <a href="../../Networks/Networks/" class="md-nav__link">
-      
-  
-  
-  <span class="md-ellipsis">
-    Networks & CyberSecurity
-    
-  </span>
-  
-
-      
-        <span class="md-nav__icon md-icon"></span>
-      
-    </a>
-  
-
   
 
       
@@ -1802,44 +1017,6 @@
       
         <footer class="md-footer">
   
-    
-      
-      <nav class="md-footer__inner md-grid" aria-label="Footer" >
-        
-          
-          <a href="../../Windows_Internals/PE/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Portable Executable file format (PE)">
-            <div class="md-footer__button md-icon">
-              
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
-            </div>
-            <div class="md-footer__title">
-              <span class="md-footer__direction">
-                Previous
-              </span>
-              <div class="md-ellipsis">
-                Portable Executable file format (PE)
-              </div>
-            </div>
-          </a>
-        
-        
-          
-          <a href="../Basic_static/" class="md-footer__link md-footer__link--next" aria-label="Next: Basic">
-            <div class="md-footer__title">
-              <span class="md-footer__direction">
-                Next
-              </span>
-              <div class="md-ellipsis">
-                Basic
-              </div>
-            </div>
-            <div class="md-footer__button md-icon">
-              
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
-            </div>
-          </a>
-        
-      </nav>
     
   
   <div class="md-footer-meta md-typeset">

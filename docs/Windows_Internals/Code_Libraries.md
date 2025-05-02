@@ -1,4 +1,42 @@
-# Dynamic Link Libraries
+# Code Libraries
+A code library is a collection of pre-written code that software developers can use. There's a couple of different types but usually "libraries" refer to static or dynamic libraries.
+
+## Types
+
+- Standard Libraries: Built into a language (e.g., stdlib.h in C).
+- Third-party Libraries: Created by the community or companies (e.g., Boost in C++, NumPy in Python).
+- Static vs. Dynamic:
+    - Static libraries are linked at compile time.
+    - Dynamic/shared libraries are linked at runtime (e.g., .dll on Windows, .so on Linux).
+
+## Static vs. Dynamic
+| Feature | Static Library | Dynamic Link Library |
+|-|-|-|
+| Windows File Extension | `.lib` | `.dll` |
+| Linking Time         | **Compile/Link time**      | **Run time (Load time or dynamically)** |
+| Loaded Into Binary   | Yes (copied into `.exe`)   | No (separate file, loaded at runtime)   |
+| Portability          | Self-contained             | Needs the `.dll` at runtime             |
+| Memory Sharing       | Each app gets its own copy | Can be shared across processes          |
+| Size of Final Binary | Larger                     | Smaller                                 |
+| Update behavior        | Requires recompiling the app | Can update DLL without recompiling   |
+
+
+## Static Libraries
+Static libraries are archives of compiled object files (.obj) that are linked directly into the executable at compile/link time. Once linked, the executable contains all the necessary code and does not need the .lib file at runtime.
+
+ Advantages:
+
+- Self-contained: All code is in one binary.
+- No runtime dependencies: No external .dll to worry about.
+- Better performance: Slightly faster startup (no runtime linking).
+
+Disadvantages:
+
+- Larger executables: Because all library code is copied into each binary.
+- Harder to update: Updating the library requires recompiling all apps using it.
+- Redundant memory usage: Each app using the library gets its own copy in memory.
+
+## Dynamic Link Libraries
 The [Microsoft docs](https://learn.microsoft.com/en-us/troubleshoot/windows-client/setup-upgrade-and-drivers/dynamic-link-library) describe a `DLL` as "`a library that contains code and data that can be used by more than one program at the same time`."
 
 Reading up on [COM objects](/Windows_Internals/Windows_API.md#history-dde-ole--com) might clear up things if you're wondering about the history behind DLL's and how they came to be what they are today.
