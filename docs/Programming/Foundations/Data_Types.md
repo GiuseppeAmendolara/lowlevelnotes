@@ -1,4 +1,4 @@
-# Data Types, NULL, and void
+# Data Types, Variables, LValues and RValues.
 
 Every programming language deals with "data", which is a BIG word. It could be any sort of representation of an object, any number, any letter or even be a complex structures (collection of different data).
 

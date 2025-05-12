@@ -103,11 +103,11 @@ nav:
     - Introduction: Programming/Foundations/Introduction.md
     - "Phase I-III":
       - "Phase I: Foundations:":
-        - Software & Processes: Programming/Foundations/Software.md
-        - IDEs & Configs: Programming/Foundations/Configuration.md
+        - Software and Processes: Programming/Foundations/Software.md
+        - IDEs and Configs: Programming/Foundations/Configuration.md
         - Memory: Programming/Foundations/Memory.md
         - Statements: Programming/Foundations/Statements.md
-        - Data Types: Programming/Foundations/Data_Types.md
+        - Data Types, Variables, LValues and RValues.: Programming/Foundations/Data_Types.md
         - Entry Point (`main`): Programming/Foundations/Main.md
   #     - Operators: Programming/P1/Operators.md
   #     - Application Entry-Point & Functions: Programming/P1/Functions.md
@@ -131,7 +131,7 @@ nav:
     - "Phase V: Assembly":
       - Architecture:
         - Introduction: Programming/Assembly/Architecture/Introduction.md
-        - x86 & x86_64 Architecture: Programming/Assembly/Architecture/x86_Architecture.md
+        - x86 and x86_64 Architecture: Programming/Assembly/Architecture/x86_Architecture.md
         - Modes of Operation: Programming/Assembly/Architecture/Operating_Modes.md
         - Memory: Programming/Assembly/Architecture/Memory.md
         - CPU Registers: Programming/Assembly/Architecture/CPU_Registers.md
