@@ -1,5 +1,18 @@
 # Changelog
 ## Past
+### 3.6.0 <small>May 12, 2025</small>
+Restructured the programming section, keeping the old standalone guides available.
+
+Added:
+
+- Phase I: Data Types, Null and void
+- Phase I: Program entry point
+
+Changed:
+
+- Phase I: Memory
+
+
 ### 3.5.5 <small>May 2, 2025</small>
 Added:
 
