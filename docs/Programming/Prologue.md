@@ -1,4 +1,4 @@
-# Introduction
+# Prologue
 This resource is free and open-source, built entirely on publicly available knowledge. For transparency and further reading, you can find our sources on the [references](/About/references) page.
 
 Its purpose is to provide a structured learning path through the core principles of compiled programming languages, with a focus on both C# (.NET) and C++. While the examples draw from these two languages, many concepts apply broadly across modern compiled languages.

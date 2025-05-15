@@ -48,6 +48,28 @@ Different languages support different sets of types, but most programming langua
         letter db 'A'          ; Character as byte
         ```
 
+## LValues and RValues
+In C++ (and many other languages), every expression is either an **LValue** or an **RValue**.
+
+An **LValue** (short for locator value) refers to an object that occupies a specific location in memory. It's often found on the left-hand side of an assignment, but that's not a strict requirement.
+
+An **RValue** (short for read value) is a temporary value that does not have a persistent memory address. It typically appears on the right-hand side of an assignment.
+
+!!! note
+    LValues are **not limited** to the left side of assignments.
+    They can appear on either side of an expression.
+    The key distinction is whether the expression has a persistent addressable memory location.
+
+!!! example
+    === "C++"
+    | Expression       | LValue or RValue | Why?                                    |
+    | ---------------- | ---------------- | --------------------------------------- |
+    | `int a = 10;`    | `a` = LValue     | It refers to a named object in memory   |
+    | `a = 20;`        | `20` = RValue    | It's a temporary literal                |
+    | `int b = a + 5;` | `a + 5` = RValue | It's a computed temporary value         |
+    | `&a`             | LValue           | You can take its address                |
+    | `&(a + 5)`       | ERROR            | You can't take the address of an RValue |
+
 ## NULL and nullptr
 In lower-level languages like C and C++, it's common to work directly with memory. When a pointer doesn't point to any valid location, it's typically assigned a special value:
 

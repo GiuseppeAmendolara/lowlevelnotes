@@ -1,5 +1,21 @@
 # Changelog
 ## Past
+### 3.6.1 <small>May 15, 2025</small>
+Restructured the programming section, keeping the old standalone guides available.
+
+Added:
+
+- Phase I: Operators
+- Phase I: Functions
+- Phase I: Control Flow
+- Phase I: Preprocessor directives
+- Phase I: Mesologue
+
+Changed:
+
+- Prologue
+- Phase I: Data Types
+
 ### 3.6.0 <small>May 12, 2025</small>
 Restructured the programming section, keeping the old standalone guides available.
 
