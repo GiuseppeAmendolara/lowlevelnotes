@@ -100,8 +100,8 @@ nav:
     - Home: index.md
     - How to study: study.md
   - Programming:
-    - Prologue: Programming/Prologue.md
     - "Phases":
+      - Prologue: Programming/Prologue.md
       - "Phase I: Foundations":
         - Software and Processes: Programming/Foundations/Software.md
         - IDEs and Configs: Programming/Foundations/Configuration.md
@@ -113,7 +113,7 @@ nav:
         - Functions: Programming/Foundations/Functions.md
         - Control flow: Programming/Foundations/Control_Flow.md
         - Preprocessor directives: Programming/Foundations/Preprocessor_Directives.md
-        - Mesologue: Programming/Mesologue.md
+      - Mesologue: Programming/Mesologue.md
 
       - "Phase II: Core Competencies":
         - Type Conversion & Parsing: Programming/Core_Competencies/Conversion.md
