@@ -230,7 +230,6 @@ nav:
   - About:
     - Changelog: About/changelog.md
     - Contribution & Style Guide: About/contribute.md
-    - About Me: About/github.md
     - Portfolio: About/portfolio.md
     - License: https://github.com/grimy86/grimy86.github.io/blob/main/LICENSE
     - References: About/references.md
