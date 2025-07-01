@@ -111,3 +111,12 @@
 <p>- App-wide Exception Handling, Logging, Mailing & Exporting data</p>
 <img src="/About/Images/Exceptions.gif" alt="Exceptions">
 </div>
+
+<div style="text-align: center; border: 2px solid grey; border-radius: 5px; padding: 20px; margin: 25px;">
+<p>Business script in PEP8 Python</p>
+<p>- Refactored Python script to be modular and have launch settings for debugging & testing</p>
+<p>- Setup Docker container for testing & running the script</p>
+<img src="/About/Images/Python_Script.png" alt="Scripting">
+<img src="https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=fff&style=flat-square">
+<img src="https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=fff&style=flat-square">
+</div>

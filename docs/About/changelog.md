@@ -1,5 +1,8 @@
 # Changelog
 ## Past
+### 3.6.2 <small>Jul 1, 2025</small>
+Added more info about a recent project using python & docker in the portfolio section.
+
 ### 3.6.1 <small>May 15, 2025</small>
 Restructured the programming section, keeping the old standalone guides available.
 
