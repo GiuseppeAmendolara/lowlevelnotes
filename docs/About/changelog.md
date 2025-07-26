@@ -1,5 +1,11 @@
 # Changelog
 ## Past
+### 3.6.3 <small>Jul 26, 2025</small>
+- Changed the logo to a pile of books
+- Major restructure
+- Major removal of contents, toning down the amount of info and work to be done on the site.
+- Added more info about a recent project using imgui in the portfolio section.
+
 ### 3.6.2 <small>Jul 1, 2025</small>
 Added more info about a recent project using python & docker in the portfolio section.
 

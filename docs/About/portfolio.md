@@ -9,7 +9,7 @@
 <h2 style="text-align: center;">2024</h2>
 <div style="text-align: center; border: 2px solid grey; border-radius: 5px; padding: 20px; margin: 25px;">
 <p>T-SQL, SQL databases, SSMS & Database normalization techniques</p>
-<ul>
+<ul style="text-align: left; display: inline-block;">
     <li>Calling stored procedures in ADO.NET.</li>
     <li>How to apply ADO.NET for other database servers like MySql / MariaDb.</li>
     <li>Wrote a DLL to simplify the use of ADO.NET and integrating hardware logging.</li>
@@ -71,7 +71,7 @@
 <h2 style="text-align: center;">2025</h2>
 <div style="text-align: center; border: 2px solid grey; border-radius: 5px; padding: 20px; margin: 25px;">
 <p>DAL-service Software architecture in C#</p>
-<ul>
+<ul style="text-align: left; display: inline-block;">
   <li>SystemInfoService: NTAccounts, OS Info & CPU Info</li>
   <li>MailService with Google SmtpClient</li>
   <li>WindowsProcessService: Launching & executing processes</li>
@@ -86,11 +86,12 @@
 
 <div style="text-align: center; border: 2px solid grey; border-radius: 5px; padding: 20px; margin: 25px;">
 <p>More .NET frameworks:</p>
-<ul>
+<ul style="text-align: left; display: inline-block;">
   <li>.NET MAUI</li>
   <li>ASP.NET (.NET Aspire) REST API in MVC using Entity Framework</li>
   <li>.NET Blazor</li>
 </ul>
+<br>
 <img src="https://img.shields.io/badge/Android-3DDC84?logo=android&logoColor=fff&style=flat-square" alt="Android Badge">
 <img src="https://img.shields.io/badge/Postman-FF6C37?logo=postman&logoColor=fff&style=flat-square" alt="Postman Badge">
 <img src="https://img.shields.io/badge/Blazor-512BD4?logo=blazor&logoColor=fff&style=flat-square" alt="Blazor Badge">
@@ -104,19 +105,36 @@
 
 <div style="text-align: center; border: 2px solid grey; border-radius: 5px; padding: 20px; margin: 25px;">
 <p>Business App Project in WPF & ADO.NET</p>
-<p>- Responsible for GitHub: Version Control System, Code Reviewing, Documentation, etc.</p>
+<ul style="text-align: left; display: inline-block;">
+  <li>Responsible for GitHub: Version Control System, Code Reviewing, Documentation, etc.</li>
+  <li>Sticky Notes Overlay Window</li>
+  <li>App-wide Exception Handling, Logging, Mailing & Exporting data</li>
+</ul>
 <img src="/About/Images/Code_Frequency.png" alt="DevOps">
-<p>- Sticky Notes Overlay Window</p>
 <img src="/About/Images/StickyNotes.gif" alt="StickyNotes">
-<p>- App-wide Exception Handling, Logging, Mailing & Exporting data</p>
 <img src="/About/Images/Exceptions.gif" alt="Exceptions">
 </div>
 
 <div style="text-align: center; border: 2px solid grey; border-radius: 5px; padding: 20px; margin: 25px;">
 <p>Business script in PEP8 Python</p>
-<p>- Refactored Python script to be modular and have launch settings for debugging & testing</p>
-<p>- Setup Docker container for testing & running the script</p>
+<ul style="text-align: left; display: inline-block;">
+  <li>Refactored Python script to be modular and have launch settings for debugging & testing</li>
+  <li>Setup Docker container for testing & running the script</li>
+</ul>
 <img src="/About/Images/Python_Script.png" alt="Scripting">
 <img src="https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=fff&style=flat-square">
 <img src="https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=fff&style=flat-square">
+</div>
+
+<div style="text-align: center; border: 2px solid grey; border-radius: 5px; padding: 20px; margin: 25px;">
+<p>Windows C++ SDK with internal DLL & ImGui GUI Injector</p>
+<ul style="text-align: left; display: inline-block;">
+    <li>Win32-based SDK with system utilities and helpers for internal use</li>
+    <li>DLL injected into a target process, allowing interaction and live modification</li>
+    <li>Custom GUI client built with Dear ImGui for interacting with the injected code</li>
+    <li>Covered concepts: DLL injection, internal hacks, detouring, virtual memory, GUI design</li>
+</ul>
+<img src="/About/Images/Imgui_Client.png" alt="Imgui client">
+<img src="https://img.shields.io/badge/C++-%2300599C.svg?logo=c%2B%2B&logoColor=white&style=flat-square">
+<img src="https://custom-icon-badges.demolab.com/badge/Windows-0078D6?logo=windows11&logoColor=white&style=flat-square">
 </div>
