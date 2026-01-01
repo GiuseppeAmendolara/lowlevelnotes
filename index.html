@@ -50,9 +50,78 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
-      opacity: 0.25;
+      opacity: 0.30;
       filter: blur(3px);
     }
+
+    /* NAV */
+    .nav {
+      position: sticky;
+      top: 1;
+      display: flex;
+      justify-content: center;
+      padding: .9rem 2rem;
+    }
+
+    /* TRACK */
+    .nav-track {
+      position: relative;
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: 1fr;
+      gap: 0;
+      padding: .25rem;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 10px;
+    }
+
+    /* SLIDER */
+    .nav-indicator {
+      position: absolute;
+      top: 2px;
+      bottom: 2px;
+      left: 2px;
+      width: calc(100% / 3 - 4px);
+      border-radius: 8px;
+
+      background:
+        linear-gradient(
+          180deg,
+          rgba(255,200,0,.18),
+          rgba(255,200,0,.08)
+        );
+
+      border: 1px solid rgba(255,200,0,.35);
+
+      transition:
+        transform .5s cubic-bezier(.4,0,.2,1),
+        opacity .5s ease;
+    }
+
+    /* BUTTONS */
+    .nav button {
+      position: relative;
+      z-index: 2;
+      background: none;
+      border: none;
+      padding: .45rem 1.4rem;
+      font-size: .8rem;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: #888;
+      cursor: pointer;
+    }
+
+    /* STATES */
+    .nav button:hover {
+      color: #ccc;
+    }
+
+    .nav button.active {
+      color: var(--accent);
+    }
+
 
     /* HERO */
     header {
@@ -97,7 +166,7 @@
       flex-direction: column;
       gap: .6rem;
       cursor: pointer;
-      transition: transform .25s ease, box-shadow .25s ease;
+      transition: transform .5s ease, box-shadow .5s ease;
     }
 
     .card:hover {
@@ -190,7 +259,7 @@
       opacity: 0;
       transform: translateY(6px);
       pointer-events: auto;
-      transition: .2s ease;
+      transition: .5s ease;
       z-index: 10;
     }
 
@@ -256,11 +325,72 @@
       opacity: .6;
       font-size: .85rem;
     }
+
+    .page {
+      max-width: 900px;
+      margin: auto;
+      line-height: 1.7;
+    }
+
+    .page h2, .page h3, .page h4 {
+      color: var(--accent);
+      margin-top: 2.2rem;
+    }
+
+    .code-example pre {
+      background: rgba(0,0,0,.7);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+      overflow-x: auto;
+      margin: .8rem 0 1.6rem;
+    }
+
+    .warning-box {
+      background: rgba(255,80,80,.1);
+      border: 1px solid rgba(255,80,80,.35);
+      border-radius: 14px;
+      padding: 1.2rem 1.4rem;
+      margin-top: 1.5rem;
+    }
+
+    /* PAGE TRANSITIONS */
+    .page-enter-active,
+    .page-leave-active {
+      transition: opacity .5s ease, transform .5s ease;
+    }
+
+    .page-enter-from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+
+    .page-leave-to {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
   </style>
 </head>
 
 <body>
 <div id="app">
+    <!-- NAVIGATION -->
+    <nav class="nav">
+      <div class="nav-track">
+        <div
+          class="nav-indicator"
+          :style="{ transform: `translateX(${navIndex * 100}%)` }">
+        </div>
+
+        <button
+          v-for="(item, i) in nav"
+          :key="item.id"
+          :class="{ active: currentPage === item.id }"
+          @click="currentPage = item.id">
+          {{ item.label }}
+        </button>
+      </div>
+    </nav>
 
   <!-- Background -->
   <div class="bg-anim">
@@ -271,59 +401,142 @@
 
   <!-- HERO -->
   <header>
-    <h1>lowlevel<span class="accent">notes</span></h1>
+    <h1>low_level<span class="accent">notes</span></h1>
     <p>{{ site.description }}</p>
   </header>
 
   <!-- CONTENT -->
   <main>
-    <div class="grid">
-      <div class="card"
-           v-for="r in resources"
-           :key="r.id"
-           :class="{ draft: r.status === 'draft' }"
-           @click="r.status === 'published' && openResource(r)">
+    <transition name="page" mode="out-in">
+    <!-- HOME -->
+    <section v-if="currentPage === 'home'">
+      <div class="grid">
+        <div class="card"
+            v-for="r in featuredResources"
+            :key="r.id"
+            :class="{ draft: r.status === 'draft' }"
+            @click="r.status === 'published' && openResource(r)">
 
-        <h3>{{ r.title }}</h3>
-        <p>{{ r.description }}</p>
+          <h3>{{ r.title }}</h3>
+          <p>{{ r.description }}</p>
 
-        <div class="card-footer">
-          <!-- Author -->
-          <div class="card-author"
-               v-if="authorMap[r.authorId]"
-               @click.stop>
-            <img :src="authorMap[r.authorId].avatar" />
-            <span>{{ authorMap[r.authorId].name }}</span>
-
-            <div class="author-hover">
+          <div class="card-footer">
+            <div class="card-author"
+                v-if="authorMap[r.authorId]"
+                @click.stop>
               <img :src="authorMap[r.authorId].avatar" />
-              <div class="author-info">
-                <strong>{{ authorMap[r.authorId].name }}</strong>
-                <span class="role">{{ authorMap[r.authorId].role }}</span>
-                <a :href="authorMap[r.authorId].profile" target="_blank">
-                  View profile ↗
-                </a>
+              <span>{{ authorMap[r.authorId].name }}</span>
+
+              <div class="author-hover">
+                <img :src="authorMap[r.authorId].avatar" />
+                <div class="author-info">
+                  <strong>{{ authorMap[r.authorId].name }}</strong>
+                  <span class="role">{{ authorMap[r.authorId].role }}</span>
+                  <a :href="authorMap[r.authorId].profile" target="_blank">
+                    View profile ↗
+                  </a>
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- Badges -->
-          <div class="badges">
-            <span class="badge accent" v-if="r.status === 'published'">PDF</span>
-            <span class="badge">🎯 {{ r.level }}</span>
-            <span class="badge">📄 {{ r.pages }}</span>
-            <span class="badge">👁 {{ r.views }}</span>
+            <div class="badges">
+              <span class="badge accent" v-if="r.status === 'published'">PDF</span>
+              <span class="badge">🎯 {{ r.level }}</span>
+              <span class="badge">📄 {{ r.pages }}</span>
+            </div>
           </div>
-
         </div>
       </div>
-    </div>
+    </section>
+
+    <!-- CHANGELOG -->
+    <section v-else-if="currentPage === 'changelog'" class="page">
+      <article v-for="entry in changelog" :key="entry.version" class="changelog-entry">
+        <h2 class="accent">
+          {{ entry.version }}
+          <small>{{ entry.date }}</small>
+        </h2>
+
+        <ul>
+          <li v-for="c in entry.changes" :key="c">{{ c }}</li>
+        </ul>
+      </article>
+    </section>
+
+    <!-- CONTRIBUTE -->
+    <section v-else-if="currentPage === 'contribute'" class="page">
+       <h2>Contribution & Style Guide</h2>
+
+        <p>
+          lowlevelnotes is an open, long-term project. Contributions are welcome,
+          but are expected to meet a high standard of clarity, structure, and intent.
+        </p>
+
+        <h3>GitHub Contribution Workflow</h3>
+
+        <ol>
+          <li>Fork the repository to create your own copy.</li>
+          <li>Create a new branch with a descriptive name.</li>
+          <li>Make your changes — bug fixes, features, or documentation.</li>
+          <li>Commit with a clear, concise commit message.</li>
+          <li>Push the branch to your fork.</li>
+          <li>Create a pull request targeting the <code>main</code> branch.</li>
+        </ol>
+
+        <p>
+          For more details, see the official
+          <a class="accent" href="https://docs.github.com/en/get-started/exploring-projects-on-github/contributing-to-a-project"
+            target="_blank">
+            GitHub Contribution Guide
+          </a>.
+        </p>
+
+        <h3>Style Guide</h3>
+
+        <p>
+          This project was historically built using
+          <a class="accent" href="https://squidfunk.github.io/mkdocs-material/reference/" target="_blank">
+            MkDocs Material
+          </a>.
+          While the frontend has changed, the documentation style remains strict.
+        </p>
+
+        <ul>
+          <li>All of the source files have to be written in <code>Markdown (.md)</code></li>
+          <li>Use proper Markdown syntax highlighting.</li>
+          <li>Code blocks for readability and practical examples.</li>
+          <li>Keep structure consistent and intentional.</li>
+        </ul>
+
+        <h3>Pull Request Guidelines</h3>
+
+        <ul>
+          <li>
+            Provide a <strong>clear, detailed description</strong> of what you changed
+            and why.
+          </li>
+          <li>
+            Ensure formatting renders correctly before submitting.
+          </li>
+        </ul>
+
+        <div class="warning-box">
+          <strong class="accent">Warning</strong>
+          <p>
+            Pull requests that lack: a proper description, correct formatting, rendering, etc. may be
+            rejected without review.
+          </p>
+          <p>
+            Well-documented changes significantly speed up review and merging.
+          </p>
+        </div>
+    </section>
+    </transition>
   </main>
 
   <footer>
-    MIT License © 2024–{{ new Date().getFullYear() }}
+    MIT License © 2024–{{ new Date().getFullYear() }}, version {{ site.version }}
   </footer>
-
 </div>
 </body>
 </html>
