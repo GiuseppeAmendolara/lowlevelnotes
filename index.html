@@ -7,15 +7,14 @@
 
   <!-- Classic metadata -->
   <meta name="description"
-  content="Structured notes on programming, low-level concepts, and system internals. Free PDFs and learning resources." />
+        content="Structured notes on programming, low-level concepts, and system internals. Free PDFs and learning resources." />
 
-  <!-- Open Graph metadata -->
+  <!-- Open Graph -->
   <meta property="og:title" content="lowlevelnotes" />
   <meta property="og:description" content="Structured notes on programming, low-level concepts, and system internals. Free PDFs." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://lowlevelnotes.com/" />
   <meta property="og:image" content="https://lowlevelnotes.com/resources/assets/preview.png" />
-
 
   <!-- Vue -->
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
@@ -23,8 +22,8 @@
 
   <style>
     :root {
-      --bg: #000000;
-      --fg: #ffffff;
+      --bg: #000;
+      --fg: #fff;
       --accent: rgb(255, 200, 0);
       --glass: rgba(255, 200, 0, 0.15);
       --border: rgba(255, 200, 0, 0.5);
@@ -37,16 +36,14 @@
       font-family: Inter, system-ui, sans-serif;
       background: #000;
       color: var(--fg);
-      overflow-x: hidden;
     }
 
-    /* BACKGROUND VIDEO */
+    /* BACKGROUND */
     .bg-anim {
       position: fixed;
       inset: 0;
       z-index: -2;
       overflow: hidden;
-      background: radial-gradient(circle at top, #141420, #000);
     }
 
     .bg-anim video {
@@ -54,45 +51,33 @@
       height: 100%;
       object-fit: cover;
       opacity: 0.25;
-      filter: blur(3px) saturate(1);
-    }
-
-    /* overlay above video, below content */
-    .bg-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: -1;
-      pointer-events: none;
+      filter: blur(3px);
     }
 
     /* HERO */
     header {
-      min-height: 10vh;
-      display: grid;
-      place-items: center;
       text-align: center;
       padding: 4rem 2rem;
-      animation: fadeIn 1.2s ease-out;
     }
 
     header h1 {
       font-size: clamp(3rem, 7vw, 5rem);
       margin: 0;
       letter-spacing: -0.04em;
-      text-shadow: 0 0 30px rgba(255, 200, 0, 0.15);
     }
 
     header p {
       max-width: 600px;
+      margin: 1.5rem auto;
       color: #aaa;
-      margin: 1.5rem auto 2.5rem;
-      font-size: 1.1rem;
     }
+
+    .accent { color: var(--accent); }
 
     /* GRID */
     main {
       max-width: 1200px;
-      margin: 0 auto;
+      margin: auto;
       padding: 4rem 2rem 6rem;
     }
 
@@ -103,40 +88,20 @@
     }
 
     .card {
-      background: linear-gradient(
-        180deg,
-        var(--glass),
-        rgba(255,255,255,0.03)
-      );
+      background: linear-gradient(180deg, var(--glass), rgba(255,255,255,0.03));
       backdrop-filter: blur(12px);
       border: 1px solid var(--border);
       border-radius: 16px;
       padding: 1.6rem;
-      position: relative;
-      overflow: hidden;
-      animation: slideUp .8s ease forwards;
-    }
-
-    .card::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(
-        circle at top left,
-        rgba(255,159,28,.15),
-        transparent 60%
-      );
-      opacity: 0;
-      transition: opacity .3s;
-    }
-
-    .card:hover::before {
-      opacity: 1;
+      display: flex;
+      flex-direction: column;
+      gap: .6rem;
+      cursor: pointer;
     }
 
     .card h3 {
-      margin: 0 0 .5rem;
       color: var(--accent);
+      margin: 0;
     }
 
     .card p {
@@ -144,87 +109,163 @@
       font-size: .95rem;
     }
 
-    .badge {
-      margin-top: 1rem;
-      display: inline-block;
+    /* CARD FOOTER */
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: .8rem;
+    }
+
+    /* AUTHOR */
+    .card-author {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
       font-size: .75rem;
+      color: #aaa;
+    }
+
+    .card-author img {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+    }
+
+    /* Hover card */
+    .author-hover {
+      position: absolute;
+      bottom: 130%;
+      left: 0;
+      display: flex;
+      gap: .8rem;
+      align-items: center;
+      padding: .8rem 1rem;
+      min-width: 220px;
+      background: linear-gradient(180deg, rgba(255,200,0,.12), rgba(0,0,0,.85));
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      backdrop-filter: blur(12px);
+      opacity: 0;
+      transform: translateY(6px);
+      pointer-events: auto;
+      transition: .2s ease;
+      z-index: 10;
+      transition-delay: 250ms;
+    }
+
+    .card-author:hover .author-hover,
+    .author-hover:hover {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .author-hover img {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+    }
+
+    .author-info strong {
+      display: block;
+      color: var(--accent);
+    }
+
+    .author-info .role {
+      font-size: .75rem;
+      color: #aaa;
+    }
+
+    .author-info a {
+      font-size: .75rem;
+      color: #ccc;
+      text-decoration: none;
+    }
+
+    .author-info a:hover {
+      color: var(--accent);
+    }
+
+    /* BADGE */
+    .badge {
+      font-size: .7rem;
       padding: .25rem .6rem;
       border-radius: 999px;
       background: rgba(255,255,255,.1);
       color: #aaa;
+      white-space: nowrap;
     }
 
     footer {
       text-align: center;
-      padding: 3rem 1rem;
+      padding: 3rem;
+      color: var(--accent);
+      opacity: .6;
       font-size: .85rem;
-
-      color: var(--accent);
-      opacity: 0.6;
-    }
-
-    .accent {
-      color: var(--accent);
-    }
-
-    /* ANIMATIONS */
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to   { opacity: 1; transform: none; }
-    }
-
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(30px); }
-      to   { opacity: 1; transform: none; }
     }
   </style>
 </head>
 
 <body>
-  <div id="app">
+<div id="app">
 
-    <!-- Background video -->
-    <div class="bg-anim">
-      <video autoplay muted loop playsinline>
-        <source src="/resources/assets/bg.mp4" type="video/mp4">
-      </video>
-    </div>
+  <div class="bg-anim">
+    <video autoplay muted loop playsinline>
+      <source src="/resources/assets/bg.mp4" type="video/mp4">
+    </video>
+  </div>
 
-    <!-- Dark blending overlay -->
-    <div class="bg-overlay"></div>
+  <header>
+    <h1>lowlevel<span class="accent">notes</span></h1>
+    <p>{{ tagline }}</p>
+  </header>
 
-    <header>
-      <div>
-        <h1>
-          lowlevel<span class="accent">notes</span>
-        </h1>
-        <p>{{ tagline }}</p>
-      </div>
-    </header>
+  <main>
+    <div class="grid">
+      <div class="card"
+           v-for="(r,i) in resources"
+           :key="r.title"
+           @click="openResource(r)">
 
-    <main>
-      <div class="grid">
-        <div
-          class="card"
-          v-for="(r, i) in resources"
-          :key="r.title"
-          :style="{ animationDelay: (i * 0.08) + 's' }"
-          :class="{ clickable: r.pdf }"
-          @click="openResource(r)"
-        >
-          <h3>{{ r.title }}</h3>
-          <p>{{ r.description }}</p>
+        <h3>{{ r.title }}</h3>
+        <p>{{ r.description }}</p>
+
+        <div class="card-footer">
+
+          <div class="card-author"
+               v-if="getAuthor(r.author)"
+               @click.stop>
+            <img :src="getAuthor(r.author).avatar" />
+            <span>{{ getAuthor(r.author).name }}</span>
+
+            <div class="author-hover">
+              <img :src="getAuthor(r.author).avatar" />
+              <div class="author-info">
+                <strong>{{ getAuthor(r.author).name }}</strong>
+                <span class="role">{{ getAuthor(r.author).role }}</span>
+                <a :href="getAuthor(r.author).profile" target="_blank">
+                  View profile ↗
+                </a>
+              </div>
+            </div>
+          </div>
+
           <span class="badge">
             {{ r.pdf ? "PDF" : "Coming soon" }}
           </span>
+
         </div>
       </div>
-    </main>
+    </div>
+  </main>
 
-    <footer>
-      MIT License © 2024–{{ new Date().getFullYear() }}
-    </footer>
+  <footer>
+    MIT License © 2024–{{ new Date().getFullYear() }}
+  </footer>
 
-  </div>
+</div>
 </body>
 </html>
