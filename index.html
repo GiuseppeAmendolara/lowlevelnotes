@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>lowlevelnotes</title>
+        
+        <!-- Vue 3 -->
+        <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+        <script src="app.js" defer></script>
+
+         <style>
+            :root {
+            --bg: #0f0f0f;
+            --fg: #eaeaea;
+            --accent: orange;
+            --muted: #999;
+            }
+
+            body {
+            margin: 0;
+            font-family: system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            }
+
+            header {
+            padding: 4rem 2rem;
+            text-align: center;
+            border-bottom: 1px solid #222;
+            }
+
+            header h1 {
+            font-size: 3rem;
+            margin: 0;
+            }
+
+            header p {
+            color: var(--muted);
+            max-width: 600px;
+            margin: 1rem auto 0;
+            }
+
+            main {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+            }
+
+            .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            }
+
+            .card {
+            border: 1px solid #222;
+            padding: 1.5rem;
+            border-radius: 8px;
+            transition: transform 0.2s, border-color 0.2s;
+            }
+
+            .card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent);
+            }
+
+            .card h3 {
+            margin-top: 0;
+            color: var(--accent);
+            }
+
+            footer {
+            border-top: 1px solid #222;
+            padding: 2rem;
+            text-align: center;
+            color: var(--muted);
+            }
+
+            a {
+            color: var(--accent);
+            text-decoration: none;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="app">
+            <header>
+                <h1>{{ siteName }}</h1>
+                <p>{{ tagline }}</p>
+            </header>
+
+            <main>
+                <h2>Resources</h2>
+
+                <div class="grid">
+                    <div class="card" v-for="resource in resources" :key="resource.title">
+                    <h3>{{ resource.title }}</h3>
+                    <p>{{ resource.description }}</p>
+                    </div>
+                </div>
+            </main>
+
+            <footer>
+                <p>
+                    <a href="https://github.com/grimy86/lowlevelnotes/blob/main/LICENSE" target="_blank" rel="noopener">
+                    MIT License, Copyright © since 2024
+                    </a>
+                </p>
+            </footer>
+        </div>
+    </body>
+</html>
