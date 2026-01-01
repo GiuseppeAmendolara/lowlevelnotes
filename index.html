@@ -1,113 +1,213 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>lowlevelnotes</title>
-        
-        <!-- Vue 3 -->
-        <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-        <script src="app.js" defer></script>
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" href="/resources/assets/icon.png" />
+  <title>notes</title>
 
-         <style>
-            :root {
-            --bg: #0f0f0f;
-            --fg: #eaeaea;
-            --accent: orange;
-            --muted: #999;
-            }
+  <!-- Vue -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="app.js" defer></script>
 
-            body {
-            margin: 0;
-            font-family: system-ui, sans-serif;
-            background: var(--bg);
-            color: var(--fg);
-            }
+  <style>
+    :root {
+      --bg: #000000;
+      --fg: #ffffff;
+      --accent: rgb(255, 200, 0);
+      --glass: rgba(255, 200, 0, 0.15);
+      --border: rgba(255, 200, 0, 0.5);
+    }
 
-            header {
-            padding: 4rem 2rem;
-            text-align: center;
-            border-bottom: 1px solid #222;
-            }
+    * { box-sizing: border-box; }
 
-            header h1 {
-            font-size: 3rem;
-            margin: 0;
-            }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, sans-serif;
+      background: #000;
+      color: var(--fg);
+      overflow-x: hidden;
+    }
 
-            header p {
-            color: var(--muted);
-            max-width: 600px;
-            margin: 1rem auto 0;
-            }
+    /* BACKGROUND VIDEO */
+    .bg-anim {
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      overflow: hidden;
+      background: radial-gradient(circle at top, #141420, #000);
+    }
 
-            main {
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 3rem 2rem;
-            }
+    .bg-anim video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.25;
+      filter: blur(3px) saturate(1);
+    }
 
-            .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 1.5rem;
-            }
+    /* overlay above video, below content */
+    .bg-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+    }
 
-            .card {
-            border: 1px solid #222;
-            padding: 1.5rem;
-            border-radius: 8px;
-            transition: transform 0.2s, border-color 0.2s;
-            }
+    /* HERO */
+    header {
+      min-height: 10vh;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 4rem 2rem;
+      animation: fadeIn 1.2s ease-out;
+    }
 
-            .card:hover {
-            transform: translateY(-4px);
-            border-color: var(--accent);
-            }
+    header h1 {
+      font-size: clamp(3rem, 7vw, 5rem);
+      margin: 0;
+      letter-spacing: -0.04em;
+      text-shadow: 0 0 30px rgba(255, 200, 0, 0.15);
+    }
 
-            .card h3 {
-            margin-top: 0;
-            color: var(--accent);
-            }
+    header p {
+      max-width: 600px;
+      color: #aaa;
+      margin: 1.5rem auto 2.5rem;
+      font-size: 1.1rem;
+    }
 
-            footer {
-            border-top: 1px solid #222;
-            padding: 2rem;
-            text-align: center;
-            color: var(--muted);
-            }
+    /* GRID */
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 4rem 2rem 6rem;
+    }
 
-            a {
-            color: var(--accent);
-            text-decoration: none;
-            }
-        </style>
-    </head>
-    <body>
-        <div id="app">
-            <header>
-                <h1>{{ siteName }}</h1>
-                <p>{{ tagline }}</p>
-            </header>
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.8rem;
+    }
 
-            <main>
-                <h2>Resources</h2>
+    .card {
+      background: linear-gradient(
+        180deg,
+        var(--glass),
+        rgba(255,255,255,0.03)
+      );
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.6rem;
+      position: relative;
+      overflow: hidden;
+      animation: slideUp .8s ease forwards;
+    }
 
-                <div class="grid">
-                    <div class="card" v-for="resource in resources" :key="resource.title">
-                    <h3>{{ resource.title }}</h3>
-                    <p>{{ resource.description }}</p>
-                    </div>
-                </div>
-            </main>
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(
+        circle at top left,
+        rgba(255,159,28,.15),
+        transparent 60%
+      );
+      opacity: 0;
+      transition: opacity .3s;
+    }
 
-            <footer>
-                <p>
-                    <a href="https://github.com/grimy86/lowlevelnotes/blob/main/LICENSE" target="_blank" rel="noopener">
-                    MIT License, Copyright © since 2024
-                    </a>
-                </p>
-            </footer>
+    .card:hover::before {
+      opacity: 1;
+    }
+
+    .card h3 {
+      margin: 0 0 .5rem;
+      color: var(--accent);
+    }
+
+    .card p {
+      color: #bbb;
+      font-size: .95rem;
+    }
+
+    .badge {
+      margin-top: 1rem;
+      display: inline-block;
+      font-size: .75rem;
+      padding: .25rem .6rem;
+      border-radius: 999px;
+      background: rgba(255,255,255,.1);
+      color: #aaa;
+    }
+
+    footer {
+      text-align: center;
+      padding: 3rem 1rem;
+      font-size: .85rem;
+
+      color: var(--accent);
+      opacity: 0.6;
+    }
+
+
+    /* ANIMATIONS */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to   { opacity: 1; transform: none; }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app">
+
+    <!-- Background video -->
+    <div class="bg-anim">
+      <video autoplay muted loop playsinline>
+        <source src="/resources/assets/bg.mp4" type="video/mp4">
+      </video>
+    </div>
+
+    <!-- Dark blending overlay -->
+    <div class="bg-overlay"></div>
+
+    <header>
+      <div>
+        <h1>{{ siteName }}</h1>
+        <p>{{ tagline }}</p>
+      </div>
+    </header>
+
+    <main>
+      <div class="grid">
+        <div
+          class="card"
+          v-for="(r, i) in resources"
+          :key="r.title"
+          :style="{ animationDelay: (i * 0.08) + 's' }"
+          :class="{ clickable: r.pdf }"
+          @click="openResource(r)"
+        >
+          <h3>{{ r.title }}</h3>
+          <p>{{ r.description }}</p>
+          <span class="badge">
+            {{ r.pdf ? "PDF" : "Coming soon" }}
+          </span>
         </div>
-    </body>
+      </div>
+    </main>
+
+    <footer>
+      MIT License © 2024–{{ new Date().getFullYear() }}
+    </footer>
+
+  </div>
+</body>
 </html>
