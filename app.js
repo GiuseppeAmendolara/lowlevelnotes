@@ -7,7 +7,18 @@
           loading: true,
 
           site: {
-            name: "lowlevelnotes"
+            name: "lowlevelnotes",
+            url: "https://lowlevelnotes.com",
+            description:
+              "Structured notes on programming, low-level concepts, and system internals.",
+            license: "MIT License",
+            legal: "https://github.com/grimy86/lowlevelnotes/blob/main/LICENSE",
+            repository: "https://github.com/grimy86/lowlevelnotes",
+            projects: "20+ projects",
+            discord: "active in 3 discord servers",
+            private: "no tracking, no ads",
+            openSource: "fully open source",
+            collection: "private access to a curated collection of books, articles, and videos"
           },
 
           currentPage: "home",
