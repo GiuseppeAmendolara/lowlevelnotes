@@ -1,4 +1,5 @@
 const { createApp } = Vue;
+const API_BASE = "https://lowlevelnotes-api.grimy86.workers.dev";
 
 createApp({
   data() {
@@ -53,6 +54,7 @@ createApp({
           description: "2024 Edition",
           pdf: "/resources/pdfs/c_style_cpp.pdf",
 
+          views: null,  // will be loaded dynamically
           level: "beginner",       // beginner | intermediate | advanced
           pages: 645,
           status: "published",     // published | draft
@@ -338,17 +340,41 @@ createApp({
     }
   },
   
+  mounted() {
+    this.loadViews();
+  },
 
   methods: {
-    openResource(resource) {
-      if (!resource.pdf) return;
+    async loadViews() {
+      for (const r of this.resources) {
+        if (r.status !== "published") continue;
 
-      const key = `views:${resource.id}`;
-      const count = Number(localStorage.getItem(key) || 0) + 1;
-      localStorage.setItem(key, count);
-      resource.views = count;
+        try {
+          const res = await fetch(
+            `${API_BASE}/api/resource/${r.id}`
+          );
+          const data = await res.json();
+          r.views = data.views;
+        } catch (e) {
+          r.views = 0;
+        }
+      }
+    },
 
+    async fetchViews(resource) {
+      const res = await fetch(`${API_BASE}/api/resource/${resource.slug}`);
+      const data = await res.json();
+      resource.views = data.views;
+    },
+
+    async openResource(resource) {
+      await fetch(
+        `${API_BASE}/api/resource/${resource.id}`,
+        { method: "POST" }
+      );
+
+      resource.views = (resource.views ?? 0) + 1;
       window.open(resource.pdf, "_blank");
     }
-  },
+  }
 }).mount("#app");

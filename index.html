@@ -369,6 +369,11 @@
       opacity: 0;
       transform: translateY(-4px);
     }
+
+    .badge.views {
+      background: rgba(255,255,255,.08);
+      color: #ccc;
+    }
   </style>
 </head>
 
@@ -409,45 +414,40 @@
   <main>
     <transition name="page" mode="out-in">
     <!-- HOME -->
-    <section v-if="currentPage === 'home'">
-      <div class="grid">
-        <div class="card"
-            v-for="r in featuredResources"
-            :key="r.id"
-            :class="{ draft: r.status === 'draft' }"
-            @click="r.status === 'published' && openResource(r)">
+          <section v-if="currentPage === 'home'">
+        <div class="grid">
+          <div class="card"
+               v-for="r in featuredResources"
+               :key="r.id"
+               :class="{ draft: r.status === 'draft' }"
+               @click="r.status === 'published' && openResource(r)">
 
-          <h3>{{ r.title }}</h3>
-          <p>{{ r.description }}</p>
+            <h3>{{ r.title }}</h3>
+            <p>{{ r.description }}</p>
 
-          <div class="card-footer">
-            <div class="card-author"
-                v-if="authorMap[r.authorId]"
-                @click.stop>
-              <img :src="authorMap[r.authorId].avatar" />
-              <span>{{ authorMap[r.authorId].name }}</span>
+            <div class="card-footer">
 
-              <div class="author-hover">
+              <div class="card-author"
+                   v-if="authorMap[r.authorId]"
+                   @click.stop>
                 <img :src="authorMap[r.authorId].avatar" />
-                <div class="author-info">
-                  <strong>{{ authorMap[r.authorId].name }}</strong>
-                  <span class="role">{{ authorMap[r.authorId].role }}</span>
-                  <a :href="authorMap[r.authorId].profile" target="_blank">
-                    View profile ↗
-                  </a>
-                </div>
+                <span>{{ authorMap[r.authorId].name }}</span>
               </div>
-            </div>
 
-            <div class="badges">
-              <span class="badge accent" v-if="r.status === 'published'">PDF</span>
-              <span class="badge">🎯 {{ r.level }}</span>
-              <span class="badge">📄 {{ r.pages }}</span>
+              <div class="badges">
+                <span class="badge accent" v-if="r.status === 'published'">PDF</span>
+                <span class="badge">🎯 {{ r.level }}</span>
+                <span class="badge">📄 {{ r.pages }}</span>
+
+                <span class="badge views" v-if="r.views !== null">
+                  👁 {{ r.views }}
+                </span>
+              </div>
+
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
     <!-- CHANGELOG -->
     <section v-else-if="currentPage === 'changelog'" class="page">
