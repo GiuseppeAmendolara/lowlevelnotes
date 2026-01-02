@@ -137,8 +137,8 @@
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 1.8rem;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.25rem;
     }
 
     /* CARDS */
@@ -162,6 +162,26 @@
 
     .card.featured {
       box-shadow: 0 0 0 1px rgba(255, 200, 0, 0.35), 0 0 40px rgba(255, 200, 0, 0.15);
+      border-left: 30px solid var(--accent);
+    }
+
+    .card p {
+      font-size: .9rem;
+      line-height: 1.4;
+    }
+
+    .card h3 {
+      font-size: 1.05rem;
+    }
+
+    .card.featured::before {
+      content: "★";
+      position: absolute;
+      top: 14px;
+      right: 18px;
+      font-size: .8rem;
+      color: var(--accent);
+      opacity: .6;
     }
 
     .card.draft {
@@ -210,6 +230,22 @@
       height: 20px;
       border-radius: 50%;
       border: 1px solid var(--border);
+    }
+
+    .skeleton {
+      background: linear-gradient(
+        90deg,
+        rgba(255,255,255,0.04),
+        rgba(255,255,255,0.08),
+        rgba(255,255,255,0.04)
+      );
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: .6; }
+      50% { opacity: .9; }
+      100% { opacity: .6; }
     }
 
     /* BADGES */
@@ -282,6 +318,27 @@
       opacity: 0;
       transform: translateY(-4px);
     }
+
+    .hero-meta {
+      margin-top: 1.2rem;
+      display: flex;
+      justify-content: center;
+      gap: 1.2rem;
+      font-size: .8rem;
+      color: var(--text-dim);
+    }
+
+    .page h3 {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+}
+
+.page p {
+  color: var(--text-muted);
+  font-size: .95rem;
+}
+
   </style>
 </head>
 
@@ -308,10 +365,20 @@
     </video>
   </div>
 
+  <div v-if="loading" class="grid">
+    <div class="card skeleton" v-for="n in 3" :key="n"></div>
+  </div>
+
   <!-- HERO -->
   <header>
     <h1>low_level<span class="accent">notes</span></h1>
     <p>{{ site.description }}</p>
+    <div class="hero-meta">
+    <span>📚 Free resources</span>
+    <span>🧠 Low-level focus</span>
+    <span>⚙️ No fluff</span>
+  </div>
+
   </header>
 
   <!-- CONTENT -->
@@ -319,15 +386,18 @@
     <transition name="page" mode="out-in">
       <!-- HOME -->
       <section v-if="currentPage === 'home'">
+        <h2 class="section-title">Featured</h2>
+
         <div class="grid">
           <div
             class="card"
-            v-for="r in featuredResources"
+            v-for="r in featuredPublished"
             :key="r.id"
-            :class="{ draft: r.status === 'draft' }"
-            @click="r.status === 'published' && openResource(r)">
+            @click="openResource(r)">
+
             <h3>{{ r.title }}</h3>
             <p>{{ r.description }}</p>
+
             <div class="card-footer">
               <div
                 class="card-author"
@@ -336,11 +406,30 @@
                 <img :src="authorMap[r.author_id].avatar" />
                 <span>{{ authorMap[r.author_id].name }}</span>
               </div>
+
               <div class="badges">
-                <span class="badge accent" v-if="r.status === 'published'">PDF</span>
+                <span class="badge accent">📁 {{ r.type }}</span>
                 <span class="badge">🎯 {{ r.level }}</span>
                 <span class="badge">📄 {{ r.pages }}</span>
-                <span class="badge views" v-if="r.views !== null">👁 {{ r.views }}</span>
+                <span class="badge views">👁 {{ r.views }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div v-if="featuredDrafts.length" class="more-section">
+          <h3 class="muted-title">More in progress</h3>
+
+          <div class="grid compact">
+            <div
+              class="card draft"
+              v-for="r in featuredDrafts"
+              :key="r.id">
+
+              <h3>{{ r.title }}</h3>
+              <p>{{ r.description || 'In progress' }}</p>
+
+              <div class="badges">
+                <span class="badge">🚧 Draft</span>
               </div>
             </div>
           </div>
@@ -426,9 +515,12 @@
     </transition>
   </main>
 
-  <footer>
-    MIT License © 2024–{{ new Date().getFullYear() }}, version {{ site.version }}
-  </footer>
+<footer>
+  MIT License © 2024–{{ new Date().getFullYear() }} ·
+  <a class="accent" href="https://github.com/grimy86/lowlevelnotes" target="_blank">
+    GitHub
+  </a>
+</footer>
 </div>
 </body>
 </html>
