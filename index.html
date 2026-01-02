@@ -1,627 +1,259 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <link rel="icon" href="/resources/assets/icon.png" />
-  <title>lowlevelnotes</title>
-
-  <!-- Metadata -->
-  <meta name="description"
-        content="Structured notes on programming, low-level concepts, and system internals. Free PDFs and learning resources." />
-
-  <!-- Open Graph -->
-  <meta property="og:title" content="lowlevelnotes" />
-  <meta property="og:description" content="Structured notes on programming, low-level concepts, and system internals. Free PDFs." />
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://lowlevelnotes.com/" />
-  <meta property="og:image" content="https://lowlevelnotes.com/resources/assets/preview.png" />
-
-  <!-- Vue (global build) -->
-  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-
-  <!-- Marked (GLOBAL build) -->
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-
-  <!-- Components -->
-  <script src="./components/MarkdownView.js" defer></script>
-
-  <!-- App -->
-  <script src="./app.js" defer></script>
-
-  <style>
-    :root {
-      --bg: #000;
-      --fg: #fff;
-      --accent: rgb(255, 200, 0);
-      --glass: rgba(255, 200, 0, 0.14);
-      --border: rgba(255, 200, 0, 0.45);
-      --text-muted: #aaa;
-      --text-dim: #888;
-      --text-light: #ccc;
-      --text-medium: #bbb;
-    }
-
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      font-family: Inter, system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--fg);
-    }
-
-    /* BACKGROUND */
-    .bg-anim {
-      position: fixed;
-      inset: 0;
-      z-index: -2;
-      overflow: hidden;
-    }
-
-    .bg-anim video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      opacity: 0.3;
-      filter: blur(3px);
-    }
-
-    /* NAVIGATION */
-    .nav {
-      position: sticky;
-      top: 1;
-      display: flex;
-      justify-content: center;
-      padding: .9rem 2rem;
-    }
-
-    .nav-track {
-      position: relative;
-      display: grid;
-      grid-auto-flow: column;
-      grid-auto-columns: 1fr;
-      gap: 0;
-      padding: .25rem;
-      background: rgba(255, 255, 255, 0.02);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 10px;
-    }
-
-    .nav-indicator {
-      position: absolute;
-      top: 2px;
-      bottom: 2px;
-      left: 2px;
-      width: calc(100% / 4 - 1px);
-      border-radius: 8px;
-      background: linear-gradient(180deg, rgba(255, 200, 0, 0.18), rgba(255, 200, 0, 0.08));
-      border: 1px solid rgba(255, 200, 0, 0.35);
-      transition: transform .5s cubic-bezier(.4, 0, .2, 1), opacity .5s ease;
-    }
-
-    .nav button {
-      position: relative;
-      z-index: 2;
-      background: none;
-      border: none;
-      padding: .45rem 1.4rem;
-      font-size: .8rem;
-      letter-spacing: .04em;
-      text-transform: uppercase;
-      color: var(--text-dim);
-      cursor: pointer;
-      transition: color .5s ease;
-    }
-
-    .nav button:hover { color: var(--text-light); }
-    .nav button.active { color: var(--accent); }
-
-    /* HERO */
-    header {
-      text-align: center;
-      padding: 4rem 2rem 3rem;
-    }
-
-    header h1 .accent {
-      text-shadow:
-        0 0 25px rgba(255, 200, 0, 0.45);
-    }
-
-    header h1 {
-      font-size: clamp(3rem, 7vw, 5rem);
-      margin: 0;
-      letter-spacing: -0.04em;
-      text-shadow:
-        0 2px 40px rgba(0, 0, 0, 0.55),
-        0 0 40px rgba(0, 0, 0, 0.35);
-    }
-
-    header p {
-      max-width: 620px;
-      margin: 1.5rem auto 0;
-      color: var(--text-muted);
-      text-shadow:
-        0 0 40px rgba(0, 0, 0, 0.45);
-    }
-
-    .accent { color: var(--accent); }
-
-    /* MAIN CONTENT */
-    main {
-      max-width: 1200px;
-      margin: auto;
-      padding: 4rem 2rem 6rem;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 1.25rem;
-    }
-
-    /* CARDS */
-    .card {
-      background: linear-gradient(180deg, var(--glass), rgba(255, 255, 255, 0.03));
-      backdrop-filter: blur(12px);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 1.6rem;
-      display: flex;
-      flex-direction: column;
-      gap: .6rem;
-      cursor: pointer;
-      transition: transform .5s ease, box-shadow .5s ease;
-    }
-
-    .card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 0 0 1px rgba(255, 200, 0, 0.15), 0 10px 40px rgba(0, 0, 0, 0.5);
-    }
-
-    .card.featured {
-      box-shadow: 0 0 0 1px rgba(255, 200, 0, 0.35), 0 0 40px rgba(255, 200, 0, 0.15);
-      border-left: 30px solid var(--accent);
-    }
-
-    .card p {
-      font-size: .9rem;
-      line-height: 1.4;
-    }
-
-    .card h3 {
-      font-size: 1.05rem;
-    }
-
-    .card.featured::before {
-      content: "★";
-      position: absolute;
-      top: 14px;
-      right: 18px;
-      font-size: .8rem;
-      color: var(--accent);
-      opacity: .6;
-    }
-
-    .card.draft {
-      opacity: 0.55;
-      cursor: default;
-      filter: saturate(0.7);
-    }
-
-    .card.draft:hover {
-      transform: none;
-      box-shadow: none;
-    }
-
-    .card.draft .badge.accent { display: none; }
-    .card.draft h3 { color: var(--text-light); }
-
-    .card h3 {
-      color: var(--accent);
-      margin: 0;
-    }
-
-    .card p {
-      color: var(--text-medium);
-      font-size: .95rem;
-    }
-
-    .card-footer {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-top: .8rem;
-      gap: .6rem;
-      flex-wrap: wrap;
-    }
-
-    .card-author {
-      display: inline-flex;
-      align-items: center;
-      gap: .5rem;
-      font-size: .75rem;
-      color: var(--text-muted);
-    }
-
-    .card-author img {
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      border: 1px solid var(--border);
-    }
-
-    .skeleton {
-      background: linear-gradient(
-        90deg,
-        rgba(255,255,255,0.04),
-        rgba(255,255,255,0.08),
-        rgba(255,255,255,0.04)
-      );
-      animation: pulse 1.5s infinite;
-    }
-
-    @keyframes pulse {
-      0% { opacity: .6; }
-      50% { opacity: .9; }
-      100% { opacity: .6; }
-    }
-
-    /* BADGES */
-    .badges {
-      display: flex;
-       gap: 0.6rem;
-      flex-wrap: wrap;
-    }
-
-    .badge {
-      font-size: 0.75rem;
-      padding: 0.3rem 0.6rem;
-      border-radius: 999px;
-      background: rgba(255, 200, 0, 0.12);
-      color: var(--accent);
-      white-space: nowrap;
-      transition: transform 0.5s ease, background 0.5s ease;
-    }
-
-    .badge.accent {
-      background: rgba(255, 200, 0, 0.15);
-      color: var(--accent);
-    }
-
-    .badge.views {
-      background: rgba(255, 255, 255, 0.08);
-      color: var(--text-light);
-    }
-
-    .badge:hover {
-      transform: translateY(-2px);
-      background: rgba(255, 200, 0, 0.2);
-    }
-
-    /* PAGE CONTENT */
-    .page {
-      max-width: 900px;
-      margin: auto;
-      line-height: 1.7;
-    }
-
-    .page h2, .page h3, .page h4 {
-      color: var(--accent);
-      margin-top: 2.2rem;
-    }
-
-    .warning-box {
-      background: rgba(255, 80, 80, 0.1);
-      border: 1px solid rgba(255, 80, 80, 0.35);
-      border-radius: 14px;
-      padding: 1.2rem 1.4rem;
-      margin-top: 1.5rem;
-    }
-
-    /* FOOTER */
-    .footer {
-      text-align: center;
-      padding: 3rem 2rem;
-      color: var(--accent);
-      opacity: 0.7;
-      font-size: 0.9rem;
-      background: linear-gradient(180deg, rgba(0,0,0,0.05), transparent);
-    }
-
-    .footer-main {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      max-width: 900px;
-      margin: auto;
-    }
-
-    .footer-row {
-      display: flex;
-      justify-content: center;
-      gap: 1rem;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-
-    .footer-description {
-      font-size: 0.85rem;
-      color: var(--text-medium);
-      margin-top: 0.6rem;
-    }
-
-    .footer-description .accent {
-      font-weight: 600;
-      text-decoration: underline;
-    }
-
-    /* PAGE TRANSITIONS */
-    .page-enter-active,
-    .page-leave-active {
-      transition: opacity .5s ease, transform .5s ease;
-    }
-
-    .page-enter-from {
-      opacity: 0;
-      transform: translateY(6px);
-    }
-
-    .page-leave-to {
-      opacity: 0;
-      transform: translateY(-4px);
-    }
-
-    .hero-meta {
-      margin-top: 1.2rem;
-      display: flex;
-      justify-content: center;
-      gap: 1.2rem;
-      font-size: .8rem;
-      color: var(--text-dim);
-    }
-
-    .page h3 {
-  display: flex;
-  align-items: center;
-  gap: .6rem;
-}
-
-.page p {
-  color: var(--text-muted);
-  font-size: .95rem;
-}
-
-
-.markdown h1,
-.markdown h2,
-.markdown h3 {
-  color: var(--text-medium);
-  margin-top: 2rem;
-}
-
-.markdown p {
-  color: var(--text-muted);
-  line-height: 1.7;
-}
-
-.markdown a {
-  color: var(--accent);
-  line-height: 1.7;
-}
-
-.markdown code {
-  background: rgba(255,255,255,0.08);
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-
-.markdown pre {
-  background: #111;
-  padding: 1rem;
-  border-radius: 12px;
-  overflow-x: auto;
-}
-  </style>
-</head>
-
-<body>
-<div id="app">
-  <!-- NAVIGATION -->
-  <nav class="nav">
-    <div class="nav-track" :style="{ '--nav-count': nav.length }">
-        <div
-          class="nav-indicator"
-          :style="{ transform: `translateX(calc(${navIndex} * 100%))` }">
-        </div>
-      <button
-        v-for="item in nav"
-        :key="item.id"
-        :class="{ active: currentPage === item.id }"
-        @click="currentPage = item.id">
-        {{ item.label }}
-      </button>
-    </div>
-  </nav>
-
-  <!-- BACKGROUND -->
-  <div class="bg-anim">
-    <video autoplay muted loop playsinline>
-      <source src="/resources/assets/bg_particles.mp4" type="video/mp4">
-    </video>
-  </div>
-
-  <div v-if="loading" class="grid">
-    <div class="card skeleton" v-for="n in 3" :key="n"></div>
-  </div>
-
-  <!-- HERO -->
-  <header>
-    <h1>low_level<span class="accent">notes</span></h1>
-    <p>{{ site.description }}</p>
-    <div class="hero-meta">
-    <span>📚 Free resources</span>
-    <span>🧠 Low-level focus</span>
-    <span>⚙️ No fluff</span>
-  </div>
-
-  </header>
-
-  <!-- CONTENT -->
-  <main>
-    <transition name="page" mode="out-in">
-      <!-- HOME -->
-      <section v-if="currentPage === 'home'">
-        <h2 class="section-title">Featured</h2>
-
-        <div class="grid">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="/resources/assets/icon.png" />
+    <title>low_levelnotes</title>
+
+    <!-- Metadata -->
+    <meta
+      name="description"
+      content="Structured notes on programming, low-level concepts, and system internals. Free PDFs and learning resources."
+    />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="lowlevelnotes" />
+    <meta
+      property="og:description"
+      content="Structured notes on programming, low-level concepts, and system internals. Free PDFs."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://lowlevelnotes.com/" />
+    <meta
+      property="og:image"
+      content="https://lowlevelnotes.com/resources/assets/preview.png"
+    />
+
+    <!-- Vue (global build) -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+
+    <!-- Marked (GLOBAL build) -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <!-- Components -->
+    <script src="./components/MarkdownView.js" defer></script>
+
+    <!-- App -->
+    <script src="./app.js" defer></script>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+
+  <body>
+    <div id="app">
+      <!-- NAVIGATION -->
+      <nav class="nav">
+        <div class="nav-track" :style="{ '--nav-count': nav.length }">
           <div
-            class="card"
-            v-for="r in featuredPublished"
-            :key="r.id"
-            @click="openResource(r)">
+            class="nav-indicator"
+            :style="{ transform: `translateX(calc(${navIndex} * 100%))` }"
+          ></div>
+          <button
+            v-for="item in nav"
+            :key="item.id"
+            :class="{ active: currentPage === item.id }"
+            @click="currentPage = item.id"
+          >
+            {{ item.label }}
+          </button>
+        </div>
+      </nav>
 
-            <h3>{{ r.title }}</h3>
-            <p>{{ r.description }}</p>
+      <!-- BACKGROUND -->
+      <div class="bg-anim">
+        <video autoplay muted loop playsinline>
+          <source src="/resources/assets/bg_particles.mp4" type="video/mp4" />
+        </video>
+      </div>
 
-            <div class="card-footer">
+      <div v-if="loading" class="grid">
+        <div class="card skeleton" v-for="n in 3" :key="n"></div>
+      </div>
+
+      <!-- HERO -->
+      <header>
+        <h1>low_level<span class="accent">notes</span></h1>
+        <p>{{ site.description }}</p>
+        <div class="hero-meta">
+          <span>📚 Free resources</span>
+          <span>🧠 Low-level focus</span>
+          <span>⚙️ No fluff</span>
+        </div>
+      </header>
+
+      <!-- CONTENT -->
+      <main>
+        <transition name="page" mode="out-in">
+          <!-- HOME -->
+          <section v-if="currentPage === 'home'">
+            <h2 class="section-title">Featured</h2>
+
+            <div class="grid">
               <div
-                class="card-author"
-                v-if="authorMap[r.author_id]"
-                @click.stop>
-                <img :src="authorMap[r.author_id].avatar" />
-                <span>{{ authorMap[r.author_id].name }}</span>
-              </div>
+                class="card"
+                v-for="r in featuredPublished"
+                :key="r.id"
+                @click="openResource(r)"
+              >
+                <h3>{{ r.title }}</h3>
+                <p>{{ r.description }}</p>
 
-              <div class="badges">
-                <span class="badge accent">📁 {{ r.type }}</span>
-                <span class="badge">🎯 {{ r.level }}</span>
-                <span class="badge">📄 {{ r.pages }}</span>
-                <span class="badge views">👁 {{ r.views }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div v-if="featuredDrafts.length" class="more-section">
-          <h3 class="muted-title">More in progress</h3>
+                <div class="card-footer">
+                  <div
+                    class="card-author"
+                    v-if="authorMap[r.author_id]"
+                    @click.stop
+                  >
+                    <img :src="authorMap[r.author_id].avatar" />
+                    <span>{{ authorMap[r.author_id].name }}</span>
+                  </div>
 
-          <div class="grid compact">
-            <div
-              class="card draft"
-              v-for="r in featuredDrafts"
-              :key="r.id">
-
-              <h3>{{ r.title }}</h3>
-              <p>{{ r.description || 'In progress' }}</p>
-
-              <div class="badges">
-                <span class="badge">🚧 Draft</span>
+                  <div class="badges">
+                    <span class="badge accent">📁 {{ r.type }}</span>
+                    <span class="badge">🎯 {{ r.level }}</span>
+                    <span class="badge">📄 {{ r.pages }}</span>
+                    <span class="badge views">👁 {{ r.views }}</span>
+                  </div>
+                </div>
               </div>
             </div>
+            <div v-if="featuredDrafts.length" class="more-section">
+              <h3 class="muted-title">More in progress</h3>
+
+              <div class="grid compact">
+                <div class="card draft" v-for="r in featuredDrafts" :key="r.id">
+                  <h3>{{ r.title }}</h3>
+                  <p>{{ r.description || 'In progress' }}</p>
+
+                  <div class="badges">
+                    <span class="badge">🚧 Draft</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- REFERENCES -->
+          <section v-else-if="currentPage === 'references'" class="page">
+            <markdown-view />
+          </section>
+
+          <!-- CHANGELOG -->
+          <section v-else-if="currentPage === 'changelog'" class="page">
+            <div v-for="entry in changelog" :key="entry.version">
+              <h3>
+                {{ entry.release_date }} - {{ entry.title }} ({{ entry.version
+                }})
+              </h3>
+              <p>{{ entry.description }}</p>
+            </div>
+          </section>
+
+          <!-- CONTRIBUTE -->
+          <section v-else-if="currentPage === 'contribute'" class="page">
+            <h2>Contribution & Style Guide</h2>
+
+            <p>
+              lowlevelnotes is an open, long-term project. Contributions are
+              welcome, but are expected to meet a high standard of clarity,
+              structure, and intent.
+            </p>
+
+            <h3>GitHub Contribution Workflow</h3>
+
+            <ol>
+              <li>Fork the repository to create your own copy.</li>
+              <li>Create a new branch with a descriptive name.</li>
+              <li>
+                Make your changes — bug fixes, features, or documentation.
+              </li>
+              <li>Commit with a clear, concise commit message.</li>
+              <li>Push the branch to your fork.</li>
+              <li>
+                Create a pull request targeting the <code>main</code> branch.
+              </li>
+            </ol>
+
+            <p>
+              For more details, see the official
+              <a
+                class="accent"
+                href="https://docs.github.com/en/get-started/exploring-projects-on-github/contributing-to-a-project"
+                target="_blank"
+              >
+                GitHub Contribution Guide </a
+              >.
+            </p>
+
+            <h3>Style Guide</h3>
+
+            <p>
+              This project was historically built using
+              <a
+                class="accent"
+                href="https://squidfunk.github.io/mkdocs-material/reference/"
+                target="_blank"
+              >
+                MkDocs Material </a
+              >. While the frontend has changed, the documentation style remains
+              strict.
+            </p>
+
+            <ul>
+              <li>
+                All of the source files have to be written in
+                <code>Markdown (.md)</code>
+              </li>
+              <li>Use proper Markdown syntax highlighting.</li>
+              <li>Code blocks for readability and practical examples.</li>
+              <li>Keep structure consistent and intentional.</li>
+            </ul>
+
+            <h3>Pull Request Guidelines</h3>
+
+            <ul>
+              <li>
+                Provide a <strong>clear, detailed description</strong> of what
+                you changed and why.
+              </li>
+              <li>Ensure formatting renders correctly before submitting.</li>
+            </ul>
+
+            <div class="warning-box">
+              <strong class="accent">Warning</strong>
+              <p>
+                Pull requests that lack: a proper description, correct
+                formatting, rendering, etc. may be rejected without review.
+              </p>
+              <p>
+                Well-documented changes significantly speed up review and
+                merging.
+              </p>
+            </div>
+          </section>
+        </transition>
+      </main>
+
+      <footer class="footer">
+        <div class="footer-main">
+          <div class="footer-row">
+            <span
+              >{{ site.license }} © 2024 – {{ new Date().getFullYear() }}</span
+            >
+            <a class="accent" :href="site.legal" target="_blank">Legal</a>
+            <a class="accent" :href="site.repository" target="_blank">GitHub</a>
+          </div>
+
+          <div class="footer-row badges">
+            <span class="badge accent">🌐 {{ site.projects }}</span>
+            <span class="badge accent">💬 {{ site.discord }}</span>
+            <span class="badge accent">🔒 {{ site.private }}</span>
+            <span class="badge accent">🛠 {{ site.openSource }}</span>
+            <span class="badge accent">📚 {{ site.collection }}</span>
           </div>
         </div>
-      </section>
-
-      <!-- REFERENCES -->
-      <section v-else-if="currentPage === 'references'" class="page">
-        <markdown-view />
-      </section>
-
-      <!-- CHANGELOG -->
-      <section v-else-if="currentPage === 'changelog'" class="page">
-        <div v-for="entry in changelog" :key="entry.version">
-        <h3>{{ entry.release_date }} - {{ entry.title }} ({{ entry.version }})</h3>
-        <p>{{ entry.description }}</p>
-      </div>
-      </section>
-
-      <!-- CONTRIBUTE -->
-      <section v-else-if="currentPage === 'contribute'" class="page">
-        <h2>Contribution & Style Guide</h2>
-
-        <p>
-          lowlevelnotes is an open, long-term project. Contributions are welcome,
-          but are expected to meet a high standard of clarity, structure, and intent.
-        </p>
-
-        <h3>GitHub Contribution Workflow</h3>
-
-        <ol>
-          <li>Fork the repository to create your own copy.</li>
-          <li>Create a new branch with a descriptive name.</li>
-          <li>Make your changes — bug fixes, features, or documentation.</li>
-          <li>Commit with a clear, concise commit message.</li>
-          <li>Push the branch to your fork.</li>
-          <li>Create a pull request targeting the <code>main</code> branch.</li>
-        </ol>
-
-        <p>
-          For more details, see the official
-          <a class="accent" href="https://docs.github.com/en/get-started/exploring-projects-on-github/contributing-to-a-project"
-            target="_blank">
-            GitHub Contribution Guide
-          </a>.
-        </p>
-
-        <h3>Style Guide</h3>
-
-        <p>
-          This project was historically built using
-          <a class="accent" href="https://squidfunk.github.io/mkdocs-material/reference/" target="_blank">
-            MkDocs Material
-          </a>.
-          While the frontend has changed, the documentation style remains strict.
-        </p>
-
-        <ul>
-          <li>All of the source files have to be written in <code>Markdown (.md)</code></li>
-          <li>Use proper Markdown syntax highlighting.</li>
-          <li>Code blocks for readability and practical examples.</li>
-          <li>Keep structure consistent and intentional.</li>
-        </ul>
-
-        <h3>Pull Request Guidelines</h3>
-
-        <ul>
-          <li>
-            Provide a <strong>clear, detailed description</strong> of what you changed
-            and why.
-          </li>
-          <li>
-            Ensure formatting renders correctly before submitting.
-          </li>
-        </ul>
-
-        <div class="warning-box">
-          <strong class="accent">Warning</strong>
-          <p>
-            Pull requests that lack: a proper description, correct formatting, rendering, etc. may be
-            rejected without review.
-          </p>
-          <p>
-            Well-documented changes significantly speed up review and merging.
-          </p>
-        </div>
-      </section>
-    </transition>
-  </main>
-
-<footer class="footer">
-    <div class="footer-main">
-      <div class="footer-row">
-        <span>{{ site.license }} © 2024 – {{ new Date().getFullYear() }}</span>
-        <a class="accent" :href="site.legal" target="_blank">Legal</a>
-        <a class="accent" :href="site.repository" target="_blank">GitHub</a>
-      </div>
-
-      <div class="footer-row badges">
-        <span class="badge accent">🌐 {{ site.projects }}</span>
-        <span class="badge accent">💬 {{ site.discord }}</span>
-        <span class="badge accent">🔒 {{ site.private }}</span>
-        <span class="badge accent">🛠 {{ site.openSource }}</span>
-        <span class="badge accent">📚 {{ site.collection }}</span>
-      </div>
+      </footer>
     </div>
-  </footer>
-</div>
-</body>
+  </body>
 </html>

@@ -74,17 +74,17 @@ const MarkdownView = {
 - [TryHackMe](https://tryhackme.com/)
 - [HackTheBox](https://www.hackthebox.com/)
 - [A-Z Index of the Linux command line: bash + utilities](https://ss64.com/bash/)
-      `
+      `,
     };
   },
 
   computed: {
     html() {
       return marked.parse(this.markdown);
-    }
+    },
   },
 
   template: `
     <div class="markdown" v-html="html"></div>
-  `
+  `,
 };
