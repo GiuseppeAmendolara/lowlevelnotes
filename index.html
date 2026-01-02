@@ -27,6 +27,10 @@
       --accent: rgb(255, 200, 0);
       --glass: rgba(255, 200, 0, 0.14);
       --border: rgba(255, 200, 0, 0.45);
+      --text-muted: #aaa;
+      --text-dim: #888;
+      --text-light: #ccc;
+      --text-medium: #bbb;
     }
 
     * { box-sizing: border-box; }
@@ -34,7 +38,7 @@
     body {
       margin: 0;
       font-family: Inter, system-ui, sans-serif;
-      background: #000;
+      background: var(--bg);
       color: var(--fg);
     }
 
@@ -50,11 +54,11 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
-      opacity: 0.30;
+      opacity: 0.3;
       filter: blur(3px);
     }
 
-    /* NAV */
+    /* NAVIGATION */
     .nav {
       position: sticky;
       top: 1;
@@ -63,7 +67,6 @@
       padding: .9rem 2rem;
     }
 
-    /* TRACK */
     .nav-track {
       position: relative;
       display: grid;
@@ -72,11 +75,10 @@
       gap: 0;
       padding: .25rem;
       background: rgba(255, 255, 255, 0.02);
-      border: 1px solid rgba(255,255,255,.08);
+      border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 10px;
     }
 
-    /* SLIDER */
     .nav-indicator {
       position: absolute;
       top: 2px;
@@ -84,22 +86,11 @@
       left: 2px;
       width: calc(100% / 3 - 4px);
       border-radius: 8px;
-
-      background:
-        linear-gradient(
-          180deg,
-          rgba(255,200,0,.18),
-          rgba(255,200,0,.08)
-        );
-
-      border: 1px solid rgba(255,200,0,.35);
-
-      transition:
-        transform .5s cubic-bezier(.4,0,.2,1),
-        opacity .5s ease;
+      background: linear-gradient(180deg, rgba(255, 200, 0, 0.18), rgba(255, 200, 0, 0.08));
+      border: 1px solid rgba(255, 200, 0, 0.35);
+      transition: transform .5s cubic-bezier(.4, 0, .2, 1), opacity .5s ease;
     }
 
-    /* BUTTONS */
     .nav button {
       position: relative;
       z-index: 2;
@@ -109,19 +100,13 @@
       font-size: .8rem;
       letter-spacing: .04em;
       text-transform: uppercase;
-      color: #888;
+      color: var(--text-dim);
       cursor: pointer;
+      transition: color .3s ease;
     }
 
-    /* STATES */
-    .nav button:hover {
-      color: #ccc;
-    }
-
-    .nav button.active {
-      color: var(--accent);
-    }
-
+    .nav button:hover { color: var(--text-light); }
+    .nav button.active { color: var(--accent); }
 
     /* HERO */
     header {
@@ -138,12 +123,12 @@
     header p {
       max-width: 620px;
       margin: 1.5rem auto 0;
-      color: #aaa;
+      color: var(--text-muted);
     }
 
     .accent { color: var(--accent); }
 
-    /* GRID */
+    /* MAIN CONTENT */
     main {
       max-width: 1200px;
       margin: auto;
@@ -156,8 +141,9 @@
       gap: 1.8rem;
     }
 
+    /* CARDS */
     .card {
-      background: linear-gradient(180deg, var(--glass), rgba(255,255,255,0.03));
+      background: linear-gradient(180deg, var(--glass), rgba(255, 255, 255, 0.03));
       backdrop-filter: blur(12px);
       border: 1px solid var(--border);
       border-radius: 18px;
@@ -171,13 +157,11 @@
 
     .card:hover {
       transform: translateY(-4px);
-      box-shadow: 0 0 0 1px rgba(255,200,0,.15),
-                  0 10px 40px rgba(0,0,0,.5);
+      box-shadow: 0 0 0 1px rgba(255, 200, 0, 0.15), 0 10px 40px rgba(0, 0, 0, 0.5);
     }
 
     .card.featured {
-      box-shadow: 0 0 0 1px rgba(255,200,0,.35),
-                  0 0 40px rgba(255,200,0,.15);
+      box-shadow: 0 0 0 1px rgba(255, 200, 0, 0.35), 0 0 40px rgba(255, 200, 0, 0.15);
     }
 
     .card.draft {
@@ -191,13 +175,8 @@
       box-shadow: none;
     }
 
-    .card.draft .badge.accent {
-      display: none;
-    }
-
-    .card.draft h3 {
-      color: #ccc;
-    }
+    .card.draft .badge.accent { display: none; }
+    .card.draft h3 { color: var(--text-light); }
 
     .card h3 {
       color: var(--accent);
@@ -205,11 +184,10 @@
     }
 
     .card p {
-      color: #bbb;
+      color: var(--text-medium);
       font-size: .95rem;
     }
 
-    /* CARD FOOTER */
     .card-footer {
       display: flex;
       align-items: center;
@@ -219,14 +197,12 @@
       flex-wrap: wrap;
     }
 
-    /* AUTHOR */
     .card-author {
-      position: relative;
       display: inline-flex;
       align-items: center;
       gap: .5rem;
       font-size: .75rem;
-      color: #aaa;
+      color: var(--text-muted);
     }
 
     .card-author img {
@@ -234,67 +210,6 @@
       height: 20px;
       border-radius: 50%;
       border: 1px solid var(--border);
-    }
-
-    /* Hover card */
-    .author-hover {
-      position: absolute;
-      bottom: 130%;
-      left: 0;
-      display: flex;
-      gap: .8rem;
-      align-items: center;
-      padding: .8rem 1rem;
-      min-width: 220px;
-
-      background:
-        linear-gradient(180deg, rgba(255,200,0,.12), rgba(0,0,0,.9)),
-        rgba(10,10,10,.85);
-
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-
-      opacity: 0;
-      transform: translateY(6px);
-      pointer-events: auto;
-      transition: .5s ease;
-      z-index: 10;
-    }
-
-    .card-author:hover .author-hover,
-    .author-hover:hover {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .author-hover img {
-      width: 42px;
-      height: 42px;
-      border-radius: 50%;
-      border: 1px solid var(--border);
-    }
-
-    .author-info strong {
-      display: block;
-      color: var(--accent);
-      font-size: .85rem;
-    }
-
-    .author-info .role {
-      font-size: .75rem;
-      color: #aaa;
-    }
-
-    .author-info a {
-      font-size: .75rem;
-      color: #ccc;
-      text-decoration: none;
-    }
-
-    .author-info a:hover {
-      color: var(--accent);
     }
 
     /* BADGES */
@@ -308,24 +223,22 @@
       font-size: .7rem;
       padding: .25rem .6rem;
       border-radius: 999px;
-      background: rgba(255,255,255,.1);
-      color: #aaa;
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-muted);
       white-space: nowrap;
     }
 
     .badge.accent {
-      background: rgba(255,200,0,.15);
+      background: rgba(255, 200, 0, 0.15);
       color: var(--accent);
     }
 
-    footer {
-      text-align: center;
-      padding: 3rem;
-      color: var(--accent);
-      opacity: .6;
-      font-size: .85rem;
+    .badge.views {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-light);
     }
 
+    /* PAGE CONTENT */
     .page {
       max-width: 900px;
       margin: auto;
@@ -337,21 +250,21 @@
       margin-top: 2.2rem;
     }
 
-    .code-example pre {
-      background: rgba(0,0,0,.7);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 1rem;
-      overflow-x: auto;
-      margin: .8rem 0 1.6rem;
-    }
-
     .warning-box {
-      background: rgba(255,80,80,.1);
-      border: 1px solid rgba(255,80,80,.35);
+      background: rgba(255, 80, 80, 0.1);
+      border: 1px solid rgba(255, 80, 80, 0.35);
       border-radius: 14px;
       padding: 1.2rem 1.4rem;
       margin-top: 1.5rem;
+    }
+
+    /* FOOTER */
+    footer {
+      text-align: center;
+      padding: 3rem;
+      color: var(--accent);
+      opacity: .6;
+      font-size: .85rem;
     }
 
     /* PAGE TRANSITIONS */
@@ -369,35 +282,26 @@
       opacity: 0;
       transform: translateY(-4px);
     }
-
-    .badge.views {
-      background: rgba(255,255,255,.08);
-      color: #ccc;
-    }
   </style>
 </head>
 
 <body>
 <div id="app">
-    <!-- NAVIGATION -->
-    <nav class="nav">
-      <div class="nav-track">
-        <div
-          class="nav-indicator"
-          :style="{ transform: `translateX(${navIndex * 100}%)` }">
-        </div>
+  <!-- NAVIGATION -->
+  <nav class="nav">
+    <div class="nav-track">
+      <div class="nav-indicator" :style="{ transform: `translateX(${navIndex * 100}%)` }"></div>
+      <button
+        v-for="item in nav"
+        :key="item.id"
+        :class="{ active: currentPage === item.id }"
+        @click="currentPage = item.id">
+        {{ item.label }}
+      </button>
+    </div>
+  </nav>
 
-        <button
-          v-for="(item, i) in nav"
-          :key="item.id"
-          :class="{ active: currentPage === item.id }"
-          @click="currentPage = item.id">
-          {{ item.label }}
-        </button>
-      </div>
-    </nav>
-
-  <!-- Background -->
+  <!-- BACKGROUND -->
   <div class="bg-anim">
     <video autoplay muted loop playsinline>
       <source src="/resources/assets/bg.mp4" type="video/mp4">
@@ -413,59 +317,47 @@
   <!-- CONTENT -->
   <main>
     <transition name="page" mode="out-in">
-    <!-- HOME -->
-          <section v-if="currentPage === 'home'">
+      <!-- HOME -->
+      <section v-if="currentPage === 'home'">
         <div class="grid">
-          <div class="card"
-               v-for="r in featuredResources"
-               :key="r.id"
-               :class="{ draft: r.status === 'draft' }"
-               @click="r.status === 'published' && openResource(r)">
-
+          <div
+            class="card"
+            v-for="r in featuredResources"
+            :key="r.id"
+            :class="{ draft: r.status === 'draft' }"
+            @click="r.status === 'published' && openResource(r)">
             <h3>{{ r.title }}</h3>
             <p>{{ r.description }}</p>
-
             <div class="card-footer">
-
-              <div class="card-author"
-                   v-if="authorMap[r.authorId]"
-                   @click.stop>
-                <img :src="authorMap[r.authorId].avatar" />
-                <span>{{ authorMap[r.authorId].name }}</span>
+              <div
+                class="card-author"
+                v-if="authorMap[r.author_id]"
+                @click.stop>
+                <img :src="authorMap[r.author_id].avatar" />
+                <span>{{ authorMap[r.author_id].name }}</span>
               </div>
-
               <div class="badges">
                 <span class="badge accent" v-if="r.status === 'published'">PDF</span>
                 <span class="badge">🎯 {{ r.level }}</span>
                 <span class="badge">📄 {{ r.pages }}</span>
-
-                <span class="badge views" v-if="r.views !== null">
-                  👁 {{ r.views }}
-                </span>
+                <span class="badge views" v-if="r.views !== null">👁 {{ r.views }}</span>
               </div>
-
             </div>
           </div>
         </div>
       </section>
 
-    <!-- CHANGELOG -->
-    <section v-else-if="currentPage === 'changelog'" class="page">
-      <article v-for="entry in changelog" :key="entry.version" class="changelog-entry">
-        <h2 class="accent">
-          {{ entry.version }}
-          <small>{{ entry.date }}</small>
-        </h2>
+      <!-- CHANGELOG -->
+      <section v-else-if="currentPage === 'changelog'" class="page">
+        <div v-for="entry in changelog" :key="entry.version">
+        <h3>{{ entry.version }} - {{ entry.title }}</h3>
+        <p>{{ entry.description }}</p>
+      </div>
+      </section>
 
-        <ul>
-          <li v-for="c in entry.changes" :key="c">{{ c }}</li>
-        </ul>
-      </article>
-    </section>
-
-    <!-- CONTRIBUTE -->
-    <section v-else-if="currentPage === 'contribute'" class="page">
-       <h2>Contribution & Style Guide</h2>
+      <!-- CONTRIBUTE -->
+      <section v-else-if="currentPage === 'contribute'" class="page">
+        <h2>Contribution & Style Guide</h2>
 
         <p>
           lowlevelnotes is an open, long-term project. Contributions are welcome,
@@ -530,7 +422,7 @@
             Well-documented changes significantly speed up review and merging.
           </p>
         </div>
-    </section>
+      </section>
     </transition>
   </main>
 
