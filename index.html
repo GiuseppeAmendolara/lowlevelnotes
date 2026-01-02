@@ -16,9 +16,17 @@
   <meta property="og:url" content="https://lowlevelnotes.com/" />
   <meta property="og:image" content="https://lowlevelnotes.com/resources/assets/preview.png" />
 
-  <!-- Vue -->
-  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-  <script src="app.js" defer></script>
+  <!-- Vue (global build) -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+
+  <!-- Marked (GLOBAL build) -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <!-- Components -->
+  <script src="./components/MarkdownView.js" defer></script>
+
+  <!-- App -->
+  <script src="./app.js" defer></script>
 
   <style>
     :root {
@@ -84,7 +92,7 @@
       top: 2px;
       bottom: 2px;
       left: 2px;
-      width: calc(100% / 3 - 4px);
+      width: calc(100% / 4 - 1px);
       border-radius: 8px;
       background: linear-gradient(180deg, rgba(255, 200, 0, 0.18), rgba(255, 200, 0, 0.08));
       border: 1px solid rgba(255, 200, 0, 0.35);
@@ -102,7 +110,7 @@
       text-transform: uppercase;
       color: var(--text-dim);
       cursor: pointer;
-      transition: color .3s ease;
+      transition: color .5s ease;
     }
 
     .nav button:hover { color: var(--text-light); }
@@ -373,6 +381,36 @@
   font-size: .95rem;
 }
 
+
+.markdown h1,
+.markdown h2,
+.markdown h3 {
+  color: var(--text-medium);
+  margin-top: 2rem;
+}
+
+.markdown p {
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+
+.markdown a {
+  color: var(--accent);
+  line-height: 1.7;
+}
+
+.markdown code {
+  background: rgba(255,255,255,0.08);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.markdown pre {
+  background: #111;
+  padding: 1rem;
+  border-radius: 12px;
+  overflow-x: auto;
+}
   </style>
 </head>
 
@@ -380,8 +418,11 @@
 <div id="app">
   <!-- NAVIGATION -->
   <nav class="nav">
-    <div class="nav-track">
-      <div class="nav-indicator" :style="{ transform: `translateX(${navIndex * 100}%)` }"></div>
+    <div class="nav-track" :style="{ '--nav-count': nav.length }">
+        <div
+          class="nav-indicator"
+          :style="{ transform: `translateX(calc(${navIndex} * 100%))` }">
+        </div>
       <button
         v-for="item in nav"
         :key="item.id"
@@ -468,6 +509,11 @@
             </div>
           </div>
         </div>
+      </section>
+
+      <!-- REFERENCES -->
+      <section v-else-if="currentPage === 'references'" class="page">
+        <markdown-view />
       </section>
 
       <!-- CHANGELOG -->

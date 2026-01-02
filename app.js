@@ -2,6 +2,7 @@
     const API_BASE = "https://lowlevelnotes-api.grimy86.workers.dev";
 
     createApp({
+      components: {MarkdownView},
       data() {
         return {
           loading: true,
@@ -25,6 +26,7 @@
 
           nav: [
             { id: "home", label: "Home" },
+            { id: "references", label: "References" },
             { id: "changelog", label: "Changelog" },
             { id: "contribute", label: "Contribute" }
           ],
