@@ -37,7 +37,7 @@
 <body>
   <div id="app">
     <!-- NAVIGATION -->
-    <nav class="nav">
+    <nav v-if="!maintenance" class="nav">
       <div class="nav-track">
         <div class="nav-indicator" :style="{ transform: `translateX(calc(${navIndex} * 100%))` }"></div>
         <button v-for="item in nav" :key="item.id" :class="{ active: currentPage === item.id }"
@@ -59,9 +59,9 @@
       <h1>low_level<sup>notes</sup></h1>
       <p>{{ site.description }}</p>
       <div>
-        <span>📚 Free resources</span>
-        <span>🧠 Low-level focus</span>
-        <span>⚙️ No fluff</span>
+        <span class="badge">📚 {{site.resources}}</span>
+        <span class="badge">🧠 {{site.focus}}</span>
+        <span class="badge">🛠 {{site.openSource}}</span>
       </div>
     </header>
 
@@ -71,47 +71,85 @@
 
         <!-- MAINTENANCE -->
         <section v-if="maintenance" class="page maintenance">
-            <h1>🚧 Under Maintenance</h1>
-            <p>
-              lowlevelnotes is currently undergoing maintenance.<br />
-              Please check back soon.
-            </p>
+          <h1>🚧 Under Maintenance</h1>
+          <p>
+            lowlevelnotes is currently undergoing maintenance.<br />
+            Please check back soon.
+          </p>
         </section>
 
         <!-- HOME -->
-        <section v-if="currentPage === 'home'">
-          <h2 class="section-title">Published</h2>
-          <div class="grid">
+        <section v-if="currentPage === 'home'" class="page">
+          <!-- Published -->
+          <h2>Published</h2>
+          <div class="cards-container">
             <div class="card" v-for="r in publishedResources" :key="r.id" @click="openResource(r)">
-              <img :src="r.img_link" class="card-cover" />
-              <h3>{{ r.title }}</h3>
-              <p>{{ r.description }}</p>
-              <div class="card-footer">
-                <div class="card-author" v-if="authorMap[r.author_id]" @click.stop>
-                  <img :src="authorMap[r.author_id].avatar" />
-                  <span>{{ authorMap[r.author_id].name }}</span>
+              <div class="card-cover">
+                <div class="cover-image-container">
+                  <img :src="r.img_link" :alt="r.title" />
+                  <div class="cover-overlay">
+                    <span class="resource-badge">{{ r.type }}</span>
+                  </div>
                 </div>
-                <div class="badges">
-                  <span class="badge accent">📁 format: {{ r.type }}</span>
-                  <span class="badge">🎯 {{ r.level }} level</span>
-                  <span class="badge">📘 chapters: {{ r.chapters }}</span>
-                  <span class="badge">✍️ exercises: {{ r.excercises }}</span>
-                  <span class="badge">📄 pages: {{ r.pages }}</span>
-                  <span class="badge views">👁 views: {{ r.views }}</span>
+                <div class="cover-content">
+                  <h3 class="cover-title">{{ r.title }}</h3>
+                  <p class="cover-description">{{ r.description }}</p>
+                </div>
+              </div>
+
+              <div class="card-body">
+                <div class="stats-grid">
+                  <div class="stat-item">
+                    <span class="stat-icon">🎯</span>
+                    <span class="stat-label">Level</span>
+                    <span class="stat-value">{{ r.level }}</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-icon">📘</span>
+                    <span class="stat-label">Chapters</span>
+                    <span class="stat-value">{{ r.chapters }}</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-icon">✍️</span>
+                    <span class="stat-label">Excercises</span>
+                    <span class="stat-value">{{ r.excercises }}</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-icon">📄</span>
+                    <span class="stat-label">Pages</span>
+                    <span class="stat-value">{{ r.pages }}</span>
+                  </div>
+                </div>
+
+                <div class="card-footer">
+                  <div class="view-count">
+                    <span class="views-icon">👁</span>
+                    <span>{{ r.views }} views</span>
+                  </div>
+
+                  <div class="card-author" v-if="authorMap[r.author_id]" @click.stop>
+                    <a :href="authorMap[r.author_id].profile" target="_blank" class="author-link">
+                      <div class="author-avatar">
+                        <img :src="authorMap[r.author_id].avatar" :alt="authorMap[r.author_id].name" />
+                      </div>
+                      <div class="author-details">
+                        <div class="author-name">{{ authorMap[r.author_id].name }}</div>
+                        <div class="author-role">{{ authorMap[r.author_id].role }}</div>
+                      </div>
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <h3 v-if="draftResources.length">Drafts</h3>
-
-          <div v-if="draftResources.length" class="more-section">
-            <div class="grid">
-              <div class="card draft" v-for="r in draftResources" :key="r.id">
-                <h3>{{ r.title }}</h3>
-                <div class="badges">
-                  <span class="badge">🚧 {{r.description}}</span>
-                </div>
+          <!-- Drafts -->
+          <div v-if="draftResources.length" class="drafts-section">
+            <div class="drafts-grid">
+              <div class="draft-card" v-for="r in draftResources" :key="r.id">
+                <div class="draft-badge">Draft</div>
+                <h4 class="draft-title">{{ r.title }}</h4>
+                <p class="draft-description">{{ r.description }}</p>
               </div>
             </div>
           </div>
@@ -271,20 +309,18 @@
     </main>
 
     <footer class="footer">
-      <div class="footer-main">
-        <div class="footer-row">
-          <span>{{ site.license }} © 2024 – {{ new Date().getFullYear() }}</span>
-          <a class="accent" :href="site.legal" target="_blank">Legal</a>
-          <a class="accent" :href="site.repository" target="_blank">GitHub</a>
-        </div>
+      <div class="footer-row">
+        <span>{{ site.license }} © 2024 – {{ new Date().getFullYear() }}</span>
+        <a class="accent" :href="site.legal" target="_blank">Legal</a>
+        <a class="accent" :href="site.repository" target="_blank">GitHub</a>
+      </div>
 
-        <div class="footer-row badges">
-          <span class="badge accent">🌐 {{ site.projects }}</span>
-          <span class="badge accent">💬 {{ site.discord }}</span>
-          <span class="badge accent">🔒 {{ site.private }}</span>
-          <span class="badge accent">🛠 {{ site.openSource }}</span>
-          <span class="badge accent">📚 {{ site.collection }}</span>
-        </div>
+      <div class="footer-row">
+        <span class="badge accent">🌐 {{ site.projects }}</span>
+        <span class="badge accent">💬 {{ site.discord }}</span>
+        <span class="badge accent">🔒 {{ site.privacy }}</span>
+        <span class="badge accent">📰 {{ site.ads }}</span>
+        <span class="badge accent">📚 {{ site.collection }}</span>
       </div>
     </footer>
   </div>
