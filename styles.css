@@ -7,16 +7,16 @@
   --text-light: rgb(255, 255, 255);
   --text-dim: rgba(255, 255, 255, 0.6);
 
-  --accent: rgba(255, 200, 0, 1);
-  --accent-light: rgba(255, 200, 0, 0.5);
-  --glass: rgba(255, 200, 0, 0.2);
-  --border: rgba(255, 200, 0, 0.25);
+  --accent: rgb(255, 125, 0);
+  --accent-light: rgba(255, 125, 0, 0.5);
+  --glass: rgba(255, 125, 0, 0.20);
+  --border: rgba(255, 125, 0, 0.75);
   --shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
   --shadow-hover: 0 12px 32px rgba(0, 0, 0, 0.1);
   --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
   --nav-count: 5;
-  --nav-bg: rgba(255, 255, 255, 0.05);
+  --nav-bg: rgba(50, 50, 50, 0.75);
 
   --card-accent: rgba(255, 200, 0, 0.12);
   --card-bg: linear-gradient(180deg, var(--glass), var(--card-accent));
@@ -116,7 +116,6 @@ a:hover {
 .nav button.active {
   color: var(--accent);
 }
-
 /* #endregion */
 
 /* #region Hero */
@@ -154,6 +153,16 @@ header div {
   color: var(--text-dim);
 }
 
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--nav-bg);
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  color: var(--text-light);
+}
 /* #endregion */
 
 /* #region Layout */
@@ -168,7 +177,6 @@ main {
   gap: 1.25rem;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
 }
-
 /* #endregion */
 
 /* #region Published cards & badges*/
@@ -181,7 +189,7 @@ main {
 
 /* Card Base */
 .card {
-  background: var(--card-bg);
+  background: var(--nav-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
@@ -303,17 +311,17 @@ main {
   margin-bottom: 0.25rem;
 }
 
+.stat-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-light);
+}
+
 .stat-label {
   font-size: 0.75rem;
   color: var(--text-dim);
   margin-bottom: 0.25rem;
   font-weight: 500;
-}
-
-.stat-value {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--text-light);
 }
 
 /* Card Footer */
@@ -484,7 +492,7 @@ main {
 .draft-card {
   position: relative;
   padding: 1.25rem;
-  background: var(--glass);
+  background: var(--nav-bg);
   border: 1px solid var(--accent-light);
   border-radius: var(--radius);
   transition: var(--transition);
@@ -563,21 +571,85 @@ main {
 
 /* #region Footer */
 .footer {
-  color: var(--accent);
-  text-align: center;
-  padding: 3rem 2rem;
-  font-size: .9rem;
-  opacity: .7;
+  padding: 2.5rem;
+  background: var(--nav-bg);
+  color: var(--text-light);
+  position: relative;
+  overflow: hidden;
 }
 
-.footer-row {
-  margin: 1rem;
+.footer-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.footer-top {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  margin-bottom: 3rem;
+  padding-bottom: 3rem;
+  border-bottom: 1px solid var(--accent-light);
+}
+
+@media (max-width: 768px) {
+  .footer-top {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+}
+
+.link-group h4 {
+  color: var(--text-light);
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.link-group a {
+  display: block;
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 0.875rem;
+  padding: 0.5rem 0;
+  transition: all 0.2s ease;
+  position: relative;
+  width: fit-content;
+}
+
+.link-group a:hover {
+  color: var(--text-light);
+  transform: translateX(4px);
+}
+
+.footer-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+  padding-bottom: 3rem;
+  border-bottom: 1px solid var(--accent-light);
+}
+
+.footer-bottom {
   display: flex;
-  justify-content: center;
-  gap: 1rem;
+  justify-content: space-between;
+  align-items: center;
   flex-wrap: wrap;
+  gap: 1.5rem;
+  color: var(--text-light);
 }
 
+@media (max-width: 768px) {
+  .footer-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
 /* #endregion */
 
 /* #region Transitions */
@@ -595,5 +667,4 @@ main {
   opacity: 0;
   transform: translateY(-4px);
 }
-
 /* #endregion */

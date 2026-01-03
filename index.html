@@ -309,18 +309,48 @@
     </main>
 
     <footer class="footer">
-      <div class="footer-row">
-        <span>{{ site.license }} © 2024 – {{ new Date().getFullYear() }}</span>
-        <a class="accent" :href="site.legal" target="_blank">Legal</a>
-        <a class="accent" :href="site.repository" target="_blank">GitHub</a>
-      </div>
+      <div class="footer-container">
+        <div class="footer-top">
+            <div class="link-group">
+              <h4>Resources</h4>
+              <a :href="site.legal" target="_blank">Legal</a>
+              <a :href="site.repository" target="_blank">GitHub Source</a>
+            </div>
+        </div>
 
-      <div class="footer-row">
-        <span class="badge accent">🌐 {{ site.projects }}</span>
-        <span class="badge accent">💬 {{ site.discord }}</span>
-        <span class="badge accent">🔒 {{ site.privacy }}</span>
-        <span class="badge accent">📰 {{ site.ads }}</span>
-        <span class="badge accent">📚 {{ site.collection }}</span>
+        <div class="footer-stats">
+          <div class="stat-item">
+            <div class="stat-icon">📚</div>
+            <div class="stat-info">
+              <div class="stat-value">{{ site.resources }}</div>
+            </div>
+          </div>
+
+          <div class="stat-item">
+            <div class="stat-icon">🌐</div>
+            <div class="stat-info">
+              <div class="stat-value">{{ site.projects }}</div>
+            </div>
+          </div>
+
+          <div class="stat-item">
+            <div class="stat-icon">👥</div>
+            <div class="stat-info">
+              <div class="stat-value">{{ site.community || 'Growing' }}</div>
+            </div>
+          </div>
+
+          <div class="stat-item highlight">
+            <div class="stat-icon">🔒</div>
+            <div class="stat-info">
+              <div class="stat-value">{{ site.privacy }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="footer-bottom">
+           <p>lowlevelnotes © 2024 – {{ new Date().getFullYear() }} • {{ site.license }}</p>
+        </div>
       </div>
     </footer>
   </div>
