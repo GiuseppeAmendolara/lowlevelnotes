@@ -321,13 +321,6 @@
 
         <div class="footer-stats">
           <div class="stat-item">
-            <div class="stat-icon">📚</div>
-            <div class="stat-info">
-              <div class="stat-value">{{ site.resources }}</div>
-            </div>
-          </div>
-
-          <div class="stat-item">
             <div class="stat-icon">🌐</div>
             <div class="stat-info">
               <div class="stat-value">{{ site.projects }}</div>
@@ -335,16 +328,23 @@
           </div>
 
           <div class="stat-item">
-            <div class="stat-icon">👥</div>
+            <div class="stat-icon">💬</div>
             <div class="stat-info">
-              <div class="stat-value">{{ site.community || 'Growing' }}</div>
+              <div class="stat-value">{{ site.discord || 'Growing' }}</div>
             </div>
           </div>
 
-          <div class="stat-item highlight">
+          <div class="stat-item">
             <div class="stat-icon">🔒</div>
             <div class="stat-info">
               <div class="stat-value">{{ site.privacy }}</div>
+            </div>
+          </div>
+
+           <div class="stat-item">
+            <div class="stat-icon">🚫</div>
+            <div class="stat-info">
+              <div class="stat-value">{{ site.ads }}</div>
             </div>
           </div>
         </div>
