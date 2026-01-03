@@ -7,8 +7,9 @@
   --text-light: rgb(255, 255, 255);
   --text-dim: rgba(255, 255, 255, 0.6);
 
-  --accent: rgb(255, 125, 0);
-  --accent-light: rgba(255, 125, 0, 0.5);
+  --accent: rgb(255, 175, 0);
+  --accent-light: rgba(255, 175, 0, 0.5);
+  --accent-dark: rgba(90, 45, 0, 0.25);
   --glass: rgba(255, 125, 0, 0.20);
   --border: rgba(255, 125, 0, 0.75);
   --shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
@@ -209,7 +210,7 @@ main {
 /* Cover Section */
 .card-cover {
   padding: 1.5rem;
-  background: var(--glass);
+  background: var(--accent-dark);
   border-bottom: 1px solid var(--border);
 }
 
@@ -302,7 +303,7 @@ main {
 }
 
 .stat-item:hover {
-  background: rgba(99, 102, 241, 0.1);
+  background: var(--accent-dark);
   transform: translateY(-2px);
 }
 
