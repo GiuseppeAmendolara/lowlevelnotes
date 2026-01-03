@@ -68,6 +68,16 @@
     <!-- CONTENT -->
     <main>
       <transition name="page" mode="out-in">
+
+        <!-- MAINTENANCE -->
+        <section v-if="maintenance" class="page maintenance">
+            <h1>🚧 Under Maintenance</h1>
+            <p>
+              lowlevelnotes is currently undergoing maintenance.<br />
+              Please check back soon.
+            </p>
+        </section>
+
         <!-- HOME -->
         <section v-if="currentPage === 'home'">
           <h2 class="section-title">Published</h2>

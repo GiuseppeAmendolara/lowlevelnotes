@@ -420,3 +420,27 @@ main {
   flex-direction: column;
   gap: 0.6rem;
 }
+
+.page.maintenance {
+  text-align: center;
+  background: var(--nav-bg);
+  backdrop-filter: blur(var(--card-blur));
+  -webkit-backdrop-filter: blur(var(--card-blur));
+  border: var(--border);
+  border-radius: var(--radius);
+  padding: 2rem;
+}
+
+.page.maintenance h1 {
+  font-size: 2rem;
+  font-weight: 600;
+  letter-spacing: 0.025rem;
+  color: var(--text-light);
+}
+
+.page.maintenance p {
+  font-size: 1rem;
+  color: var(--text-muted);
+  opacity: 0.85;
+  line-height: 1.5;
+}

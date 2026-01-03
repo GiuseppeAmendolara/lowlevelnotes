@@ -6,6 +6,7 @@ createApp({
   data() {
     return {
       loading: true,
+      maintenance: false,
 
       site: {
         name: "lowlevelnotes",
@@ -64,6 +65,13 @@ createApp({
   methods: {
     async loadData() {
       try {
+        const health = await fetch(`${API_BASE}/api/health`);
+
+        if (health.status === 503) {
+          this.maintenance = true;
+          return;
+        }
+
         const [resourcesRes, changelogRes, peopleRes] = await Promise.all([
           fetch(`${API_BASE}/api/resources`),
           fetch(`${API_BASE}/api/changelog`),
@@ -75,6 +83,7 @@ createApp({
         this.people = await peopleRes.json();
       } catch (e) {
         console.error(e);
+        this.maintenance = true; // fallback safety
       } finally {
         this.loading = false;
       }
