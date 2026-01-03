@@ -1,13 +1,23 @@
 :root {
-  --bg: #000;
-  --fg: #fff;
-  --accent: rgb(255, 200, 0);
-  --glass: rgba(255, 200, 0, 0.14);
-  --border: rgba(255, 200, 0, 0.45);
+  --body-bg: #000;
+  --body-fg: #fff;
+
+  --radius: 0.25rem;
+  --font: Inter, system-ui, sans-serif;
+  --text-dim: rgba(255, 255, 255, 0.6);
+  --text-light: rgb(255, 255, 255);
+
+  --accent: rgba(255, 200, 0, 1);
+  --glass: rgba(255, 200, 0, 0.2);
+  --border: rgba(255, 200, 0, 0.4);
+
+  --nav-count: 5;
+  --nav-bg: rgba(255, 255, 255, 0.05);
+
   --text-muted: #aaa;
-  --text-dim: #888;
-  --text-light: #ccc;
-  --text-medium: #bbb;
+  --card-accent: rgba(255, 200, 0, 0.12);
+  --card-blur: 0.3rem;
+  --card-bg: linear-gradient(180deg, var(--glass), var(--card-accent));
 }
 
 * {
@@ -16,12 +26,12 @@
 
 body {
   margin: 0;
-  font-family: Inter, system-ui, sans-serif;
-  background: var(--bg);
-  color: var(--fg);
+  font-family: var(--font);
+  background: var(--body-bg);
+  color: var(--body-fg);
 }
 
-/* BACKGROUND */
+/* #region Background video */
 .bg-anim {
   position: fixed;
   inset: 0;
@@ -34,16 +44,17 @@ body {
   height: 100%;
   object-fit: cover;
   opacity: 0.3;
-  filter: blur(3px);
+  filter: blur(0.5rem) brightness(2.5);
 }
 
-/* NAVIGATION */
+/* #endregion */
+
+/* #region Navigation */
 .nav {
-  position: sticky;
-  top: 1;
+  position: static;
   display: flex;
   justify-content: center;
-  padding: 0.9rem 2rem;
+  padding: 1rem;
 }
 
 .nav-track {
@@ -53,9 +64,9 @@ body {
   grid-auto-columns: 1fr;
   gap: 0;
   padding: 0.25rem;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
+  background: var(--nav-bg);
+  border: var(--border);
+  border-radius: var(--radius);
 }
 
 .nav-indicator {
@@ -63,14 +74,10 @@ body {
   top: 2px;
   bottom: 2px;
   left: 2px;
-  width: calc(100% / 4 - 1px);
-  border-radius: 8px;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 200, 0, 0.18),
-    rgba(255, 200, 0, 0.08)
-  );
-  border: 1px solid rgba(255, 200, 0, 0.35);
+  width: calc(100% / var(--nav-count) - 1px);
+  border-radius: var(--radius);
+  background: var(--glass);
+  border: 1px solid var(--border);
   transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease;
 }
 
@@ -82,7 +89,6 @@ body {
   padding: 0.45rem 1.4rem;
   font-size: 0.8rem;
   letter-spacing: 0.04em;
-  text-transform: uppercase;
   color: var(--text-dim);
   cursor: pointer;
   transition: color 0.5s ease;
@@ -91,37 +97,48 @@ body {
 .nav button:hover {
   color: var(--text-light);
 }
+
 .nav button.active {
   color: var(--accent);
 }
 
-/* HERO */
+/* #endregion */
+
+/* #region Hero */
 header {
   text-align: center;
   padding: 4rem 2rem 3rem;
-}
-
-header h1 .accent {
-  text-shadow: 0 0 25px rgba(255, 200, 0, 0.45);
 }
 
 header h1 {
   font-size: clamp(3rem, 7vw, 5rem);
   margin: 0;
   letter-spacing: -0.04em;
-  text-shadow: 0 2px 40px rgba(0, 0, 0, 0.55), 0 0 40px rgba(0, 0, 0, 0.35);
+  text-shadow: 0 0 25px rgb(0, 0, 0);
+  color: var(--text-light);
+}
+
+header h1 sup {
+  text-shadow: 0 0 25px rgba(255, 200, 0, 0.45);
+  color: var(--accent);
 }
 
 header p {
   max-width: 620px;
-  margin: 1.5rem auto 0;
+  margin: 1rem auto 0;
   color: var(--text-muted);
   text-shadow: 0 0 40px rgba(0, 0, 0, 0.45);
 }
 
-.accent {
-  color: var(--accent);
+header div {
+  margin: 1rem;
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: var(--text-dim);
 }
+/* #endregion */
 
 /* MAIN CONTENT */
 main {
@@ -138,10 +155,10 @@ main {
 
 /* CARDS */
 .card {
-  background: linear-gradient(180deg, var(--glass), rgba(255, 255, 255, 0.03));
-  backdrop-filter: blur(12px);
+  background: var(--card-bg);
+  backdrop-filter: var(--card-blur);
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: var(--radius);
   padding: 1.6rem;
   display: flex;
   flex-direction: column;
@@ -180,24 +197,6 @@ main {
   opacity: 0.6;
 }
 
-.card.draft {
-  opacity: 0.55;
-  cursor: default;
-  filter: saturate(0.7);
-}
-
-.card.draft:hover {
-  transform: none;
-  box-shadow: none;
-}
-
-.card.draft .badge.accent {
-  display: none;
-}
-.card.draft h3 {
-  color: var(--text-light);
-}
-
 .card h3 {
   color: var(--accent);
   margin: 0;
@@ -206,6 +205,13 @@ main {
 .card p {
   color: var(--text-medium);
   font-size: 0.95rem;
+}
+
+.card img {
+  width: 7.5rem;
+  height: 7.5rem;
+  margin-bottom: 1rem;
+  align-self: center;
 }
 
 .card-footer {
@@ -228,17 +234,15 @@ main {
 .card-author img {
   width: 20px;
   height: 20px;
-  border-radius: 50%;
+  border-radius: var(--radius);
   border: 1px solid var(--border);
 }
 
 .skeleton {
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.04),
-    rgba(255, 255, 255, 0.08),
-    rgba(255, 255, 255, 0.04)
-  );
+  background: linear-gradient(90deg,
+      rgba(255, 255, 255, 0.04),
+      rgba(255, 255, 255, 0.08),
+      rgba(255, 255, 255, 0.04));
   animation: pulse 1.5s infinite;
 }
 
@@ -246,9 +250,11 @@ main {
   0% {
     opacity: 0.6;
   }
+
   50% {
     opacity: 0.9;
   }
+
   100% {
     opacity: 0.6;
   }
@@ -264,7 +270,7 @@ main {
 .badge {
   font-size: 0.75rem;
   padding: 0.3rem 0.6rem;
-  border-radius: 999px;
+  border-radius: var(--radius);
   background: rgba(255, 200, 0, 0.12);
   color: var(--accent);
   white-space: nowrap;
@@ -303,7 +309,7 @@ main {
 .warning-box {
   background: rgba(255, 80, 80, 0.1);
   border: 1px solid rgba(255, 80, 80, 0.35);
-  border-radius: 14px;
+  border-radius: var(--radius);
   padding: 1.2rem 1.4rem;
   margin-top: 1.5rem;
 }
@@ -361,14 +367,7 @@ main {
   transform: translateY(-4px);
 }
 
-.hero-meta {
-  margin-top: 1.2rem;
-  display: flex;
-  justify-content: center;
-  gap: 1.2rem;
-  font-size: 0.8rem;
-  color: var(--text-dim);
-}
+
 
 .page h3 {
   display: flex;
@@ -401,12 +400,23 @@ main {
 .markdown code {
   background: rgba(255, 255, 255, 0.08);
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius);
 }
 
 .markdown pre {
   background: #111;
   padding: 1rem;
-  border-radius: 12px;
+  border-radius: var(--radius);
   overflow-x: auto;
+}
+
+.draft {
+  background: linear-gradient(180deg, var(--glass), rgba(255, 255, 255, 0.03));
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
 }

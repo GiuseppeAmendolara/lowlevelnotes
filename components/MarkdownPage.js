@@ -1,4 +1,4 @@
-const MarkdownView = {
+const MarkdownPage = {
   data() {
     return {
       markdown: `

@@ -2,7 +2,7 @@ const { createApp } = Vue;
 const API_BASE = "https://lowlevelnotes-api.grimy86.workers.dev";
 
 createApp({
-  components: { MarkdownView },
+  components: { MarkdownPage },
   data() {
     return {
       loading: true,
@@ -11,7 +11,7 @@ createApp({
         name: "lowlevelnotes",
         url: "https://lowlevelnotes.com",
         description:
-          "Structured notes on programming, low-level concepts, and system internals.",
+          "Structured notes on programming, low-level concepts and system internals.",
         license: "MIT License",
         legal: "https://github.com/grimy86/lowlevelnotes/blob/main/LICENSE",
         repository: "https://github.com/grimy86/lowlevelnotes",
@@ -27,9 +27,10 @@ createApp({
 
       nav: [
         { id: "home", label: "Home" },
+        { id: "learn", label: "Learn" },
         { id: "references", label: "References" },
         { id: "changelog", label: "Changelog" },
-        { id: "contribute", label: "Contribute" },
+        { id: "contribution", label: "Contribution" },
       ],
 
       people: [],
@@ -43,14 +44,12 @@ createApp({
       return Object.fromEntries(this.people.map((p) => [p.id, p]));
     },
 
-    featuredPublished() {
-      return this.resources.filter(
-        (r) => r.featured && r.status === "published"
-      );
+    publishedResources() {
+      return this.resources.filter(r => r.published === 1);
     },
 
-    featuredDrafts() {
-      return this.resources.filter((r) => r.featured && r.status === "draft");
+    draftResources() {
+      return this.resources.filter(r => r.published === 0);
     },
 
     navIndex() {

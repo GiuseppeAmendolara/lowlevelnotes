@@ -1,259 +1,283 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" href="/resources/assets/icon.png" />
-    <title>low_levelnotes</title>
 
-    <!-- Metadata -->
-    <meta
-      name="description"
-      content="Structured notes on programming, low-level concepts, and system internals. Free PDFs and learning resources."
-    />
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" href="/resources/assets/icon.png" />
+  <title>low_levelnotes</title>
 
-    <!-- Open Graph -->
-    <meta property="og:title" content="lowlevelnotes" />
-    <meta
-      property="og:description"
-      content="Structured notes on programming, low-level concepts, and system internals. Free PDFs."
-    />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://lowlevelnotes.com/" />
-    <meta
-      property="og:image"
-      content="https://lowlevelnotes.com/resources/assets/preview.png"
-    />
+  <!-- Metadata -->
+  <meta name="description"
+    content="Structured notes on programming, low-level concepts and system internals. Free PDFs and learning resources." />
 
-    <!-- Vue (global build) -->
-    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <!-- Open Graph -->
+  <meta property="og:title" content="lowlevelnotes" />
+  <meta property="og:description"
+    content="Structured notes on programming, low-level concepts, and system internals. Free PDFs." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://lowlevelnotes.com/" />
+  <meta property="og:image" content="https://lowlevelnotes.com/resources/assets/preview.png" />
 
-    <!-- Marked (GLOBAL build) -->
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <!-- CSS -->
+  <link rel="stylesheet" href="./styles.css" />
 
-    <!-- Components -->
-    <script src="./components/MarkdownView.js" defer></script>
+  <!-- Vue (global build) -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
 
-    <!-- App -->
-    <script src="./app.js" defer></script>
+  <!-- Marked (global build) -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
-    <!-- CSS -->
-    <link rel="stylesheet" href="./styles.css" />
-  </head>
+  <!-- Components -->
+  <script src="./components/MarkdownPage.js" defer></script>
 
-  <body>
-    <div id="app">
-      <!-- NAVIGATION -->
-      <nav class="nav">
-        <div class="nav-track" :style="{ '--nav-count': nav.length }">
-          <div
-            class="nav-indicator"
-            :style="{ transform: `translateX(calc(${navIndex} * 100%))` }"
-          ></div>
-          <button
-            v-for="item in nav"
-            :key="item.id"
-            :class="{ active: currentPage === item.id }"
-            @click="currentPage = item.id"
-          >
-            {{ item.label }}
-          </button>
-        </div>
-      </nav>
+  <!-- App -->
+  <script src="./app.js" defer></script>
+</head>
 
-      <!-- BACKGROUND -->
-      <div class="bg-anim">
-        <video autoplay muted loop playsinline>
-          <source src="/resources/assets/bg_particles.mp4" type="video/mp4" />
-        </video>
+<body>
+  <div id="app">
+    <!-- NAVIGATION -->
+    <nav class="nav">
+      <div class="nav-track">
+        <div class="nav-indicator" :style="{ transform: `translateX(calc(${navIndex} * 100%))` }"></div>
+        <button v-for="item in nav" :key="item.id" :class="{ active: currentPage === item.id }"
+          @click="currentPage = item.id">
+          {{ item.label }}
+        </button>
       </div>
+    </nav>
 
-      <div v-if="loading" class="grid">
-        <div class="card skeleton" v-for="n in 3" :key="n"></div>
-      </div>
-
-      <!-- HERO -->
-      <header>
-        <h1>low_level<span class="accent">notes</span></h1>
-        <p>{{ site.description }}</p>
-        <div class="hero-meta">
-          <span>📚 Free resources</span>
-          <span>🧠 Low-level focus</span>
-          <span>⚙️ No fluff</span>
-        </div>
-      </header>
-
-      <!-- CONTENT -->
-      <main>
-        <transition name="page" mode="out-in">
-          <!-- HOME -->
-          <section v-if="currentPage === 'home'">
-            <h2 class="section-title">Featured</h2>
-
-            <div class="grid">
-              <div
-                class="card"
-                v-for="r in featuredPublished"
-                :key="r.id"
-                @click="openResource(r)"
-              >
-                <h3>{{ r.title }}</h3>
-                <p>{{ r.description }}</p>
-
-                <div class="card-footer">
-                  <div
-                    class="card-author"
-                    v-if="authorMap[r.author_id]"
-                    @click.stop
-                  >
-                    <img :src="authorMap[r.author_id].avatar" />
-                    <span>{{ authorMap[r.author_id].name }}</span>
-                  </div>
-
-                  <div class="badges">
-                    <span class="badge accent">📁 {{ r.type }}</span>
-                    <span class="badge">🎯 {{ r.level }}</span>
-                    <span class="badge">📄 {{ r.pages }}</span>
-                    <span class="badge views">👁 {{ r.views }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div v-if="featuredDrafts.length" class="more-section">
-              <h3 class="muted-title">More in progress</h3>
-
-              <div class="grid compact">
-                <div class="card draft" v-for="r in featuredDrafts" :key="r.id">
-                  <h3>{{ r.title }}</h3>
-                  <p>{{ r.description || 'In progress' }}</p>
-
-                  <div class="badges">
-                    <span class="badge">🚧 Draft</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <!-- REFERENCES -->
-          <section v-else-if="currentPage === 'references'" class="page">
-            <markdown-view />
-          </section>
-
-          <!-- CHANGELOG -->
-          <section v-else-if="currentPage === 'changelog'" class="page">
-            <div v-for="entry in changelog" :key="entry.version">
-              <h3>
-                {{ entry.release_date }} - {{ entry.title }} ({{ entry.version
-                }})
-              </h3>
-              <p>{{ entry.description }}</p>
-            </div>
-          </section>
-
-          <!-- CONTRIBUTE -->
-          <section v-else-if="currentPage === 'contribute'" class="page">
-            <h2>Contribution & Style Guide</h2>
-
-            <p>
-              lowlevelnotes is an open, long-term project. Contributions are
-              welcome, but are expected to meet a high standard of clarity,
-              structure, and intent.
-            </p>
-
-            <h3>GitHub Contribution Workflow</h3>
-
-            <ol>
-              <li>Fork the repository to create your own copy.</li>
-              <li>Create a new branch with a descriptive name.</li>
-              <li>
-                Make your changes — bug fixes, features, or documentation.
-              </li>
-              <li>Commit with a clear, concise commit message.</li>
-              <li>Push the branch to your fork.</li>
-              <li>
-                Create a pull request targeting the <code>main</code> branch.
-              </li>
-            </ol>
-
-            <p>
-              For more details, see the official
-              <a
-                class="accent"
-                href="https://docs.github.com/en/get-started/exploring-projects-on-github/contributing-to-a-project"
-                target="_blank"
-              >
-                GitHub Contribution Guide </a
-              >.
-            </p>
-
-            <h3>Style Guide</h3>
-
-            <p>
-              This project was historically built using
-              <a
-                class="accent"
-                href="https://squidfunk.github.io/mkdocs-material/reference/"
-                target="_blank"
-              >
-                MkDocs Material </a
-              >. While the frontend has changed, the documentation style remains
-              strict.
-            </p>
-
-            <ul>
-              <li>
-                All of the source files have to be written in
-                <code>Markdown (.md)</code>
-              </li>
-              <li>Use proper Markdown syntax highlighting.</li>
-              <li>Code blocks for readability and practical examples.</li>
-              <li>Keep structure consistent and intentional.</li>
-            </ul>
-
-            <h3>Pull Request Guidelines</h3>
-
-            <ul>
-              <li>
-                Provide a <strong>clear, detailed description</strong> of what
-                you changed and why.
-              </li>
-              <li>Ensure formatting renders correctly before submitting.</li>
-            </ul>
-
-            <div class="warning-box">
-              <strong class="accent">Warning</strong>
-              <p>
-                Pull requests that lack: a proper description, correct
-                formatting, rendering, etc. may be rejected without review.
-              </p>
-              <p>
-                Well-documented changes significantly speed up review and
-                merging.
-              </p>
-            </div>
-          </section>
-        </transition>
-      </main>
-
-      <footer class="footer">
-        <div class="footer-main">
-          <div class="footer-row">
-            <span
-              >{{ site.license }} © 2024 – {{ new Date().getFullYear() }}</span
-            >
-            <a class="accent" :href="site.legal" target="_blank">Legal</a>
-            <a class="accent" :href="site.repository" target="_blank">GitHub</a>
-          </div>
-
-          <div class="footer-row badges">
-            <span class="badge accent">🌐 {{ site.projects }}</span>
-            <span class="badge accent">💬 {{ site.discord }}</span>
-            <span class="badge accent">🔒 {{ site.private }}</span>
-            <span class="badge accent">🛠 {{ site.openSource }}</span>
-            <span class="badge accent">📚 {{ site.collection }}</span>
-          </div>
-        </div>
-      </footer>
+    <!-- BACKGROUND -->
+    <div class="bg-anim">
+      <video autoplay muted loop playsinline>
+        <source src="/resources/assets/bg_particles.mp4" type="video/mp4" />
+      </video>
     </div>
-  </body>
+
+    <!-- HERO -->
+    <header v-if="currentPage === 'home'" class="hero">
+      <h1>low_level<sup>notes</sup></h1>
+      <p>{{ site.description }}</p>
+      <div>
+        <span>📚 Free resources</span>
+        <span>🧠 Low-level focus</span>
+        <span>⚙️ No fluff</span>
+      </div>
+    </header>
+
+    <!-- CONTENT -->
+    <main>
+      <transition name="page" mode="out-in">
+        <!-- HOME -->
+        <section v-if="currentPage === 'home'">
+          <h2 class="section-title">Published</h2>
+          <div class="grid">
+            <div class="card" v-for="r in publishedResources" :key="r.id" @click="openResource(r)">
+              <img :src="r.img_link" class="card-cover" />
+              <h3>{{ r.title }}</h3>
+              <p>{{ r.description }}</p>
+              <div class="card-footer">
+                <div class="card-author" v-if="authorMap[r.author_id]" @click.stop>
+                  <img :src="authorMap[r.author_id].avatar" />
+                  <span>{{ authorMap[r.author_id].name }}</span>
+                </div>
+                <div class="badges">
+                  <span class="badge accent">📁 format: {{ r.type }}</span>
+                  <span class="badge">🎯 {{ r.level }} level</span>
+                  <span class="badge">📘 chapters: {{ r.chapters }}</span>
+                  <span class="badge">✍️ exercises: {{ r.excercises }}</span>
+                  <span class="badge">📄 pages: {{ r.pages }}</span>
+                  <span class="badge views">👁 views: {{ r.views }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <h3 v-if="draftResources.length">Drafts</h3>
+
+          <div v-if="draftResources.length" class="more-section">
+            <div class="grid">
+              <div class="card draft" v-for="r in draftResources" :key="r.id">
+                <h3>{{ r.title }}</h3>
+                <div class="badges">
+                  <span class="badge">🚧 {{r.description}}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- LEARN -->
+        <section v-else-if="currentPage === 'learn'" class="page">
+          <h2>Natural Progression</h2>
+          <p>
+            Computer science topics build on each other. Skipping fundamentals leads to
+            shallow understanding. Advanced skills only make sense once the basics are
+            solid.
+          </p>
+          <p>
+            Some areas can be studied independently, but they eventually connect into a
+            unified skill set.
+          </p>
+
+          <h2>Effective Study Habits</h2>
+          <ul>
+            <li>Learn in small, cumulative steps</li>
+            <li>Each step should include practical work</li>
+            <li>Use spaced repetition for memorization</li>
+            <li>Write your own summaries to reinforce understanding</li>
+            <li>Avoid jumping topics without a clear reason</li>
+            <li>Keep track of where you left off</li>
+          </ul>
+
+          <h2>Roadmap</h2>
+          <ol>
+            <li> Programming
+              <ul>
+                <li>High-level: Python, Java, C#, C / C++</li>
+                <li>Low-level: x86 / x86_64 Assembly</li>
+              </ul>
+            </li>
+            <li> Operating Systems
+              <ul>
+                <li>System navigation (sysadmin mindset)</li>
+                <li>Core OS concepts</li>
+                <li>Windows internals</li>
+              </ul>
+            </li>
+            <li> Reverse Engineering
+              <ul>
+                <li>Static and dynamic analysis</li>
+                <li>Debuggers and disassemblers</li>
+              </ul>
+            </li>
+            <li> Networking & Security
+              <ul>
+                <li>Metworking fundamentals</li>
+                <li>Pentesting fundamentals</li>
+              </ul>
+            </li>
+          </ol>
+
+          <h2>Practical Tips</h2>
+          <ul>
+            <li>Use readability tools (e.g. dark mode extensions)</li>
+            <li>Bookmark high-quality resources</li>
+            <li>Ask for clarification when stuck, don’t stall indefinitely</li>
+          </ul>
+        </section>
+
+        <!-- REFERENCES -->
+        <section v-else-if="currentPage === 'references'" class="page">
+          <markdown-page />
+        </section>
+
+        <!-- CHANGELOG -->
+        <section v-else-if="currentPage === 'changelog'" class="page">
+          <div v-for="entry in changelog" :key="entry.version">
+            <h3>
+              {{ entry.release_date }} - {{ entry.title }} ({{ entry.version
+              }})
+            </h3>
+            <p>{{ entry.description }}</p>
+          </div>
+        </section>
+
+        <!-- CONTRIBUTION -->
+        <section v-else-if="currentPage === 'contribution'" class="page">
+          <h2>Contribution & Style Guide</h2>
+
+          <p>
+            lowlevelnotes is an open, long-term project. Contributions are
+            welcome, but are expected to meet a high standard of clarity,
+            structure, and intent.
+          </p>
+
+          <h3>GitHub Contribution Workflow</h3>
+
+          <ol>
+            <li>Fork the repository to create your own copy.</li>
+            <li>Create a new branch with a descriptive name.</li>
+            <li>
+              Make your changes — bug fixes, features, or documentation.
+            </li>
+            <li>Commit with a clear, concise commit message.</li>
+            <li>Push the branch to your fork.</li>
+            <li>
+              Create a pull request targeting the <code>main</code> branch.
+            </li>
+          </ol>
+
+          <p>
+            For more details, see the official
+            <a class="accent"
+              href="https://docs.github.com/en/get-started/exploring-projects-on-github/contributing-to-a-project"
+              target="_blank">
+              GitHub Contribution Guide </a>.
+          </p>
+
+          <h3>Style Guide</h3>
+
+          <p>
+            This project was historically built using
+            <a class="accent" href="https://squidfunk.github.io/mkdocs-material/reference/" target="_blank">
+              MkDocs Material </a>. While the frontend has changed, the documentation style remains
+            strict.
+          </p>
+
+          <ul>
+            <li>
+              All of the source files have to be written in
+              <code>Markdown (.md)</code>
+            </li>
+            <li>Use proper Markdown syntax highlighting.</li>
+            <li>Code blocks for readability and practical examples.</li>
+            <li>Keep structure consistent and intentional.</li>
+          </ul>
+
+          <h3>Pull Request Guidelines</h3>
+
+          <ul>
+            <li>
+              Provide a <strong>clear, detailed description</strong> of what
+              you changed and why.
+            </li>
+            <li>Ensure formatting renders correctly before submitting.</li>
+          </ul>
+
+          <div class="warning-box">
+            <strong class="accent">Warning</strong>
+            <p>
+              Pull requests that lack: a proper description, correct
+              formatting, rendering, etc. may be rejected without review.
+            </p>
+            <p>
+              Well-documented changes significantly speed up review and
+              merging.
+            </p>
+          </div>
+        </section>
+      </transition>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-main">
+        <div class="footer-row">
+          <span>{{ site.license }} © 2024 – {{ new Date().getFullYear() }}</span>
+          <a class="accent" :href="site.legal" target="_blank">Legal</a>
+          <a class="accent" :href="site.repository" target="_blank">GitHub</a>
+        </div>
+
+        <div class="footer-row badges">
+          <span class="badge accent">🌐 {{ site.projects }}</span>
+          <span class="badge accent">💬 {{ site.discord }}</span>
+          <span class="badge accent">🔒 {{ site.private }}</span>
+          <span class="badge accent">🛠 {{ site.openSource }}</span>
+          <span class="badge accent">📚 {{ site.collection }}</span>
+        </div>
+      </div>
+    </footer>
+  </div>
+</body>
+
 </html>
