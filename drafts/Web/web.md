@@ -2,6 +2,19 @@
 title: "Modern web development with HTML & CSS"
 subtitle: "2026 Edition"
 author: "grimy86"
+
+colorlinks: true
+linkcolor: blue
+urlcolor: blue
+citecolor: blue
+toccolor: black
+
+listings: true
+listings-no-page-break: true
+listings-options:
+  frame: single
+  breaklines: true
+  basicstyle: \ttfamily\small
 ---
 
 # HTML
