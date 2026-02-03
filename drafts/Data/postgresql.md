@@ -1,5 +1,5 @@
 ---
-title: "Postgresql cheatsheet"
+title: "Postgresql compacted"
 subtitle: "2026 Edition"
 author: "grimy86"
 
@@ -81,8 +81,8 @@ SQL statements are:
 
 It's best practice to start clauses like `FROM`, `WHERE`, `ORDER BY`, etc. on a new line. This improves readability.
 
-## Selecting data
-### `SELECT`, `FROM`
+# Selecting data
+## `SELECT`, `FROM`
 A `SELECT` clause returns data from specific columns, it's followed by a `WHERE` clause where we define from which table the data is needed.
 
 It's by far the most important query in SQL. There's also lots of ways to select data, you could join tables togheter for example. 
@@ -107,7 +107,7 @@ SELECT
 FROM actors;
 ```
 
-### Mathematical expressions
+## Mathematical expressions
 We can use basic PEMDAS operations in sql statements.
 Additionally we can also use mathemathical functions like `MOD`.
 
@@ -117,13 +117,13 @@ SELECT salary * 12 as "Actor Annual Income"
 FROM actors;
 ```
 
-### `NULL` values
+## `NULL` values
 A `NULL` value is a special type of value meaning that there's no data in the field.
 This doesn't mean it's equal to 0, it's simply missing a value.
 
 This is important to be mindful about because mathematical operations like `NULL` division is not allowed.
 
-### Text concatenation
+## Text concatenation
 The concatenation operator `||` adds two text-based columns togheter.
 When we want to provide a space or other character between the two concatednated columns we do so using single quotation marks. Double quotes won't work.
 
@@ -136,7 +136,7 @@ SELECT firstname || ' ' || lastname AS "Actor Name"
 FROM actors;
 ```
 
-### `DISTINCT`
+## `DISTINCT`
 The `DISTINCT` keyword lets us select unique data, this avoids duplicates.
 
 Example:
@@ -144,7 +144,7 @@ Example:
 SELECT DISTINCT name AS "Family Name"
 FROM actors;
 ```
-### The psql query buffer
+## The psql query buffer
 In psql (the PostgreSQL terminal), there is something called a **query buffer**.
 It is temporary memory where the current SQL query is stored before execution.
 
@@ -161,7 +161,7 @@ It is temporary memory where the current SQL query is stored before execution.
 
 Note that backslash `\` commands are not stored in the buffer.
 
-### Describe
+## Describe
 `\d tablename`:
 - Shows the table structure
 - Columns
@@ -170,7 +170,7 @@ Note that backslash `\` commands are not stored in the buffer.
 - Primary keys
 - Foreign key relationships
 
-### `WHERE` & comparison operators
+# `WHERE` & comparison operators
 With the `WHERE` clause we can add a condition to the `SELECT` clause.
 This time when we're selecting text values themselves, they are case-sensitive.
 Also, we select values using comparison operators:
@@ -193,7 +193,7 @@ FROM actors
 WHERE actorid < 10;
 ```
 
-### Logical operators
+## Logical operators
 - `AND`
 - `OR`
 - A combination is also possible: `WHERE n OR n AND n`
@@ -207,7 +207,7 @@ WHERE actorid < 10
 AND known_from IS NOT NULL
 ```
 
-### `ORDER BY`
+## `ORDER BY`
 With `ORDER BY` we can effective sort the values in a column.
 
 - `ASC`
@@ -227,7 +227,7 @@ AND known_from IS NOT NULL
 ORDER BY "Actor ID" DESC;
 ```
 
-### `LIMIT` & `OFFSET`
+## `LIMIT` & `OFFSET`
 With `LIMIT` we limit the amount of output and with `OFFSET` we can skip rows based on a certain output.
 
 Example:
@@ -243,7 +243,7 @@ ORDER BY "Actor ID" DESC;
 LIMIT 3;
 ```
 
-### PSQL variables
+## PSQL variables
 PSQL variables are limited to the psql-client.
 They are processed before SQL goes to the server.
 
@@ -258,10 +258,10 @@ Example with user input:
 
 If we ever want to free up a variable we can use the `\unset variableName` command.
 
-## Single-row functions
+# Single-row functions
 Single-row functions take data from one singular row as opposed to multiple-row functions.
 
-### Character functions
+## Character functions
 Character conversions:
 - `LOWER(arg)`, all lowercase text as a result
 - `UPPER(arg)`, all uppercase text as a result
@@ -279,19 +279,19 @@ String manipulation:
 - `RPAD(string, length, [, paddingchar])`, padds a string with a specified character to the right
 - `REPLACE(string, toReplace, replacementString)`
 
-### Numerical functions
+## Numerical functions
 - `ROUND(arg [, precision])`
 - `TRUNC(arg [, precision])`
 - `MOD(divident, divisor)`
 
-### Date functions
+## Date functions
 - `CURRENT_DATE`
 - `CURRENT_TIMESTAMP`
 - `NOW()`, returns current date and time
 - `DATE_TRUNC(unit, timestamp)`
 - `AGE(arg)`
 
-### Examples
+## Examples
 ```sql
 --
 SELECT created_at, AGE(created_at)
@@ -323,7 +323,7 @@ SELECT
 FROM employees;
 ```
 
-### Type conversion
+# Type conversion
 There's two types of type conversion, implicit or automatic and explicit.
 If we want to explicitly convert types then we must use functions, otherwise a coversion happens implicitly.
 
@@ -337,7 +337,7 @@ Explicit:
 - `TO_DATE()`
 - `TO_TIMESTAMP()`
 
-### Date & time calculations
+## Date & time calculations
 DATE-type default format: `YYYY-MM-DD`
 TIME-type default format: `HH:MI:SS`
 TIMESTAMP-type default format: `YYYY-MM-DD HH:MI:SS`
@@ -356,7 +356,7 @@ SELECT TO_DATE('03/09/25', 'DD/MM/YY') - TO_DATE('03/08/25','DD/MM/YY')
 AS Difference;
 ```
 
-### Functions with NULL
+## Functions with NULL
 - `COALESCE(arg1, arg2, ..., arg n)`
   - All arguments must have the same type
   - Loops over the argument trying to find a value that isn't null
@@ -393,7 +393,7 @@ SELECT
 FROM users;
 ```
 
-### Conditional expressions
+# Conditional expressions
 We can make our SQL expressions conditional by using the `CASE` structure.
 
 Structure:
@@ -445,8 +445,8 @@ SELECT
 FROM customers;
 ```
 
-## Group- or Multiple-row functions
-### Aggregate group functions
+# Group- or Multiple-row functions
+## Aggregate group functions
 - `AVG(column)`, the average
 - `SUM(column)`, the sum
 - `MIN(column)`, mimimum value
@@ -455,7 +455,7 @@ FROM customers;
 - `STDDEV(column)`, standard deviance
 - `VARIANCE(column)`, variance
 
-### `GROUP BY`
+## `GROUP BY`
 When you use `GROUP BY`, the result will contain one row per group.
 As a result, **every selected value must be uniquely determined for that group**.
 
@@ -484,7 +484,7 @@ FROM orders
 GROUP BY customer;
 ```
 
-### `HAVING`
+## `HAVING`
 `HAVING` filters groups, not rows.
 `HAVING` exists because `WHERE` cannot use aggregate functions like `SUM` or `COUNT` because aggregates only make sense after grouping.
 
@@ -499,10 +499,10 @@ GROUP BY customer
 HAVING SUM(amount) > 60;
 ```
 
-## `JOIN` data from seperate tables togheter
+# `JOIN` data from seperate tables togheter
 A JOIN combines rows from two tables based on a related column. **Usually by primary key(PK) in one table and foreign key(FK) in the other**.
 
-### `NATURAL JOIN`
+## `NATURAL JOIN`
 With a natural join you do not specify the join condition yourself. Using natural joins is **considered malpractice**. NATURAL JOIN is just a **special case of `INNER JOIN` with automatic conditions**.
 
 1. Looks for columns with the same name in both tables
@@ -525,7 +525,7 @@ JOIN departments
   ON employees.department_id = departments.department_id;
 ```
 
-### `USING` vs. `ON` & `INNER JOIN`
+## `USING` vs. `ON` & `INNER JOIN`
 Whenever we write `JOIN` we're effectively using the `INNER JOIN`, they are equivalent.
 More on join types later.
 
@@ -576,7 +576,7 @@ WHERE department_id IN (20, 50, 70, 80)
 ORDER BY loc.city;
 ```
 
-### `JOIN` Types
+## `JOIN` Types
 1. `JOIN` or `INNER JOIN`: Only matching rows from both tables
 2. `LEFT JOIN` or `LEFT OUTER JOIN`: All rows from the left table, plus matching rows from the right.
 3. `RIGHT JOIN` or `RIGHT OUTER JOIN`: All rows from the right table, plus matching rows from the left.
@@ -593,7 +593,7 @@ Example logic:
 
 The inner query answers (1), and its result is used by the outer query to answer (2).
 
-### General Rules for Subqueries
+## General Rules for Subqueries
 The number of values returned by the subquery determines **which operators** you can use (`=`, `IN`, `ANY`, `ALL`).
 
 - Subqueries are written **to the right of the comparison operator**
@@ -601,7 +601,7 @@ The number of values returned by the subquery determines **which operators** you
 - Subqueries are **logically evaluated before** the outer query
 - A subquery returns **one or more values**, which the outer query uses for filtering
 
-### Single-row subqueries
+## Single-row subqueries
 A **single-row subquery** returns **exactly one value**.
 
 Because only one value is returned, you can use **single-value comparison operators**:
@@ -639,7 +639,7 @@ WHERE salary =
      FROM employees);
 ```
 
-### Multiple-row subqueries
+## Multiple-row subqueries
 A **multiple-row subquery** returns **more than one value**.
 
 You cannot use `=` with multiple values.
@@ -688,10 +688,10 @@ WHERE employee_id NOT IN
      FROM employees);
 ```
 
-## DML
+# DML
 DML focuses on how data is inserted, updated, deleted, and safely managed using transactions.
 
-### Database Transactions
+## Database Transactions
 A **transaction** is a sequence of DML operations that must be executed **as a single unit**: either all changes succeed or none do.
 
 ### Transaction clauses
@@ -700,25 +700,25 @@ A **transaction** is a sequence of DML operations that must be executed **as a s
 - **ROLLBACK**: Cancels all changes made in the transaction.
 - **SAVEPOINT**: Creates intermediate points to partially roll back.
 
-### Transaction behavior
+## Transaction behavior
 - Changes are **only visible to the user** who started the transaction.
 - Modified rows are **locked** for other users.
 - Other users can still **read old data (SELECT)**.
 - The database keeps both the **original** and **modified** versions until commit or rollback.
 
-### COMMIT
+## COMMIT
 - Makes all changes permanent.
 - Unlocks affected rows.
 - Removes all savepoints.
 - Ends the transaction.
 
-### ROLLBACK
+## ROLLBACK
 - Restores the database to its original state.
 - Unlocks affected rows.
 - Removes all savepoints.
 - Ends the transaction.
 
-### SAVEPOINT and Partial Rollback
+## SAVEPOINT and Partial Rollback
 Savepoints allow rollback to a specific point instead of cancelling everything.
 
 Example:
@@ -727,7 +727,7 @@ SAVEPOINT update1;
 ROLLBACK TO update1;
 ```
 
-### Adding data using `INSERT`
+## Adding data using `INSERT`
 Adds a new row to a table. Values must match all columns in the table, in exact order.
 
 It's important to note that we can handle `NULL` values implicitly by simple omitting the nullable columns from the column list. Or explicitly by providing `NULL` as a value.
@@ -754,7 +754,7 @@ INSERT INTO table
 VALUES (value1, value2, ...);
 ```
 
-### Modifying data using `UPDATE`
+## Modifying data using `UPDATE`
 `UPDATE` updates one or more rows in a table. Again, update using transactions.
 
 Key rules:
@@ -762,7 +762,7 @@ Key rules:
 - `NULL` is used to remove a column value.
 - The number of affected rows depends on the condition.
 
-### Removing data using `DELETE` & `SET`
+## Removing data using `DELETE` & `SET`
 Deletes one or more rows from a table.
 
 Key rules:
@@ -778,7 +778,7 @@ SET salary = 0
 WHERE employee_id = 179;
 ```
 
-### DML subqueries
+## DML subqueries
 Subqueries allow DML operations based on data from other tables.
 
 `INSERT`:
@@ -804,7 +804,7 @@ DELETE FROM table
 WHERE column IN (SELECT column FROM other_table);
 ```
 
-## DDL
+# DDL
 DDL is used to **create, modify, and remove database structures** such as databases, tables, and constraints in PostgreSQL.
 
 DDL defines the **structure** of a relational database, not the data itself.
@@ -817,7 +817,7 @@ Main DDL clauses:
 - Datatypes
 - Constraints
 
-### `CREATE DATABASE`
+## `CREATE DATABASE`
 Creates a new database and assigns an owner.
 
 Important: **Only users with `CREATEDB` rights can create databases.**
@@ -831,7 +831,7 @@ ALTER USER student WITH CREATEDB;
 CREATE DATABASE ClassesDB OWNER student;
 ```
 
-### `CREATE TABLE`
+## `CREATE TABLE`
 Creates a new table in the database.
 
 We can also combine `CREATE TABLE` with DDL subqueries but it's generally not recommended.
@@ -848,11 +848,11 @@ Conventions:
 - Columns are separated by commas.
 - Datatype, default values, and constraints are **defined per column**.
 
-### `SERIAL`
+## `SERIAL`
 `SERIAL` is not a real datatype, but shorthand for an **auto-incrementing sequence**.
 Commonly used with the `PRIMARY KEY` contraint.
 
-### `DEFAULT` Values
+## `DEFAULT` Values
 `DEFAULT` values are automatically used **when no value is provided in an `INSERT`**.
 
 Example:
@@ -865,7 +865,7 @@ CREATE TABLE department (
 );
 ```
 
-### Constraints
+## Constraints
 Constraints enforce **data integrity** and restrict invalid data.
 
 Allowed Constraints:
@@ -880,7 +880,7 @@ Violating Constraints:
 - Deleting a row referenced by a foreign key raises an error.
 - Constraints protect consistency and relationships.
 
-### `DROP TABLE`
+## `DROP TABLE`
 Removes tables permanently.
 
 `DROP TABLE` constraints:
@@ -894,7 +894,7 @@ DROP TABLE IF EXISTS deparments;
 DROP TABLE IF EXISTS deparments CASCADE;
 ```
 
-### `ALTER TABLE`
+## `ALTER TABLE`
 Used to modify existing tables.
 
 Common Operations:
@@ -956,7 +956,7 @@ JOIN jobs j USING (job_id)
 GROUP BY j.job_title;
 ```
 
-### `DROP VIEW`
+## `DROP VIEW`
 Removes a view definition.
 
 Example:
