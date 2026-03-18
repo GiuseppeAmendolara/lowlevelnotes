@@ -24,10 +24,7 @@
       property="og:image"
       content="https://lowlevelnotes.com/assets/images/preview.png"
     />
-    <meta
-      property="og:image:alt"
-      content="A page preview image."
-    />
+    <meta property="og:image:alt" content="A page preview image." />
 
     <!-- CSS -->
     <link rel="stylesheet" href="./styles.css" />
@@ -75,43 +72,42 @@
           </div>
 
           <!-- RESOURCES -->
-          <div v-else-if="currentPage === 'resources'">
-            <!-- HEADER -->
-            <div class="list-header">
-              <span>Name</span>
-              <span>Author</span>
-              <span>Views</span>
-            </div>
-
-            <!-- ROW -->
+          <div v-else-if="currentPage === 'resources'" class="resource-grid">
             <div
               v-for="r in resources"
               :key="r.id"
-              class="list-row"
+              class="resource-tile"
               @click="navigateResource(r.path)"
             >
-              <div class="main">
-                <div class="title">{{ r.title }}</div>
-                <div class="meta">
-                  <span class="type">{{ r.type }}</span>
-                  <span class="separator">•</span>
-                  <span class="desc">{{ r.description }}</span>
+              <div class="tile-title">{{ r.title }}</div>
+
+              <div class="tile-meta">
+                <span class="type">{{ r.type }}</span>
+                <span class="separator">•</span>
+                <span class="desc">{{ r.description }}</span>
+              </div>
+
+              <div class="tile-footer">
+                <div class="author" v-if="authorMap[r.author_id]" @click.stop>
+                  <a
+                    :href="authorMap[r.author_id].profile"
+                    target="_blank"
+                    class="author-link"
+                  >
+                    <img :src="authorMap[r.author_id].avatar" class="avatar" />
+                    <div class="author-text">
+                      <div class="author-name">
+                        {{ authorMap[r.author_id].name }}
+                      </div>
+                      <div class="author-role">
+                        {{ authorMap[r.author_id].role }}
+                      </div>
+                    </div>
+                  </a>
                 </div>
-              </div>
 
-              <div class="author" v-if="authorMap[r.author_id]" @click.stop>
-                <a :href="authorMap[r.author_id].profile" target="_blank" class="author-link">
-                  <div class="author-avatar">
-                    <img :src="authorMap[r.author_id].avatar" :alt="authorMap[r.author_id].name" />
-                  </div>
-                  <div class="author-details">
-                    <div class="author-name">{{ authorMap[r.author_id].name }}</div>
-                    <div class="author-role">{{ authorMap[r.author_id].role }}</div>
-                  </div>
-                </a>
+                <div class="views">{{ r.views }} views</div>
               </div>
-
-              <div class="views">{{ r.views }}</div>
             </div>
           </div>
 
@@ -135,7 +131,9 @@
             <h3>{{ site.name }}</h3>
             <p>{{ site.description }}</p>
             <p>License: {{ site.license }}</p>
-            <p>Repository: <a :href="site.repository">{{ site.repository }}</a></p>
+            <p>
+              Repository: <a :href="site.repository">{{ site.repository }}</a>
+            </p>
 
             <!-- Inline info with separators -->
             <p class="inline-info">
