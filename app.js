@@ -7,69 +7,41 @@ createApp({
     return {
       loading: true,
       maintenance: false,
-
       site: {
         name: "lowlevelnotes",
         url: "https://lowlevelnotes.com",
-        description:
-          "Structured notes on programming, low-level concepts and system internals.",
+        description: "Organized knowledge for mastering software development.",
         license: "MIT License",
-        legal: "https://github.com/grimy86/lowlevelnotes/blob/main/LICENSE",
         repository: "https://github.com/grimy86/lowlevelnotes",
-        resources: "Free learning resources",
-        focus: "Low-level focus",
-        openSource: "Fully open-source",
-        projects: "20+ hands-on projects",
-        discord: "3 Active private communities",
-        privacy: "No trackers. Full privacy.",
-        ads: "No ads, ever.",
-        collection:
-          "Private access to a curated collection of books, articles, and videos",
+        free: "Free learning resources.",
+        openSource: "Open source.",
+        privacy: "Full privacy.",
+        ads: "Zero ads."
       },
-
-      currentPage: "home",
-
+      currentPage: "resources",
       nav: [
-        { id: "home", label: "Home" },
-        { id: "learn", label: "Learn" },
-        { id: "references", label: "References" },
-        { id: "changelog", label: "Changelog" },
-        { id: "contribution", label: "Contribution" },
+        { id: "resources", label: "resources" },
+        { id: "references", label: "references" },
+        { id: "changelog", label: "changelog" },
+        { id: "about", label: "about" }
       ],
-
       people: [],
       resources: [],
-      changelog: [],
+      changelog: []
     };
   },
-
   computed: {
     authorMap() {
       return Object.fromEntries(this.people.map((p) => [p.id, p]));
-    },
-
-    publishedResources() {
-      return this.resources.filter(r => r.published === 1);
-    },
-
-    draftResources() {
-      return this.resources.filter(r => r.published === 0);
-    },
-
-    navIndex() {
-      return this.nav.findIndex((n) => n.id === this.currentPage);
-    },
+    }
   },
-
   mounted() {
     this.loadData();
   },
-
   methods: {
     async loadData() {
       try {
         const health = await fetch(`${API_BASE}/api/health`);
-
         if (health.status === 503) {
           this.maintenance = true;
           return;
@@ -78,7 +50,7 @@ createApp({
         const [resourcesRes, changelogRes, peopleRes] = await Promise.all([
           fetch(`${API_BASE}/api/resources`),
           fetch(`${API_BASE}/api/changelog`),
-          fetch(`${API_BASE}/api/people`),
+          fetch(`${API_BASE}/api/people`)
         ]);
 
         this.resources = await resourcesRes.json();
@@ -86,21 +58,15 @@ createApp({
         this.people = await peopleRes.json();
       } catch (e) {
         console.error(e);
-        this.maintenance = true; // fallback safety
+        this.maintenance = true;
       } finally {
         this.loading = false;
       }
     },
 
-    async openResource(resource) {
-      const res = await fetch(`${API_BASE}/api/resource/${resource.id}`, {
-        method: "POST",
-      });
-
-      const data = await res.json();
-      resource.views = data.views;
-
-      window.open(resource.path, "_blank");
-    },
-  },
+    navigateResource(path) {
+      if (!path) return;
+      window.open(path, "_blank"); // opens in a new tab
+    }
+  }
 }).mount("#app");
