@@ -1,33 +1,132 @@
-body {
-  margin: 0;
-  background: #008080;
-  font-family: Tahoma, sans-serif;
-  font-size: 14px;
+:root {
+  --font: Tahoma, sans-serif;
+  --fontsize: 14px;
+  --line-height: 1.5;
+  --win98-dark: #808080;
+  --win98-light: #c0c0c0;
+  --win98-white: #ffffff;
+  --win98-border-shadow: #404040;
+  --accent-border-width: 2px;
+  --accent-title-bar: linear-gradient(to right, #000080, #1084d0);
+  --page-padding: 2px;
+  --taskbar-padding: 4px;
+  --content-padding: 20px;
+  --win98-bar-height: 24px;
+  --Win98-checker: url("./assets/images/dither.png");
+  --Win98-wave: url("./assets/images/wvleft.bmp");
 }
 
-/* Window */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+body {
+  margin: 0;
+  background: var(--win98-dark);
+  font-family: var(--font);
+  font-size: var(--fontsize);
+  line-height: var(--line-height);
+}
+
+.taskbar {
+  display: flex;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: var(--taskbar-padding);
+  background: var(--win98-dark);
+  border-top: var(--accent-border-width) solid var(--win98-white);
+  border-bottom: var(--accent-border-width) solid var(--win98-border-shadow);
+}
+
+.taskbar button img {
+  width: 16px;
+  height: 16px;
+  image-rendering: pixelated; /* retro sharpness */
+}
+
+.taskbar button {
+  display: inline-flex;
+  align-items: center;
+  height: var(--win98-bar-height);
+  margin-right: 4px;
+  gap: 4px;
+  padding: 2px 6px 4px;
+  background: var(--win98-light);
+  border-top: var(--accent-border-width) solid var(--win98-white);
+  border-left: var(--accent-border-width) solid var(--win98-white);
+  border-right: var(--accent-border-width) solid var(--win98-border-shadow);
+  border-bottom: var(--accent-border-width) solid var(--win98-border-shadow);
+}
+
+.taskbar button.selected {
+  font-weight: bold;
+  border-top: var(--accent-border-width) solid var(--win98-dark);
+  border-left: var(--accent-border-width) solid var(--win98-dark);
+  border-bottom: var(--accent-border-width) solid var(--win98-light);
+  border-right: var(--accent-border-width) solid var(--win98-light);
+  background-image: var(--Win98-checker);
+}
+
+.taskbar button:active {
+  border-top: var(--accent-border-width) solid var(--win98-border-shadow);
+  border-left: var(--accent-border-width) solid var(--win98-border-shadow);
+  border-right: var(--accent-border-width) solid var(--win98-white);
+  border-bottom: var(--accent-border-width) solid var(--win98-white);
+}
+
 .page {
-  width: 100rem;
-  margin: 40px auto;
-  background: #c0c0c0;
-  border-top: 2px solid #fff;
-  border-left: 2px solid #fff;
-  border-right: 2px solid #404040;
-  border-bottom: 2px solid #404040;
+  width: 85%;
+  margin: 2.5% auto;
+  padding: var(--page-padding);
+  background: var(--win98-light);
+  border-top: var(--accent-border-width) solid var(--win98-white);
+  border-left: var(--accent-border-width) solid var(--win98-white);
+  border-right: var(--accent-border-width) solid var(--win98-border-shadow);
+  border-bottom: var(--accent-border-width) solid var(--win98-border-shadow);
 }
 
 .title-bar {
-  background: linear-gradient(to right, #000080, #1084d0);
-  color: #fff;
-  padding: 4px 6px;
+  display: flex;
+  align-items: center;
+  padding: 2px 6px;
   font-weight: bold;
+  color: var(--win98-white);
+  height: var(--win98-bar-height);
+  background: var(--accent-title-bar);
+}
+
+.title-bar img {
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+  image-rendering: pixelated; /* retro sharpness */
 }
 
 .content {
-  padding: 20px;
-  background: #fff;
-  display: flex;
-  justify-content: center;
+  padding: var(--content-padding);
+  background-color: var(--win98-white);
+  background-image: var(--Win98-wave);
+  background-repeat: no-repeat;
+  background-position: left top;
 }
 
 .resource-grid {
@@ -93,33 +192,6 @@ body {
   color: #fff;
 }
 
-.taskbar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: #c0c0c0;
-  border-top: 2px solid #fff;
-  padding: 4px;
-}
-
-.taskbar button {
-  margin-right: 4px;
-  padding: 3px 10px;
-  background: #c0c0c0;
-  border-top: 2px solid #fff;
-  border-left: 2px solid #fff;
-  border-right: 2px solid #404040;
-  border-bottom: 2px solid #404040;
-}
-
-.taskbar button:active {
-  border-top: 2px solid #404040;
-  border-left: 2px solid #404040;
-  border-right: 2px solid #fff;
-  border-bottom: 2px solid #fff;
-}
-
 /* List header */
 .list-header,
 .list-row {
@@ -160,8 +232,8 @@ body {
   color: #555;
 }
 
-.type.external {
-  color: #800000;
+.type {
+  font-weight: bold;
 }
 
 /* Author column */

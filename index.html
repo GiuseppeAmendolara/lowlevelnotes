@@ -44,28 +44,26 @@
 
   <body>
     <div id="app">
-      <!-- TASKBAR -->
       <nav class="taskbar">
         <button
           v-for="item in nav"
           :key="item.id"
           @click="currentPage = item.id"
+          :class="{ selected: item.id === currentPage }"
         >
-          {{ item.label }}
+          <img v-if="item.icon" :src="item.icon" alt="" />
+          <span>{{ item.label }}</span>
         </button>
       </nav>
 
-      <!-- MAIN WINDOW -->
       <section class="page">
-        <!-- TITLE BAR -->
-        <div class="title-bar">{{ currentPage }}</div>
+        <div class="title-bar">
+          <img v-if="currentPageIcon" :src="currentPageIcon" alt="" />
+          <span>{{ currentPage }}</span>
+        </div>
 
-        <!-- CONTENT -->
         <div class="content">
-          <!-- LOADING -->
           <div v-if="loading">Loading...</div>
-
-          <!-- MAINTENANCE -->
           <div v-else-if="maintenance">
             <h3>Under Maintenance</h3>
             <p>Please check back later.</p>

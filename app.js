@@ -16,24 +16,40 @@ createApp({
         free: "Free learning resources.",
         openSource: "Open source.",
         privacy: "Full privacy.",
-        ads: "Zero ads."
+        ads: "Zero ads.",
       },
       currentPage: "resources",
       nav: [
-        { id: "resources", label: "resources" },
-        { id: "references", label: "references" },
-        { id: "changelog", label: "changelog" },
-        { id: "about", label: "about" }
+        {
+          id: "resources",
+          label: "resources",
+          icon: "./assets/images/res.png",
+        },
+        {
+          id: "references",
+          label: "references",
+          icon: "./assets/images/ref.png",
+        },
+        {
+          id: "changelog",
+          label: "changelog",
+          icon: "./assets/images/log.png",
+        },
+        { id: "about", label: "about", icon: "./assets/images/about.png" },
       ],
       people: [],
       resources: [],
-      changelog: []
+      changelog: [],
     };
   },
   computed: {
     authorMap() {
       return Object.fromEntries(this.people.map((p) => [p.id, p]));
-    }
+    },
+    currentPageIcon() {
+      const page = this.nav.find((item) => item.id === this.currentPage);
+      return page ? page.icon : null;
+    },
   },
   mounted() {
     this.loadData();
@@ -50,7 +66,7 @@ createApp({
         const [resourcesRes, changelogRes, peopleRes] = await Promise.all([
           fetch(`${API_BASE}/api/resources`),
           fetch(`${API_BASE}/api/changelog`),
-          fetch(`${API_BASE}/api/people`)
+          fetch(`${API_BASE}/api/people`),
         ]);
 
         this.resources = await resourcesRes.json();
@@ -67,6 +83,6 @@ createApp({
     navigateResource(path) {
       if (!path) return;
       window.open(path, "_blank"); // opens in a new tab
-    }
-  }
+    },
+  },
 }).mount("#app");
