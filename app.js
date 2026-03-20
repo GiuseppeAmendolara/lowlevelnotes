@@ -37,6 +37,12 @@ createApp({
         },
         { id: "about", label: "about", icon: "./assets/images/about.png" },
       ],
+      typeIcons: {
+        pdf: "./assets/images/pdf.png",
+        website: "./assets/images/website.png",
+        videos: "./assets/images/videos.png",
+        git: "./assets/images/git.png"
+      },
       people: [],
       resources: [],
       changelog: [],
