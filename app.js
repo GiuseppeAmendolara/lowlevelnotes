@@ -26,9 +26,9 @@ createApp({
           icon: "./assets/images/res.png",
         },
         {
-          id: "references",
-          label: "references",
-          icon: "./assets/images/ref.png",
+          id: "tools",
+          label: "tools",
+          icon: "./assets/images/tools.png",
         },
         {
           id: "changelog",
