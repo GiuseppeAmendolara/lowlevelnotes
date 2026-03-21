@@ -1,156 +1,130 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" href="./assets/images/icon.png" />
-    <title>low_levelnotes</title>
 
-    <!-- Metadata -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta
-      name="description"
-      content="Organized knowledge for mastering software development."
-    />
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" href="./assets/images/icon.png" />
+  <title>low_levelnotes</title>
 
-    <!-- Open Graph -->
-    <meta property="og:title" content="lowlevelnotes" />
-    <meta
-      property="og:description"
-      content="Organized knowledge for mastering software development."
-    />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://lowlevelnotes.com/" />
-    <meta
-      property="og:image"
-      content="https://lowlevelnotes.com/assets/images/preview.png"
-    />
-    <meta property="og:image:alt" content="A page preview image." />
+  <!-- Metadata -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Organized knowledge for mastering software development." />
 
-    <!-- CSS -->
-    <link rel="stylesheet" href="./styles.css" />
+  <!-- Open Graph -->
+  <meta property="og:title" content="lowlevelnotes" />
+  <meta property="og:description" content="Organized knowledge for mastering software development." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://lowlevelnotes.com/" />
+  <meta property="og:image" content="https://lowlevelnotes.com/assets/images/preview.png" />
+  <meta property="og:image:alt" content="A page preview image." />
 
-    <!-- Vue (global build) -->
-    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <!-- CSS -->
+  <link rel="stylesheet" href="./styles.css" />
 
-    <!-- Marked (global build) -->
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <!-- Vue (global build) -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
 
-    <!-- Components -->
-    <script src="./components/MarkdownPage.js" defer></script>
+  <!-- Marked (global build) -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
-    <!-- App -->
-    <script src="./app.js" defer></script>
-  </head>
+  <!-- Components -->
+  <script src="./components/MarkdownPage.js" defer></script>
 
-  <body>
-    <div id="app">
-      <nav class="taskbar">
-        <button
-          v-for="item in nav"
-          :key="item.id"
-          @click="currentPage = item.id"
-          :class="{ selected: item.id === currentPage }"
-        >
-          <img v-if="item.icon" :src="item.icon" alt="" />
-          <span>{{ item.label }}</span>
-        </button>
-      </nav>
+  <!-- App -->
+  <script src="./app.js" defer></script>
+</head>
 
-      <section class="page">
-        <div class="title-bar">
-          <img v-if="currentPageIcon" :src="currentPageIcon" alt="" />
-          <span>{{ currentPage }}</span>
+<body>
+  <div id="mobile-warning">
+    <p>This site isn’t optimized for mobile devices. Please use a desktop for the best experience.</p>
+  </div>
+
+  <div id="app">
+    <nav class="taskbar">
+      <button v-for="item in nav" :key="item.id" @click="currentPage = item.id"
+        :class="{ selected: item.id === currentPage }">
+        <img v-if="item.icon" :src="item.icon" alt="" />
+        <span>{{ item.label }}</span>
+      </button>
+    </nav>
+
+    <section class="page">
+      <div class="title-bar">
+        <img v-if="currentPageIcon" :src="currentPageIcon" alt="" />
+        <span>{{ currentPage }}</span>
+      </div>
+
+      <div class="content">
+        <div v-if="loading">Loading...</div>
+        <div v-else-if="maintenance">
+          <h3>Under Maintenance</h3>
+          <p>Please check back later.</p>
         </div>
 
-        <div class="content">
-          <div v-if="loading">Loading...</div>
-          <div v-else-if="maintenance">
-            <h3>Under Maintenance</h3>
-            <p>Please check back later.</p>
-          </div>
-
-          <!-- RESOURCES -->
-          <div v-else-if="currentPage === 'resources'" class="resource-container">
-            <div
-              v-for="r in resources"
-              :key="r.id"
-              class="resource-tile"
-              @click="navigateResource(r.path)"
-            >
-             <div class="tile-header">
-              <img
-                class="tile-image"
-                :src="typeIcons[r.type]"
-                alt="type icon"
-              />
+        <!-- RESOURCES -->
+        <div v-else-if="currentPage === 'resources'" class="resource-container">
+          <div v-for="r in resources" :key="r.id" class="resource-tile" @click="navigateResource(r.path)">
+            <div class="tile-header">
+              <img class="tile-image" :src="typeIcons[r.type]" alt="type icon" />
               <span>{{ r.title }}</span>
-              </div>
+            </div>
 
-              <div class="tile-meta">
-                <span>{{ r.description }}</span>
-              </div>
+            <div class="tile-meta">
+              <span>{{ r.description }}</span>
+            </div>
 
-              <div class="tile-footer">
-                <div class="author" v-if="authorMap[r.author_id]" @click.stop>
-                  <a
-                    :href="authorMap[r.author_id].profile"
-                    target="_blank"
-                    class="author-link"
-                  >
-                    <img :src="authorMap[r.author_id].avatar" class="avatar" />
-                    <div class="author-text">
-                      <div class="author-name">
-                        {{ authorMap[r.author_id].name }}
-                      </div>
-                      <div class="author-role">
-                        {{ authorMap[r.author_id].role }}
-                      </div>
+            <div class="tile-footer">
+              <div class="author" v-if="authorMap[r.author_id]">
+                <a :href="authorMap[r.author_id].profile" target="_blank" class="author-link" @click.stop>
+                  <img :src="authorMap[r.author_id].avatar" class="author-avatar" />
+                  <div class="author-text">
+                    <div class="author-name">
+                      {{ authorMap[r.author_id].name }}
                     </div>
-                  </a>
-                </div>
-
-                <div class="views">{{ r.views }} views</div>
+                    <div class="author-role">
+                      {{ authorMap[r.author_id].role }}
+                    </div>
+                  </div>
+                </a>
               </div>
+
+              <div class="tile-views">{{ r.views }} views</div>
             </div>
-          </div>
-
-          <!-- REFERENCES -->
-          <div v-else-if="currentPage === 'tools'">
-            <markdown-page />
-          </div>
-
-          <!-- CHANGELOG -->
-          <div v-else-if="currentPage === 'changelog'">
-            <div v-for="entry in changelog" :key="entry.version">
-              <h3>
-                {{ entry.release_date }} - {{ entry.title }} ({{ entry.version
-                }})
-              </h3>
-              <p>{{ entry.description }}</p>
-            </div>
-          </div>
-
-          <div v-else-if="currentPage === 'about'">
-            <h3>{{ site.name }}</h3>
-            <p>{{ site.description }}</p>
-            <p>License: {{ site.license }}</p>
-            <p>
-              Repository: <a :href="site.repository">{{ site.repository }}</a>
-            </p>
-
-            <!-- Inline info with separators -->
-            <p class="inline-info">
-              <span>{{ site.free }}</span>
-              <span class="separator">•</span>
-              <span>{{ site.openSource }}</span>
-              <span class="separator">•</span>
-              <span>{{ site.privacy }}</span>
-              <span class="separator">•</span>
-              <span>{{ site.ads }}</span>
-            </p>
           </div>
         </div>
-      </section>
-    </div>
-  </body>
+
+        <!-- REFERENCES -->
+        <div v-else-if="currentPage === 'tools'">
+          <markdown-page class="markdown-page"/>
+        </div>
+
+        <!-- CHANGELOG -->
+        <div v-else-if="currentPage === 'changelog'">
+          <div v-for="entry in changelog" :key="entry.version">
+            <h3>
+              {{ entry.release_date }} - {{ entry.title }} ({{ entry.version
+              }})
+            </h3>
+            <p>{{ entry.description }}</p>
+          </div>
+        </div>
+
+        <div v-else-if="currentPage === 'about'">
+          <h3>{{ site.name }}</h3>
+          <p>{{ site.description }}</p>
+          <p>License: {{ site.license }}</p>
+          <p>
+            Repository: <a :href="site.repository">{{ site.repository }}</a>
+          </p>
+
+          <p class="about-info">
+            <span>{{ site.free }} • {{ site.openSource }} • {{ site.privacy }} •
+              {{ site.ads }}</span>
+          </p>
+        </div>
+      </div>
+    </section>
+  </div>
+</body>
+
 </html>
