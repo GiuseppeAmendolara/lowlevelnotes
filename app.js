@@ -59,6 +59,19 @@ createApp({
   },
   mounted() {
     this.loadData();
+
+    // startup sound
+    const audio = document.getElementById("startup-sound");
+    if (audio) {
+      audio.play().catch(() => {
+        // Fallback: play on first user interaction
+        const playOnClick = () => {
+          audio.play();
+          document.removeEventListener("click", playOnClick);
+        };
+        document.addEventListener("click", playOnClick);
+      });
+    }
   },
   methods: {
     async loadData() {
