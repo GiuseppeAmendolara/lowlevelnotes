@@ -14,6 +14,9 @@
   --win98-bar-height: 24px;
   --Win98-checker: url("./assets/images/dither.png");
   --Win98-wave: url("./assets/images/wvleft.bmp");
+  --Win98-arrow-cursor: url("./assets/cursors/arrow.cur");
+  --Win98-click-cursor: url("./assets/cursors/click.cur");
+  --Win98-info-cursor: url("./assets/cursors/info.cur");
 }
 
 *,
@@ -23,6 +26,10 @@
   margin: 0;
   padding: 0;
   user-select: none;
+}
+
+#mobile-warning {
+  display: none;
 }
 
 img {
@@ -35,6 +42,15 @@ input,
 textarea,
 select {
   font: inherit;
+}
+
+html, body {
+  cursor: var(--Win98-arrow-cursor), auto;
+}
+
+a:not(.author-link),
+button {
+  cursor: var(--Win98-click-cursor), auto;
 }
 
 body {
@@ -142,7 +158,7 @@ body {
   flex-direction: column;
   padding: var(--content-padding);
   gap: var(--content-padding);
-  cursor: pointer;
+  cursor: var(--Win98-click-cursor), auto;
 
   background: var(--win98-light);
   border-top: var(--accent-border-width) solid var(--win98-light);
@@ -192,7 +208,7 @@ body {
   border-right: var(--accent-border-width) solid var(--win98-dark);
   border-bottom: var(--accent-border-width) solid var(--win98-dark);
   padding: 10px;
-  cursor: help;
+  cursor: var(--Win98-info-cursor), auto;
 }
 
 .author-link {
@@ -203,6 +219,7 @@ body {
   color: inherit;
   font-size: 12px;
   margin-right: 15px;
+  cursor: inherit;
 }
 
 .author-avatar {
