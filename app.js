@@ -1,1 +1,125 @@
-const _0x2fd021=_0x165f;function _0x165f(_0x329a4c,_0x19be07){_0x329a4c=_0x329a4c-0xd8;const _0x2d3058=_0x2d30();let _0x165fe1=_0x2d3058[_0x329a4c];return _0x165fe1;}(function(_0x3a36d7,_0x1addee){const _0x209bcd=_0x165f,_0x21d8ef=_0x3a36d7();while(!![]){try{const _0x3238dd=-parseInt(_0x209bcd(0xe0))/0x1+parseInt(_0x209bcd(0x10a))/0x2+parseInt(_0x209bcd(0xf9))/0x3+-parseInt(_0x209bcd(0x111))/0x4*(-parseInt(_0x209bcd(0xfb))/0x5)+-parseInt(_0x209bcd(0xf6))/0x6*(parseInt(_0x209bcd(0xe9))/0x7)+-parseInt(_0x209bcd(0xf8))/0x8*(parseInt(_0x209bcd(0xeb))/0x9)+-parseInt(_0x209bcd(0x10e))/0xa*(parseInt(_0x209bcd(0xe5))/0xb);if(_0x3238dd===_0x1addee)break;else _0x21d8ef['push'](_0x21d8ef['shift']());}catch(_0x557a23){_0x21d8ef['push'](_0x21d8ef['shift']());}}}(_0x2d30,0xdfa44));const {createApp}=Vue,API_BASE=_0x2fd021(0x10d);document[_0x2fd021(0x10f)](_0x2fd021(0x107),_0x4ba0f5=>_0x4ba0f5[_0x2fd021(0xff)]()),document['addEventListener']('keydown',_0x5aaabe=>{const _0x1b6e66=_0x2fd021;(_0x5aaabe[_0x1b6e66(0x102)]===_0x1b6e66(0xdb)||_0x5aaabe[_0x1b6e66(0xe1)]&&_0x5aaabe[_0x1b6e66(0x10b)]&&['I','J','C'][_0x1b6e66(0x112)](_0x5aaabe[_0x1b6e66(0x102)])||_0x5aaabe[_0x1b6e66(0xe1)]&&_0x5aaabe['key']==='U')&&_0x5aaabe[_0x1b6e66(0xff)]();}),document[_0x2fd021(0x10f)](_0x2fd021(0x100),_0x4c5bc3=>{const _0x4b3e99=_0x2fd021;_0x4c5bc3[_0x4b3e99(0xff)](),_0x4c5bc3['clipboardData'][_0x4b3e99(0x114)](_0x4b3e99(0x113),_0x4b3e99(0x101));}),document[_0x2fd021(0x10f)](_0x2fd021(0xd8),_0x52a268=>_0x52a268[_0x2fd021(0xff)]()),createApp({'components':{'MarkdownPage':MarkdownPage},'data'(){const _0x4d105c=_0x2fd021;return{'loading':!![],'maintenance':![],'site':{'name':'lowlevelnotes','url':_0x4d105c(0x116),'description':_0x4d105c(0xec),'license':_0x4d105c(0xfe),'repository':_0x4d105c(0xef),'free':'Free\x20learning\x20resources.','openSource':_0x4d105c(0xd9),'privacy':_0x4d105c(0xe3),'ads':_0x4d105c(0xf2)},'currentPage':_0x4d105c(0x105),'nav':[{'id':_0x4d105c(0x105),'label':_0x4d105c(0x105),'icon':_0x4d105c(0xf1)},{'id':_0x4d105c(0xf3),'label':_0x4d105c(0xf3),'icon':_0x4d105c(0xf5)},{'id':'changelog','label':'changelog','icon':_0x4d105c(0xdd)},{'id':_0x4d105c(0xfc),'label':_0x4d105c(0xfc),'icon':_0x4d105c(0x103)}],'typeIcons':{'pdf':_0x4d105c(0x108),'website':_0x4d105c(0x110),'videos':_0x4d105c(0xed),'git':_0x4d105c(0xde)},'people':[],'resources':[],'changelog':[]};},'computed':{'authorMap'(){const _0x3e0adc=_0x2fd021;return Object['fromEntries'](this[_0x3e0adc(0x115)][_0x3e0adc(0xfa)](_0x4a11d3=>[_0x4a11d3['id'],_0x4a11d3]));},'currentPageIcon'(){const _0xed79ba=_0x2fd021,_0x5284d4=this[_0xed79ba(0xe6)]['find'](_0x60cb87=>_0x60cb87['id']===this[_0xed79ba(0xf7)]);return _0x5284d4?_0x5284d4[_0xed79ba(0xee)]:null;}},'mounted'(){const _0x2d3c37=_0x2fd021;this[_0x2d3c37(0xfd)]();const _0x253243=document[_0x2d3c37(0xf0)](_0x2d3c37(0xea));_0x253243&&_0x253243[_0x2d3c37(0x106)]()[_0x2d3c37(0xe8)](()=>{const _0x5a18ef=_0x2d3c37,_0x1591db=()=>{const _0x312f64=_0x165f;_0x253243[_0x312f64(0x106)](),document['removeEventListener'](_0x312f64(0xe2),_0x1591db);};document[_0x5a18ef(0x10f)](_0x5a18ef(0xe2),_0x1591db);});},'methods':{async 'loadData'(){const _0x4f9058=_0x2fd021;try{const _0xc8cef9=await fetch(API_BASE+_0x4f9058(0xdf));if(_0xc8cef9['status']===0x1f7){this[_0x4f9058(0xe7)]=!![];return;}const [_0xca631d,_0x12bcd2,_0x43b799]=await Promise['all']([fetch(API_BASE+'/resources'),fetch(API_BASE+_0x4f9058(0xdc)),fetch(API_BASE+'/people')]);this[_0x4f9058(0x105)]=await _0xca631d[_0x4f9058(0x104)](),this[_0x4f9058(0xda)]=await _0x12bcd2[_0x4f9058(0x104)](),this[_0x4f9058(0x115)]=await _0x43b799['json']();}catch(_0x5e4ebd){console['error'](_0x5e4ebd),this['maintenance']=!![];}finally{this[_0x4f9058(0xf4)]=![];}},'navigateResource'(_0x3a30a3){const _0x42b435=_0x2fd021;if(!_0x3a30a3)return;window[_0x42b435(0x10c)](_0x3a30a3,_0x42b435(0x109));}}})['mount'](_0x2fd021(0xe4));function _0x2d30(){const _0xa68852=['F12','/changelog','./assets/images/log.png','./assets/images/git.png','/health','371811UynvDG','ctrlKey','click','Full\x20privacy.','#app','5632649cyjFhe','nav','maintenance','catch','3056158DBMfLY','startup-sound','3775293zovEht','Organized\x20knowledge\x20for\x20mastering\x20software\x20development.','./assets/images/videos.png','icon','https://github.com/grimy86/lowlevelnotes','getElementById','./assets/images/res.png','Zero\x20ads.','tools','loading','./assets/images/tools.png','18gkrCeQ','currentPage','8tEphTl','5292912cSrDvM','map','1955wZaQWb','about','loadData','MIT\x20License','preventDefault','copy','Content\x20is\x20protected.','key','./assets/images/about.png','json','resources','play','contextmenu','./assets/images/pdf.png','_blank','884216nazxFQ','shiftKey','open','https://api.lowlevelnotes.com','10vZHzhK','addEventListener','./assets/images/website.png','13532OOENAu','includes','text/plain','setData','people','https://lowlevelnotes.com','dragstart','Open\x20source.','changelog'];_0x2d30=function(){return _0xa68852;};return _0x2d30();}
+const { createApp } = Vue;
+const API_BASE = "https://api.lowlevelnotes.com";
+
+// 🔒 Disable right-click
+document.addEventListener("contextmenu", (e) => e.preventDefault());
+
+// 🔒 Disable devtools shortcuts & view source
+document.addEventListener("keydown", (e) => {
+  if (
+    e.key === "F12" ||
+    (e.ctrlKey && e.shiftKey && ["I", "J", "C"].includes(e.key)) ||
+    (e.ctrlKey && e.key === "U")
+  ) {
+    e.preventDefault();
+  }
+});
+
+// 🔒 Disable copy (overrides clipboard with a protection notice)
+document.addEventListener("copy", (e) => {
+  e.preventDefault();
+  e.clipboardData.setData("text/plain", "Content is protected.");
+});
+
+// 🔒 Disable drag (prevents dragging images/text out)
+document.addEventListener("dragstart", (e) => e.preventDefault());
+
+createApp({
+  components: { MarkdownPage },
+  data() {
+    return {
+      loading: true,
+      maintenance: false,
+      error: null,
+      site: {
+        name: "lowlevelnotes",
+        url: "https://lowlevelnotes.com",
+        description: "Organized knowledge for mastering software development.",
+        license: "MIT License",
+        repository: "https://github.com/grimy86/lowlevelnotes",
+        free: "Free learning resources.",
+        openSource: "Open source.",
+        privacy: "Full privacy.",
+        ads: "Zero ads.",
+      },
+      currentPage: "resources",
+      nav: [
+        { id: "resources", label: "resources", icon: "./assets/images/res.png" },
+        { id: "tools",     label: "tools",     icon: "./assets/images/tools.png" },
+        { id: "changelog", label: "changelog", icon: "./assets/images/log.png" },
+        { id: "about",     label: "about",     icon: "./assets/images/about.png" },
+      ],
+      typeIcons: {
+        pdf:     "./assets/images/pdf.png",
+        website: "./assets/images/website.png",
+        videos:  "./assets/images/videos.png",
+        git:     "./assets/images/git.png",
+      },
+      people: [],
+      resources: [],
+      changelog: [],
+    };
+  },
+  computed: {
+    authorMap() {
+      return Object.fromEntries(this.people.map((p) => [p.id, p]));
+    },
+    currentPageIcon() {
+      const page = this.nav.find((item) => item.id === this.currentPage);
+      return page ? page.icon : null;
+    },
+  },
+  mounted() {
+    this.loadData();
+
+    const audio = document.getElementById("startup-sound");
+    if (audio) {
+      audio.play().catch(() => {
+        const playOnClick = () => {
+          audio.play();
+          document.removeEventListener("click", playOnClick);
+        };
+        document.addEventListener("click", playOnClick);
+      });
+    }
+  },
+  methods: {
+    async loadData() {
+      try {
+        const healthRes = await fetch(`${API_BASE}/health`);
+        console.log("Health status:", healthRes.status);
+
+        if (healthRes.status === 503) {
+          this.maintenance = true;
+          return;
+        }
+
+        const [resourcesRes, changelogRes, peopleRes] = await Promise.all([
+          fetch(`${API_BASE}/resources`),
+          fetch(`${API_BASE}/changelog`),
+          fetch(`${API_BASE}/people`),
+        ]);
+
+        console.log("Resources status:", resourcesRes.status);
+        console.log("Changelog status:", changelogRes.status);
+        console.log("People status:", peopleRes.status);
+
+        this.resources = await resourcesRes.json();
+        this.changelog = await changelogRes.json();
+        this.people = await peopleRes.json();
+      } catch (e) {
+        // Show the actual error instead of silently going to maintenance
+        console.error("loadData failed:", e.message, e);
+        this.error = e.message;
+        this.maintenance = true;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    navigateResource(path) {
+      if (!path) return;
+      window.open(path, "_blank");
+    },
+  },
+}).mount("#app");
