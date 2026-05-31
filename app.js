@@ -1,5 +1,28 @@
 const { createApp } = Vue;
-const API_BASE = "https://lowlevelnotes-api.grimy86.workers.dev";
+const API_BASE = "https://api.lowlevelnotes.com";
+
+// 🔒 Disable right-click
+document.addEventListener("contextmenu", (e) => e.preventDefault());
+
+// 🔒 Disable devtools shortcuts & view source
+document.addEventListener("keydown", (e) => {
+  if (
+    e.key === "F12" ||
+    (e.ctrlKey && e.shiftKey && ["I", "J", "C"].includes(e.key)) ||
+    (e.ctrlKey && e.key === "U")
+  ) {
+    e.preventDefault();
+  }
+});
+
+// 🔒 Disable copy (overrides clipboard with a protection notice)
+document.addEventListener("copy", (e) => {
+  e.preventDefault();
+  e.clipboardData.setData("text/plain", "Content is protected.");
+});
+
+// 🔒 Disable drag (prevents dragging images/text out)
+document.addEventListener("dragstart", (e) => e.preventDefault());
 
 createApp({
   components: { MarkdownPage },
@@ -7,6 +30,7 @@ createApp({
     return {
       loading: true,
       maintenance: false,
+      error: null,
       site: {
         name: "lowlevelnotes",
         url: "https://lowlevelnotes.com",
@@ -20,28 +44,16 @@ createApp({
       },
       currentPage: "resources",
       nav: [
-        {
-          id: "resources",
-          label: "resources",
-          icon: "./assets/images/res.png",
-        },
-        {
-          id: "tools",
-          label: "tools",
-          icon: "./assets/images/tools.png",
-        },
-        {
-          id: "changelog",
-          label: "changelog",
-          icon: "./assets/images/log.png",
-        },
-        { id: "about", label: "about", icon: "./assets/images/about.png" },
+        { id: "resources", label: "resources", icon: "./assets/images/res.png" },
+        { id: "tools",     label: "tools",     icon: "./assets/images/tools.png" },
+        { id: "changelog", label: "changelog", icon: "./assets/images/log.png" },
+        { id: "about",     label: "about",     icon: "./assets/images/about.png" },
       ],
       typeIcons: {
-        pdf: "./assets/images/pdf.png",
+        pdf:     "./assets/images/pdf.png",
         website: "./assets/images/website.png",
-        videos: "./assets/images/videos.png",
-        git: "./assets/images/git.png"
+        videos:  "./assets/images/videos.png",
+        git:     "./assets/images/git.png",
       },
       people: [],
       resources: [],
@@ -60,11 +72,9 @@ createApp({
   mounted() {
     this.loadData();
 
-    // startup sound
     const audio = document.getElementById("startup-sound");
     if (audio) {
       audio.play().catch(() => {
-        // Fallback: play on first user interaction
         const playOnClick = () => {
           audio.play();
           document.removeEventListener("click", playOnClick);
@@ -76,23 +86,31 @@ createApp({
   methods: {
     async loadData() {
       try {
-        const health = await fetch(`${API_BASE}/api/health`);
-        if (health.status === 503) {
+        const healthRes = await fetch(`${API_BASE}/health`);
+        console.log("Health status:", healthRes.status);
+
+        if (healthRes.status === 503) {
           this.maintenance = true;
           return;
         }
 
         const [resourcesRes, changelogRes, peopleRes] = await Promise.all([
-          fetch(`${API_BASE}/api/resources`),
-          fetch(`${API_BASE}/api/changelog`),
-          fetch(`${API_BASE}/api/people`),
+          fetch(`${API_BASE}/resources`),
+          fetch(`${API_BASE}/changelog`),
+          fetch(`${API_BASE}/people`),
         ]);
+
+        console.log("Resources status:", resourcesRes.status);
+        console.log("Changelog status:", changelogRes.status);
+        console.log("People status:", peopleRes.status);
 
         this.resources = await resourcesRes.json();
         this.changelog = await changelogRes.json();
         this.people = await peopleRes.json();
       } catch (e) {
-        console.error(e);
+        // Show the actual error instead of silently going to maintenance
+        console.error("loadData failed:", e.message, e);
+        this.error = e.message;
         this.maintenance = true;
       } finally {
         this.loading = false;
@@ -101,7 +119,7 @@ createApp({
 
     navigateResource(path) {
       if (!path) return;
-      window.open(path, "_blank"); // opens in a new tab
+      window.open(path, "_blank");
     },
   },
 }).mount("#app");
