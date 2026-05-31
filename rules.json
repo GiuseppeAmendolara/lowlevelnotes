@@ -1,0 +1,68 @@
+(cf.client.bot) or 
+(ip.src.country in {"KP" "IR" "SY" "RU" "CU" "VE" "CN" "TR" "BR" "IN" "PK" "UA" "VN" "RO" "NG"}) or
+(
+  (http.request.uri.path ne "/robots.txt") and 
+  (
+    (http.user_agent contains "Applebot") or
+    (http.user_agent contains "archive.org_bot") or
+    (http.user_agent contains "Arquivo-web-crawler") or
+    (http.user_agent contains "bingbot") or
+    (http.user_agent contains "DuckAssistBot") or
+    (http.user_agent contains "Googlebot") or
+    (http.user_agent contains "ChatGPT-User") or
+    (http.user_agent contains "Manus-User") or
+    (http.user_agent contains "meta-externalfetcher") or
+    (http.user_agent contains "MistralAI-User") or
+    (http.user_agent contains "OAI-SearchBot") or
+    (http.user_agent contains "Perplexity-User") or
+    (http.user_agent contains "PerplexityBot") or
+    (http.user_agent contains "ProRataInc") or
+    (http.user_agent contains "Terracotta")
+  )
+)
+
+
+(not http.user_agent contains "/") or
+
+(lower(http.user_agent) contains "sqlmap") or
+(lower(http.user_agent) contains "nikto") or
+(lower(http.user_agent) contains "nmap") or
+(lower(http.user_agent) contains "acunetix") or
+
+(http.request.uri.path contains ".env") or
+(http.request.uri.path contains "wp-admin") or
+(http.request.uri.path contains "phpMyAdmin") or
+(http.request.uri.path contains ".git") or
+(http.request.uri.path contains "/config") or
+
+(http.request.uri.path contains ".php") or
+(http.request.uri.path contains "shell") or
+(http.request.uri.path contains "backdoor") or
+(http.request.uri.path contains "cmd") or
+(http.request.uri.path contains "eval") or
+
+(http.request.uri.path contains "wp-login") or
+(http.request.uri.path contains "wp-includes") or
+(http.request.uri.path contains "xmlrpc") or
+(http.request.uri.path contains "administrator") or
+(http.request.uri.path contains "/admin") or
+
+(http.request.uri.path contains ".sql") or
+(http.request.uri.path contains ".bak") or
+(http.request.uri.path contains ".backup") or
+(http.request.uri.path contains ".yaml") or
+(http.request.uri.path contains ".yml") or
+(http.request.uri.path contains ".ini") or
+(http.request.uri.path contains ".log") or
+(http.request.uri.path contains ".db") or
+(http.request.uri.path contains ".sqlite") or
+
+(http.request.uri.path contains "server-status") or
+(http.request.uri.path contains "server-info") or
+(http.request.uri.path contains "actuator") or
+(http.request.uri.path contains "swagger") or
+(http.request.uri.path contains "api-docs") or
+
+(http.request.uri.path contains "../") or
+(http.request.uri.path contains "..%2F") or
+(http.request.uri.path contains "%2e%2e")
