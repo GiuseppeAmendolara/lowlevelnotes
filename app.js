@@ -45,15 +45,15 @@ createApp({
       currentPage: "resources",
       nav: [
         { id: "resources", label: "resources", icon: "./assets/images/res.png" },
-        { id: "tools",     label: "tools",     icon: "./assets/images/tools.png" },
+        { id: "tools", label: "tools", icon: "./assets/images/tools.png" },
         { id: "changelog", label: "changelog", icon: "./assets/images/log.png" },
-        { id: "about",     label: "about",     icon: "./assets/images/about.png" },
+        { id: "about", label: "about", icon: "./assets/images/about.png" },
       ],
       typeIcons: {
-        pdf:     "./assets/images/pdf.png",
+        pdf: "./assets/images/pdf.png",
         website: "./assets/images/website.png",
-        videos:  "./assets/images/videos.png",
-        git:     "./assets/images/git.png",
+        videos: "./assets/images/videos.png",
+        git: "./assets/images/git.png",
       },
       people: [],
       resources: [],
@@ -117,8 +117,15 @@ createApp({
       }
     },
 
-    navigateResource(path) {
+    async navigateResource(path, resourceId) {
       if (!path) return;
+
+      try {
+        await fetch(`${API_BASE}/resource/${resourceId}`, { method: "POST" });
+      } catch (e) {
+        console.warn("Failed to increment views:", e);
+      }
+
       window.open(path, "_blank");
     },
   },

@@ -87,7 +87,7 @@
 
         <!-- RESOURCES -->
         <div v-else-if="currentPage === 'resources'" class="resource-container">
-          <div v-for="r in resources" :key="r.id" class="resource-tile" @click="navigateResource(r.path)">
+          <div v-for="r in resources" :key="r.id" class="resource-tile" @click="navigateResource(r.path, r.id)">
             <div class="tile-header">
               <img class="tile-image" :src="typeIcons[r.type]" alt="type icon" />
               <span>{{ r.title }}</span>
@@ -119,7 +119,7 @@
 
         <!-- REFERENCES -->
         <div v-else-if="currentPage === 'tools'">
-          <markdown-page class="markdown-page"/>
+          <markdown-page class="markdown-page" />
         </div>
 
         <!-- CHANGELOG -->
