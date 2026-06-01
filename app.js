@@ -118,15 +118,15 @@ createApp({
     },
 
     async navigateResource(path, resourceId) {
-      if (!path) return;
+  if (!path) return;
 
-      try {
-        await fetch(`${API_BASE}/resource/${resourceId}`, { method: "POST" });
-      } catch (e) {
-        console.warn("Failed to increment views:", e);
-      }
+  try {
+    await fetch(`${API_BASE}/resource/${resourceId}`, { method: "POST" });
+  } catch (e) {
+    console.warn("Failed to increment views:", e);
+  }
 
-      window.open(path, "_blank");
-    },
+  window.open(path, "_blank");
+},
   },
 }).mount("#app");
