@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { JetBrains_Mono } from 'next/font/google';
+
 import "./globals.css";
+
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 
@@ -11,49 +13,68 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const viewport: Viewport = {
   themeColor: "#171717",
+  colorScheme: "dark",
   width: "device-width",
   initialScale: 1,
+  minimumScale: 1,
   maximumScale: 5,
   userScalable: true,
   viewportFit: "cover",
-  minimumScale: 1,
 };
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://lowlevelnotes.com"),
+
   title: "0xLN",
   description: "Organized knowledge for mastering software development.",
+
   applicationName: "lowlevelnotes",
   category: "technology",
-  authors: [{ name: "Giuseppe Amendolara", url: "https://lowlevelnotes.com" }],
+
+  authors: [
+    {
+      name: "Giuseppe Amendolara",
+      url: "https://lowlevelnotes.com",
+    },
+  ],
+
   creator: "Giuseppe Amendolara",
   publisher: "lowlevelnotes",
-  icons: { icon: "/favicon.ico", shortcut: "/favicon.ico", apple: "/favicon.ico" },
-  colorScheme: "dark",
+
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/favicon.ico",
+  },
+
   alternates: {
     canonical: "https://lowlevelnotes.com",
     languages: {
       "en-US": "https://lowlevelnotes.com",
     },
   },
+
   appLinks: {
     web: {
       url: "https://lowlevelnotes.com",
-      should_fallback: true,
+      shouldFallback: true,
     },
   },
+
   manifest: "/manifest.json",
-  themeColor: "#171717",
+
   formatDetection: {
     email: false,
     address: false,
     telephone: false,
   },
+
   robots: {
     index: true,
     follow: true,
     nocache: true,
   },
+
   openGraph: {
     title: "0xLN",
     description: "Organized knowledge for mastering software development.",
@@ -69,9 +90,11 @@ export const metadata: Metadata = {
     locale: "en-US",
     type: "website",
   },
+
   verification: {
     google: "google-site-verification=G7g0k1J8z3x5y6z7a8b9c0d1e2f3g4h5i6j7k8l9m0n",
   },
+
   keywords: [
     // Core search terms
     "0xLN",
