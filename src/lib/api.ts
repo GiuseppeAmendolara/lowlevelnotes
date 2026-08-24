@@ -18,7 +18,7 @@ export type Person = {
   name: string
   role: string
   avatar: string
-  profileUrl?: string
+  profile: string
 }
 
 export type Tool = {
