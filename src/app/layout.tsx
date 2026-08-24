@@ -56,8 +56,7 @@ export const metadata: Metadata = {
 
   appLinks: {
     web: {
-      url: "https://lowlevelnotes.com",
-      shouldFallback: true,
+      url: "https://lowlevelnotes.com"
     },
   },
 
