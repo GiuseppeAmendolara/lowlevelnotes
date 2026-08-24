@@ -1,7 +1,7 @@
-import { getChangelog } from '@/lib/api'
+import { getChangelog } from "@/lib/api";
 
 export default async function ChangelogPage() {
-  const entries = await getChangelog()
+  const entries = await getChangelog();
 
   return (
     <main className="min-h-screen bg-black">
@@ -44,5 +44,5 @@ export default async function ChangelogPage() {
         </div>
       </section>
     </main>
-  )
+  );
 }
