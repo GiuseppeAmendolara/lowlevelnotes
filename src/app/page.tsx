@@ -1,6 +1,8 @@
 import { getResources, getPeople, Resource } from '@/lib/api'
 import ResourceCategorySection from '@/components/ResourceCategorySection'
 
+export const dynamic = 'force-dynamic'
+
 function groupByCategory(items: Resource[]) {
   const map = new Map<string, Resource[]>()
   for (const item of items) {

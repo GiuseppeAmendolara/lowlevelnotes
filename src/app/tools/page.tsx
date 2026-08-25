@@ -1,6 +1,8 @@
 import { getTools, Tool } from '@/lib/api'
 import ToolCategorySection from '@/components/ToolCategorySection'
 
+export const dynamic = 'force-dynamic'
+
 function groupByCategory(tools: Tool[]) {
   const map = new Map<string, Tool[]>()
 
