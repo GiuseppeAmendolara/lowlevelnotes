@@ -7,6 +7,7 @@ const links = [
   { href: '/', label: 'resources' },
   { href: '/tools', label: 'tools' },
   { href: '/changelog', label: 'changelog' },
+  { href: '/status', label: 'status' },
 ]
 
 export default function Nav() {
