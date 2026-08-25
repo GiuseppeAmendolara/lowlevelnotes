@@ -6,7 +6,7 @@ export default async function ChangelogPage() {
   const entries = await getChangelog();
 
   return (
-    <main className="min-h-screen bg-black">
+    <main className="min-h-screen bg-[#171717]">
       <section className="max-w-4xl mx-auto px-6 pt-16 pb-10">
         <h1 className="font-mono text-4xl font-bold text-white tracking-tight">
           changelog

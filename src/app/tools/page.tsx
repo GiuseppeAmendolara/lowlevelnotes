@@ -22,7 +22,7 @@ export default async function ToolsPage() {
   const grouped = groupByCategory(tools)
 
   return (
-    <main className="min-h-screen bg-black">
+    <main className="min-h-screen bg-[#171717]">
       <section className="max-w-6xl mx-auto px-6 pt-16 pb-10">
         <h1 className="font-mono text-4xl font-bold text-white tracking-tight">
           tools

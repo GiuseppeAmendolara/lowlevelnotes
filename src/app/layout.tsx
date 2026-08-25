@@ -142,7 +142,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${jetbrainsMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <header>
+        <header className="sticky top-0 z-10">
         <Nav />
         </header>
         {children}

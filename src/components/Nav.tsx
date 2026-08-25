@@ -13,7 +13,7 @@ export default function Nav() {
   const pathname = usePathname()
 
   return (
-    <nav className="border-b border-white/10 bg-black sticky top-0 z-10">
+    <nav className="border-b border-white/10 bg-[#171717]">
       <div className="max-w-6xl mx-auto px-6 flex items-center gap-8">
         <span className="font-mono font-bold text-white py-4 tracking-tight">0xLN</span>
         <div className="flex gap-6">
