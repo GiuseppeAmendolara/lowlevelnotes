@@ -15,11 +15,11 @@ export default function Footer() {
             <p>
               Repository:{' '}
               
-                <a href="https://github.com/grimy86/lowlevelnotes"
+                <a href="https://github.com/GiuseppeAmendolara/lowlevelnotes"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-white/70 hover:text-white underline underline-offset-2 transition-colors">
-                github.com/grimy86/lowlevelnotes
+                github.com/GiuseppeAmendolara/lowlevelnotes
               </a>
             </p>
           </div>
