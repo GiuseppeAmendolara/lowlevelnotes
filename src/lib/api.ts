@@ -38,6 +38,9 @@ export type ChangelogEntry = {
 async function apiFetch<T>(endpoint: string): Promise<T> {
   const res = await fetch(`${API_BASE}${endpoint}`, {
     next: { revalidate: 60 },
+    headers: {
+      'x-internal-key': process.env.INTERNAL_API_KEY!,
+    },
   })
   if (!res.ok) throw new Error(`API ${endpoint} failed: ${res.status}`)
   return res.json()
