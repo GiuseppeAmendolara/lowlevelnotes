@@ -35,7 +35,7 @@ export default function ResetPasswordForm({ token }: { token: string }) {
         <AuthMessage message="Password has been reset." tone="success" />
         <p className="mt-6 text-sm text-[#A1A1AA]">
           <Link href="/login" className="text-white/70 underline underline-offset-2 transition-colors hover:text-white">
-            Log in
+            Login
           </Link>
         </p>
       </>

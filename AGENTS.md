@@ -180,6 +180,35 @@ These are planning notes, not authorization to begin future phases early.
   verify-email where the token itself is the public credential). Any
   future page that needs to call the Worker server-side must account for
   this rather than assuming a plain `fetch()` will work.
+- **`GET /resources`, `/tools`, `/people` now require a session** — the
+  library is gated to logged-in users (user's explicit request); these
+  three return 401 without `getSessionUser()` succeeding. `/library`
+  fetches them client-side only, after confirming a session, matching
+  `/account`'s pattern — not server-rendered, since the Next.js server
+  can't see the session cookie anyway (see the host-only cookie note
+  above) and a server-rendered-then-hidden page wouldn't actually
+  restrict the data. Any response carrying per-session data (these three,
+  plus `GET /v1/auth/session`) sets `Cache-Control: private, no-store`
+  explicitly (the `NO_STORE` constant near `json()`) — don't rely on
+  Cloudflare's default cache-bypass for dynamic Worker responses; it was
+  observed serving a stale pre-deploy response for about a minute after
+  this gate first shipped.
+- **Library asset files live in R2 (`lowlevelnotes-assets` bucket, `ASSETS`
+  binding), not `public/`.** Gating the `/library` page and its JSON
+  endpoints did nothing for the actual PDFs/notes as long as they sat in
+  Next.js's `public/` folder — static files there are always served with
+  no possible auth check, dirbustable regardless of what the app code
+  does. `GET /v1/library/assets/*` (`getLibraryAssetV1` in
+  `worker/index.js`) streams objects from R2 after the same
+  `getSessionUser()` check, plus its own dedicated rate limit (60
+  downloads/hour per user, `asset_download` in `auth_events` —
+  `worker/migrations/0004_asset_download_rate_limit.sql` recreated that
+  table to add the CHECK value, since SQLite has no `ALTER` for
+  constraints). `resources.path` in D1 is unchanged (`./assets/pdfs/...`)
+  — `LibraryBrowser.tsx`'s `resolveHref()` rewrites local paths to the
+  gated endpoint URL at render time rather than the data being migrated.
+  R2 object keys mirror the old `public/assets/` relative paths exactly
+  (e.g. `pdfs/cpp.pdf`, `drafts/Networks/networks.md`).
 
 ### Security and roles
 
@@ -297,6 +326,16 @@ throughout the product:
   never gated to begin with. This does not extend to git history rewrites,
   force-pushes, or revoking/rotating the token itself — those still get
   confirmed explicitly.
+- `CLOUDFLARE_API_TOKEN` now also has **`Zone → WAF → Edit`** (scoped to
+  the `lowlevelnotes.com` zone) and **`Workers R2 Storage: Edit`**
+  (2026-08-26) — added specifically so custom WAF/Security Rules for the
+  domain and R2 object management (used by the gated library-asset
+  endpoint, see below) can be handled the same standing-permission way as
+  D1/Worker changes already are. Note the WAF permission is `Zone WAF
+  Write` — a *zone*-scoped grant, not the account-level `Rule Policies`
+  permission that also appears in the token editor (that one is a
+  separate, thinly-documented Account permission group, unrelated to this
+  domain's Security Rules page; not added, not needed here).
 
 <!-- BEGIN:nextjs-agent-rules -->
 

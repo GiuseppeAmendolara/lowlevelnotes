@@ -5,6 +5,9 @@
 # Cloudflare Worker source — kept local-only, never committed
 /worker/
 
+# Cloudflare Wrangler source - kept local-only, never committed
+/.wrangler/
+
 # personal Claude Code permission overrides for this machine
 /.claude/
 

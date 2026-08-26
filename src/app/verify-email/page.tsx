@@ -10,7 +10,7 @@ export default async function VerifyEmailPage({
   const { token } = await searchParams
 
   return (
-    <AuthPageShell eyebrow="Email verification" heading="Verify your email.">
+    <AuthPageShell eyebrow="Email verification" heading="Verify your email">
       {token ? (
         <VerifyEmailResult token={token} />
       ) : (

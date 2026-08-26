@@ -1,12 +1,15 @@
 'use client'
 
-// Client-safe wrappers for /v1/auth/* — deliberately separate from
-// src/lib/api.ts (server-only, uses the INTERNAL_API_KEY secret). Auth
-// calls run in the browser and rely on the session cookie instead, which
-// is HttpOnly and host-only on api.lowlevelnotes.com — the browser must
-// therefore talk to that domain directly (credentials: 'include'), not
-// through a same-origin Next.js proxy, or the cookie would end up scoped
-// to the wrong host.
+// Client-safe wrappers for everything that runs on the session cookie —
+// /v1/auth/* plus the now-gated library data — deliberately separate
+// from src/lib/api.ts (server-only, uses the INTERNAL_API_KEY secret).
+// These calls run in the browser and rely on the session cookie instead,
+// which is HttpOnly and host-only on api.lowlevelnotes.com — the browser
+// must therefore talk to that domain directly (credentials: 'include'),
+// not through a same-origin Next.js proxy, or the cookie would end up
+// scoped to the wrong host.
+
+import type { Resource, Person, Tool } from '@/lib/api'
 
 const AUTH_API_BASE = 'https://api.lowlevelnotes.com'
 
@@ -103,4 +106,24 @@ export function resendVerification() {
     '/v1/auth/resend-verification',
     { method: 'POST' }
   )
+}
+
+// Library data now requires a session — gated server-side (not just a
+// frontend redirect), so a logged-out request genuinely gets a 401 with
+// no data, not just a hidden-but-fetched response.
+export async function getLibrary() {
+  const [resources, people, tools] = await Promise.all([
+    authFetch<Resource[]>('/resources'),
+    authFetch<Person[]>('/people'),
+    authFetch<Tool[]>('/tools'),
+  ])
+
+  if (!resources.ok) return resources
+  if (!people.ok) return people
+  if (!tools.ok) return tools
+
+  return {
+    ok: true as const,
+    data: { resources: resources.data, people: people.data, tools: tools.data },
+  }
 }

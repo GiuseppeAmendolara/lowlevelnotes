@@ -76,8 +76,14 @@ export default function Home() {
 
             <div className="mt-10 flex flex-col gap-3 sm:flex-row">
               <Link
-                href="#topics"
+                href="/login"
                 className="inline-flex items-center justify-center gap-3 bg-[#FF8A3D] px-5 py-3.5 text-sm font-semibold text-[#0D0D0D] transition-colors hover:bg-[#FFA15C] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF8A3D]"
+              >
+                Login
+              </Link>
+              <Link
+                href="#topics"
+                className="inline-flex items-center justify-center gap-3 border border-white/15 px-5 py-3.5 text-sm font-medium text-white transition-colors hover:border-white/40 hover:bg-white/[0.04] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
               >
                 Explore the library
                 <span aria-hidden="true">↓</span>

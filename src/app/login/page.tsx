@@ -43,14 +43,14 @@ export default function LoginPage() {
   }
 
   return (
-    <AuthPageShell eyebrow="Welcome back" heading="Log in.">
+    <AuthPageShell eyebrow="Welcome back" heading="Login">
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <AuthTextField label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" required />
         <AuthTextField label="Password" type="password" value={password} onChange={setPassword} autoComplete="current-password" required />
 
         {error && <AuthMessage message={error} />}
 
-        <AuthSubmitButton loading={submitting}>Log in</AuthSubmitButton>
+        <AuthSubmitButton loading={submitting}>Login</AuthSubmitButton>
       </form>
 
       <p className="mt-6 text-sm text-[#A1A1AA]">

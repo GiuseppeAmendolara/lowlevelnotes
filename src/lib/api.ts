@@ -47,9 +47,6 @@ async function apiFetch<T>(endpoint: string): Promise<T> {
   return res.json()
 }
 
-export const getResources = () => apiFetch<Resource[]>('/resources')
-export const getPeople = () => apiFetch<Person[]>('/people')
-export const getTools = () => apiFetch<Tool[]>('/tools')
 export const getChangelog = () => apiFetch<ChangelogEntry[]>('/changelog')
 
 export async function incrementResourceViews(id: number): Promise<void> {

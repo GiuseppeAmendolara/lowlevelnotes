@@ -35,7 +35,7 @@ export default function ForgotPasswordPage() {
 
   if (done) {
     return (
-      <AuthPageShell eyebrow="Password recovery" heading="Check your email.">
+      <AuthPageShell eyebrow="Password recovery" heading="Check your email">
         <AuthMessage message="If that email is registered, a password reset link has been sent." tone="success" />
       </AuthPageShell>
     )

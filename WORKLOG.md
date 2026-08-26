@@ -7,9 +7,10 @@ It supplements the durable project guidance in `AGENTS.md`.
 ## Status
 
 - **Active phase:** Phase 4 — Authorization roles (not yet started)
-- **Current area:** Frontend (`src/app/`) — just finished the auth pages
-- **Milestone:** Auth frontend (login/register/forgot-password/reset-password/
-  verify-email/account) + styled transactional emails, both live
+- **Current area:** Library access control — just finished
+- **Milestone:** `/library` genuinely restricted to logged-in users, both
+  the page/API (Worker session check) and the underlying asset files
+  (moved from public `public/assets/` to a gated R2-backed endpoint)
 - **Last updated:** 2026-08-26
 
 ## Homepage review (2026-08-26)
@@ -950,3 +951,127 @@ foundation Phase 3 built — the frontend pattern for calling
 this round) is ready to reuse for those too. Real course content
 (replacing the Phase 1 test seed) remains explicitly deferred to its own
 later pass, not tied to a numbered phase.
+
+## Polish pass + gating /library behind login (2026-08-26)
+
+Copy/layout fixes: "Log in" → "Login" everywhere (was inconsistently a
+two-word verb phrase in some spots), removed the trailing periods this
+session had put on every `AuthPageShell` heading, reordered `Header.tsx`
+so the login/account link sits before GitHub (closer to the main nav),
+and added a "Login" button to the homepage hero, first in the row before
+"Explore the library."
+
+The substantial piece: user asked to restrict `/library` to logged-in
+users. Asked one clarifying question first, since there were genuinely
+two different things this could mean given how Phase 3's cookie works
+(host-only on `api.lowlevelnotes.com`, invisible to the Next.js server) —
+a quick client-side redirect (cosmetic, the server-rendered data would
+still ship to a logged-out browser before the redirect fired) versus
+making the restriction real (the Worker itself refuses the data without
+a session). User chose real. Implemented:
+
+- `worker/index.js`: `getResources`, `getTools`, `getPeople` now call
+  `getSessionUser()` and return 401 without one — the actual data is
+  gated, not just hidden by the frontend.
+- `/library/page.tsx` rewritten from a Server Component (fetched via the
+  server-only `INTERNAL_API_KEY`) into a client component matching
+  `/account`'s pattern: redirect-guard if logged out, fetch only after a
+  session is confirmed, via a new `getLibrary()` in `authClient.ts`
+  (parallel authed fetches to the three now-gated endpoints).
+  `getResources`/`getPeople`/`getTools` removed from the server-only
+  `src/lib/api.ts` — nothing else used them.
+
+Caught a real issue while verifying, not just a cosmetic one: right after
+deploying the gate, `curl https://api.lowlevelnotes.com/resources` with
+no auth still returned the full 200 dataset — turned out to be
+Cloudflare's edge serving a cached response from *before* the deploy
+(confirmed transient: the same bare URL correctly 401'd on its own within
+about a minute, no cache-busting needed). Rather than trust that this
+stays transient, added an explicit `Cache-Control: private, no-store` to
+every response from these three endpoints and `GET /v1/auth/session`
+(new `NO_STORE` header constant, reused via `json()`'s existing
+extra-headers parameter) — makes it impossible for any layer to cache
+per-session data going forward, instead of relying on Cloudflare's
+default (and apparently not fully reliable in the few-seconds-post-deploy
+window) cache-bypass behavior for dynamic Worker responses.
+
+Verified: `curl` without a session → 401 with `Cache-Control: private,
+no-store` on all four endpoints; `curl` with a real session's bearer
+token → 200 on all three library endpoints. Browser pass (mocked
+`/v1/auth/*` + the three library endpoints): `/library` redirects to
+`/login` when logged out, loads real data once logged in, header shows
+the login/account link before GitHub. Test account cleaned out of D1
+afterward.
+
+## Closing the real gap: library assets moved to R2 (2026-08-26)
+
+User caught something the library gate above completely missed: gating
+`/library` and its JSON endpoints did nothing for the actual files —
+`public/assets/pdfs/*.pdf` and the whole `public/assets/drafts/` tree (69
+files, 27MB total) were still fully public and directly dirbustable,
+since anything in Next.js's `public/` folder is served statically with no
+possible auth check, regardless of what the app does. Same root cause as
+every other "can the server check the session" question this session:
+there isn't one, so the fix has to happen at the storage layer, not the
+page layer.
+
+User's fears going in, addressed directly rather than hand-waved:
+- **Surprise billing from abuse** — resolved with concrete numbers (27MB
+  is ~0.27% of R2's 10GB free tier; R2 has zero egress fees regardless of
+  volume; the existing global rate limiter alone already bounds a single
+  IP to ~1.3M requests/month max, under the 10M free-tier read limit) plus
+  a new dedicated limit (60 downloads/hour/user) added specifically for
+  this endpoint, not left as a "should be fine."
+- **Files getting deleted by an attacker** — not architecturally possible:
+  the new endpoint is GET-only, R2 write/delete access is never exposed
+  outside the Worker's own server-side binding.
+- Also identified the exact Cloudflare token permissions needed by
+  checking Cloudflare's own docs rather than guessing from memory
+  (`Zone WAF Write` for the domain's Security Rules page — confirmed
+  distinct from the similarly-named but different `Account → Rule
+  Policies` permission the user also saw in the token editor, which
+  isn't needed here) — user granted both `Zone WAF Write` and `Workers R2
+  Storage: Edit` on the existing `CLOUDFLARE_API_TOKEN`.
+
+Built once R2 was enabled and the token scoped:
+- New `lowlevelnotes-assets` R2 bucket, all 69 files uploaded via
+  `wrangler r2 object put --remote` (no MCP tool exists for R2 object
+  upload, only bucket management — the CLI was the only path), keys
+  mirroring the old `public/assets/` relative structure.
+- `worker/wrangler.toml`: new `[[r2_buckets]]` binding (`ASSETS`).
+- `worker/migrations/0004_asset_download_rate_limit.sql`: added
+  `asset_download` to `auth_events.event_type`'s CHECK constraint
+  (required recreating the table — SQLite has no `ALTER` for constraints).
+- New `GET /v1/library/assets/*` (`getLibraryAssetV1`): same
+  `getSessionUser()` gate as the JSON endpoints, the new 60/hour/user
+  rate limit, streams the R2 object with a content-type inferred from
+  extension, `Cache-Control: private, no-store` (same reasoning as the
+  JSON endpoints — a cached response would bypass the per-request auth
+  check for whoever it's served to next).
+- `LibraryBrowser.tsx`'s `resolveHref()` now rewrites local resource
+  paths to the new gated endpoint URL instead of the old `/assets/*`
+  Next.js public path — `resources.path` in D1 stays exactly as-is
+  (`./assets/pdfs/...`), no data migration needed, just a different
+  resolution at render time.
+- Deleted `public/assets/pdfs/` and `public/assets/drafts/` from the repo
+  (`git rm`) — the actual fix, not just adding a second front door next
+  to the open one. Content itself wasn't destroyed — it's the same bytes,
+  now living in R2, still fully usable by any logged-in visitor.
+
+Verified in two halves, since Cloudflare's bot-detection blocks genuine
+headless-browser automation talking to `api.lowlevelnotes.com` directly
+(the same issue hit during Phase 3 testing) — real users' real browsers
+aren't affected, but it means one single live click-through test isn't
+possible from this environment:
+- **Server side, real data**: `curl` without auth → 401; with a real
+  session's bearer token → 200, byte-identical file (verified against the
+  original), correct `Content-Type` per extension (`application/pdf`,
+  `text/markdown; charset=utf-8`, etc.); nonexistent key → 404.
+- **Client side, mocked session**: confirmed via Playwright that a local
+  resource (`./assets/pdfs/cpp.pdf`) now renders with an `href` pointing
+  at `https://api.lowlevelnotes.com/v1/library/assets/pdfs/cpp.pdf`,
+  while an external resource link is left untouched.
+
+Both halves independently proven; combined they cover the full path.
+`next build` clean (public/ dropped from ~27MB back to 16KB). Test
+accounts cleaned out of D1 after each verification pass.

@@ -29,9 +29,13 @@ type Item = {
   views: number | null
 }
 
+// Local files (D1 paths like "./assets/pdfs/cpp.pdf") used to resolve to
+// a Next.js /public/ path — fully public with no possible auth check.
+// They now live in R2 behind a gated Worker endpoint instead, so a local
+// path resolves there rather than to this site's own /assets/*.
 function resolveHref(path: string) {
   if (/^https?:\/\//i.test(path)) return path
-  return path.replace(/^\.\//, '/')
+  return `https://api.lowlevelnotes.com/v1/library/assets/${path.replace(/^\.\/assets\//, '')}`
 }
 
 function trackView(item: Item) {

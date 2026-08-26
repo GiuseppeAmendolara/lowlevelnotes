@@ -43,6 +43,15 @@ export default function Header() {
             })}
           </div>
 
+          {!loading && (
+            <Link
+              href={user ? '/account' : '/login'}
+              className="ml-5 shrink-0 border-l border-white/10 pl-5 text-xs font-medium uppercase tracking-[0.12em] text-[#A1A1AA] transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF8A3D]"
+            >
+              {user ? user.displayName : 'Login'}
+            </Link>
+          )}
+
           <a
             href="https://github.com/GiuseppeAmendolara/lowlevelnotes"
             target="_blank"
@@ -51,15 +60,6 @@ export default function Header() {
           >
             GitHub ↗
           </a>
-
-          {!loading && (
-            <Link
-              href={user ? '/account' : '/login'}
-              className="ml-5 shrink-0 border-l border-white/10 pl-5 text-xs font-medium uppercase tracking-[0.12em] text-[#A1A1AA] transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF8A3D]"
-            >
-              {user ? user.displayName : 'Log in'}
-            </Link>
-          )}
         </div>
       </nav>
     </header>

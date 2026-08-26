@@ -65,7 +65,7 @@ export default function AccountPage() {
 
   if (sessionLoading || !user) {
     return (
-      <AuthPageShell eyebrow="Account" heading="Account.">
+      <AuthPageShell eyebrow="Account" heading="Account">
         <p className="text-sm text-[#A1A1AA]">Loading…</p>
       </AuthPageShell>
     )
