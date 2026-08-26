@@ -7,10 +7,16 @@ It supplements the durable project guidance in `AGENTS.md`.
 ## Status
 
 - **Active phase:** Phase 4 — Authorization roles (not yet started)
-- **Current area:** Library access control — just finished
+- **Current area:** Cloudflare WAF custom rules — just finished a full
+  review (2 bugs fixed, 3 rules hardened, attacking IP blocked)
 - **Milestone:** `/library` genuinely restricted to logged-in users, both
   the page/API (Worker session check) and the underlying asset files
   (moved from public `public/assets/` to a gated R2-backed endpoint)
+- **Pending:** today's full batch of Next.js/Worker code changes (library
+  gating, R2 frontend wiring, homepage button swap, Turnstile) still
+  uncommitted — needs a commit pass. Also `TURNSTILE_SECRET` still needs
+  setting on the Worker (`wrangler secret put`) before this actually works
+  live — see below.
 - **Last updated:** 2026-08-26
 
 ## Homepage review (2026-08-26)
@@ -1075,3 +1081,120 @@ possible from this environment:
 Both halves independently proven; combined they cover the full path.
 `next build` clean (public/ dropped from ~27MB back to 16KB). Test
 accounts cleaned out of D1 after each verification pass.
+
+## WAF custom rules review (2026-08-26)
+
+Triggered by a real attack: IP `185.177.72.67` sent ~3.2k bare `curl`
+requests in a day. Blocked it via Cloudflare IP Access Rules (separate
+5-rule-cap quota from Custom Rules, requested and granted `Zone →
+Firewall Services → Edit` on `CLOUDFLARE_API_TOKEN` for this). While in
+there, reviewed all 5 existing custom WAF rules on the zone
+(`http_request_firewall_custom` phase, ruleset
+`8ed73952296d4bfd9223e77e6a2b7d3b`) end to end.
+
+Two real bugs found and fixed (both had been silently breaking
+legitimate functionality, confirmed via before/after `curl`):
+- **Rule 2** ("suspicious user agents & path probes") was blocking the
+  new `/v1/library/assets/*` R2 endpoint's `.yaml`/`.yml` extensions —
+  added an explicit exemption alongside the existing `/resource/` POST
+  and `/health`/`.svg` exemptions.
+- **Rule 5** ("non-GET on main domain") was blocking the resource
+  view-counter's `POST /api/resource/[id]` proxy — likely broken since
+  the rule was first added. Added the same path-based exemption pattern.
+
+Also found (and left as-is, out of scope) a hardcoded secret embedded
+directly in Rule 2's expression (`x-internal-key` bypass value) — noted
+for awareness; not touched since rotating it would require coordinating
+a Worker env var change too.
+
+Three deliberate design changes, each confirmed with the user first:
+- **Rule 1** ("countries + AI crawlers"): kept the country blocklist
+  as-is (user's call — later added `IL` to it directly via the
+  dashboard mid-review, preserved). Removed the blanket `cf.client.bot`
+  clause and dropped `Googlebot`/`bingbot` from the named block list, so
+  real search-engine crawling for SEO isn't blocked, while every AI
+  scraper UA (`ChatGPT-User`, `PerplexityBot`, `OAI-SearchBot`, etc.)
+  stays blocked. Verified: a spoofed `Googlebot`/`bingbot` UA from curl
+  still gets 403'd — that's Cloudflare's own Verified Bots anti-spoofing
+  layer (checks source IP against Google/Microsoft's real ranges, not
+  our rule), confirmed by testing a made-up bot UA (passes clean) — so
+  real crawlers from real Google/Bing IPs will pass Rule 1 now, even
+  though that specific case can't be curl-verified from here.
+- **Rules 3 & 4** ("API direct access prevention", "hotlink
+  protection"): both had the same real weakness — the referer check
+  used `http.referer contains "lowlevelnotes.com"`, a substring match
+  beatable by a referer like `https://evil.com/?x=lowlevelnotes.com`.
+  Initially recommended dropping both, since the R2 migration above
+  means there's nothing on the main domain left to hotlink and the API
+  is already properly session-gated — user pushed back, correctly:
+  wanted the intent kept (defense in depth), just written properly,
+  rather than removed. Rewrote both with an anchored check —
+  `starts_with(http.referer, "https://lowlevelnotes.com/")` (plus the
+  bare-origin and `www` forms) instead of `contains` — which closes the
+  spoofing trick while still allowing empty referers through
+  (unavoidable: the R2 asset download links use `rel="noreferrer"`
+  deliberately, so blocking empty referer would break that legitimate
+  flow). Rule 4 also scoped down to just `lowlevelnotes.com` + path
+  `contains "/assets/"` (dropped a dead `/components/` clause) — dormant
+  today since `public/assets/` is empty post-R2-migration, but ready if
+  public media ever gets added back to the main site. Verified: spoofed
+  substring referer against the API now 403s (was passing before); empty
+  referer and a real `lowlevelnotes.com` referer both still 200.
+
+All changes applied via the Rulesets API (`PATCH
+.../rulesets/{id}/rules/{rule_id}`, each body written to a scratch file
+first rather than inlined — cleaner and avoids embedding the internal
+key value in a shell command). One conflict during the process: a
+dashboard edit to Rule 1 (adding `IL`) landed between my first patch and
+verification, silently reverting the Googlebot/bingbot fix — caught by
+re-fetching the live rule and diffing against what was just sent, not
+assumed from the "success" response alone. Confirmed with the user
+before reapplying on top of their edit rather than overwriting it.
+
+## Cloudflare Turnstile on the three auth forms (2026-08-26)
+
+Widget was already created in the Cloudflare dashboard (site key
+`0x4AAAAAAEdKEFa7n07s2OQ1`); this closes the loop end to end, following
+Cloudflare's own existing-widget integration guide.
+
+- New `src/components/auth/TurnstileWidget.tsx`: explicit-render API
+  (`window.turnstile.render`, not the implicit `cf-turnstile` div) so the
+  resulting token lands in the parent form's React state rather than
+  only a hidden input the app can't see. Exposes `reset()` via a ref —
+  tokens are single-use, consumed by the Worker's `siteverify` call
+  regardless of whether the underlying login/register/reset attempt
+  itself succeeds, so every submit path resets the widget and clears the
+  token before the next attempt is allowed.
+- `/register`, `/login`, `/forgot-password` each render the widget with
+  a distinct `action` (`"register"`, `"login"`, `"forgot_password"`) and
+  disable their submit button until a token exists.
+  `/forgot-password` specifically treats a Turnstile-failure 403 as its
+  own error state, kept separate from the existing rate-limit/success
+  branches — a bad captcha isn't an account-existence signal, so it
+  can't be allowed to interact with that endpoint's enumeration
+  protection.
+- `worker/index.js`: new `verifyTurnstile(env, token, ip, expectedAction)`
+  posts to `https://challenges.cloudflare.com/turnstile/v0/siteverify`
+  and requires all three of `success`, `action` match (stops a token
+  solved on one form being replayed against another), and `hostname`
+  being ours. Wired into `registerV1`, `loginV1`, and
+  `forgotPasswordV1`, positioned after the existing cheap sync
+  validation (email format, password rules) but before any D1
+  rate-limit/bookkeeping calls — fail fast on garbage input without a
+  network round-trip, but don't let a bot's traffic touch the rate-limit
+  counters at all if it can't solve the challenge.
+- Site key is public by design (identifies the widget, safe in client
+  code) — went straight into `TurnstileWidget.tsx`, not `.env.local`.
+  The secret key is the actual credential; it's a Worker secret
+  (`TURNSTILE_SECRET`, read as `env.TURNSTILE_SECRET`) rather than
+  anything in `wrangler.toml`, matching how `RESEND_API_KEY` is already
+  handled in this codebase. **Not yet set** — needs `wrangler secret put
+  TURNSTILE_SECRET` run by the user directly (interactive prompt, value
+  never touches a file or this session), same treatment as every other
+  secret this project handles.
+
+Verified: `npx tsc --noEmit` clean, `next build` clean (all three auth
+routes still prerender/render correctly), `node --check worker/index.js`
+clean. Full live click-through (solve → submit → siteverify → 403 on a
+bad/replayed token) still pending the secret being set — noted in
+Status above.

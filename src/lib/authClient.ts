@@ -58,17 +58,17 @@ export function getSession() {
   return authFetch<AuthUser>('/v1/auth/session')
 }
 
-export function login(email: string, password: string) {
+export function login(email: string, password: string, turnstileToken: string) {
   return authFetch<{ token: string; expiresAt: string; user: AuthUser }>('/v1/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email, password, turnstileToken }),
   })
 }
 
-export function register(email: string, password: string, displayName: string) {
+export function register(email: string, password: string, displayName: string, turnstileToken: string) {
   return authFetch<{ message: string; email: string; verificationLink?: string; note?: string }>(
     '/v1/auth/register',
-    { method: 'POST', body: JSON.stringify({ email, password, displayName }) }
+    { method: 'POST', body: JSON.stringify({ email, password, displayName, turnstileToken }) }
   )
 }
 
@@ -83,10 +83,10 @@ export function changePassword(currentPassword: string, newPassword: string) {
   })
 }
 
-export function forgotPassword(email: string) {
+export function forgotPassword(email: string, turnstileToken: string) {
   return authFetch<{ message: string }>('/v1/auth/forgot-password', {
     method: 'POST',
-    body: JSON.stringify({ email }),
+    body: JSON.stringify({ email, turnstileToken }),
   })
 }
 

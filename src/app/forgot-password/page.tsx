@@ -1,32 +1,47 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import Link from 'next/link'
 import AuthPageShell from '@/components/auth/AuthPageShell'
 import AuthTextField from '@/components/auth/AuthTextField'
 import AuthSubmitButton from '@/components/auth/AuthSubmitButton'
 import AuthMessage from '@/components/auth/AuthMessage'
+import TurnstileWidget, { type TurnstileHandle } from '@/components/auth/TurnstileWidget'
 import { forgotPassword } from '@/lib/authClient'
 
 export default function ForgotPasswordPage() {
+  const turnstileRef = useRef<TurnstileHandle>(null)
+
   const [email, setEmail] = useState('')
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [rateLimited, setRateLimited] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [done, setDone] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (!turnstileToken) return
+    setError(null)
     setSubmitting(true)
 
-    const result = await forgotPassword(email)
+    const result = await forgotPassword(email, turnstileToken)
     setSubmitting(false)
+
+    turnstileRef.current?.reset()
+    setTurnstileToken(null)
 
     // The API returns the identical message whether or not the account
     // exists, by design (see Phase 3) — the frontend must not undermine
     // that by branching on it. A 429 is shown separately since it's a
-    // rate-limit signal, not an account-existence signal.
+    // rate-limit signal, not an account-existence signal. A 403 here is a
+    // failed Turnstile check, not an enumeration signal either.
     if (!result.ok && result.status === 429) {
       setRateLimited(true)
+      return
+    }
+    if (!result.ok && result.status === 403) {
+      setError(result.error)
       return
     }
 
@@ -50,9 +65,12 @@ export default function ForgotPasswordPage() {
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <AuthTextField label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" required />
 
-        {rateLimited && <AuthMessage message="Too many requests. Try again later." />}
+        <TurnstileWidget ref={turnstileRef} action="forgot_password" onToken={setTurnstileToken} />
 
-        <AuthSubmitButton loading={submitting}>Send reset link</AuthSubmitButton>
+        {rateLimited && <AuthMessage message="Too many requests. Try again later." />}
+        {error && <AuthMessage message={error} />}
+
+        <AuthSubmitButton loading={submitting} disabled={!turnstileToken}>Send reset link</AuthSubmitButton>
       </form>
 
       <p className="mt-6 text-sm text-[#A1A1AA]">

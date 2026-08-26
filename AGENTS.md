@@ -215,6 +215,19 @@ These are planning notes, not authorization to begin future phases early.
 - Understand and use established solutions for sessions, cookies, JWTs, refresh
   tokens, CSRF, XSS, OAuth, password hashing, and authorization; do not design
   bespoke authentication cryptography.
+- Cloudflare Turnstile guards `/register`, `/login`, and `/forgot-password`
+  (site key `0x4AAAAAAEdKEFa7n07s2OQ1` — public, safe to keep in client code;
+  only the secret key needs protecting, held as the Worker secret
+  `TURNSTILE_SECRET`, set via `wrangler secret put`, never in a tracked file).
+  `TurnstileWidget.tsx` renders the challenge explicitly (not the implicit
+  `cf-turnstile` div) so the token lands in form state; each form disables
+  submit until a token exists and resets the widget after every attempt,
+  since tokens are single-use regardless of outcome. `verifyTurnstile()` in
+  `worker/index.js` checks the token against Cloudflare's `siteverify`
+  endpoint, requiring the returned `action` to match the endpoint being hit
+  (so a token solved on `/login` can't be replayed against `/register`) and
+  the returned `hostname` to be ours — runs before any rate-limit bookkeeping
+  or DB work in `registerV1`/`loginV1`/`forgotPasswordV1`.
 - Students read courses, complete lessons, take quizzes, and track progress.
 - Contributors create and edit lessons. Instructors create courses, manage
   exercises, and view student statistics. Administrators have full access.

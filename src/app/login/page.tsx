@@ -1,21 +1,24 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import AuthPageShell from '@/components/auth/AuthPageShell'
 import AuthTextField from '@/components/auth/AuthTextField'
 import AuthSubmitButton from '@/components/auth/AuthSubmitButton'
 import AuthMessage from '@/components/auth/AuthMessage'
+import TurnstileWidget, { type TurnstileHandle } from '@/components/auth/TurnstileWidget'
 import { useSession } from '@/components/SessionProvider'
 import { login } from '@/lib/authClient'
 
 export default function LoginPage() {
   const router = useRouter()
   const { user, loading: sessionLoading, refresh } = useSession()
+  const turnstileRef = useRef<TurnstileHandle>(null)
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
@@ -27,11 +30,15 @@ export default function LoginPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (!turnstileToken) return
     setError(null)
     setSubmitting(true)
 
-    const result = await login(email, password)
+    const result = await login(email, password, turnstileToken)
     setSubmitting(false)
+
+    turnstileRef.current?.reset()
+    setTurnstileToken(null)
 
     if (!result.ok) {
       setError(result.error)
@@ -48,9 +55,11 @@ export default function LoginPage() {
         <AuthTextField label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" required />
         <AuthTextField label="Password" type="password" value={password} onChange={setPassword} autoComplete="current-password" required />
 
+        <TurnstileWidget ref={turnstileRef} action="login" onToken={setTurnstileToken} />
+
         {error && <AuthMessage message={error} />}
 
-        <AuthSubmitButton loading={submitting}>Login</AuthSubmitButton>
+        <AuthSubmitButton loading={submitting} disabled={!turnstileToken}>Login</AuthSubmitButton>
       </form>
 
       <p className="mt-6 text-sm text-[#A1A1AA]">
