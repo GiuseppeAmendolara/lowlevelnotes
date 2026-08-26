@@ -402,9 +402,168 @@ the confirmed-intentional `drafts/` + `pdfs/` content (27MB total) plus the
 manifest icon. Verified `next build` still produces the identical route list
 after the moves.
 
+## Removed the SVG proxy layer — badges now point straight at the Worker (2026-08-26)
+
+User asked a sharp question: given the WAF fix already makes `/status.svg`,
+`/history.svg`, `/stats.svg` genuinely public, why proxy them through
+Next.js Route Handlers at all instead of pointing `<img>` straight at
+`api.lowlevelnotes.com`? On reflection, the original justification (an
+`ERR_BLOCKED_BY_ORB` failure under headless-browser testing, months back)
+didn't hold up — that failure was almost certainly Cloudflare's bot
+mitigation reacting to the automated test traffic, not a real limitation.
+With the WAF exemption in place there's no header/secret being hidden for
+these three paths, so the proxy wasn't doing meaningful work anymore.
+
+Simplified: `transparency/page.tsx`'s `SvgBadge`s now point directly at
+`https://api.lowlevelnotes.com/*.svg`. Removed as dead code:
+`src/app/api/status.svg`, `.../history.svg`, `.../stats.svg` (and the now-
+empty `src/app/api/` dir), `getStatusSvg`/`getHistorySvg`/`getStatsSvg`/
+`fetchSvg` from `lib/api.ts`, and `StatusCard.tsx` (nothing imported it once
+`transparency` used `SvgBadge` directly).
+
+While verifying, hit `ERR_BLOCKED_BY_ORB` again testing locally — traced it
+properly this time instead of assuming: captured the actual Cloudflare
+response and found it only happens when the request's `Referer` is
+`http://localhost:3000`, which gets a 403 HTML block page from a Cloudflare
+security layer that's separate from our custom WAF rule (likely a baseline
+bot-fight heuristic that distrusts an obviously non-production referrer).
+Confirmed directly with curl: the identical request with
+`Referer: https://lowlevelnotes.com/transparency` gets a clean 200. So this
+is purely a local-dev-testing artifact — real visitors on the production
+domain won't hit it — but it means the on-site badges can't be fully
+end-to-end verified until this is live on the real domain post-deploy.
+
+## Phase 1 kickoff: learning-platform data model (2026-08-26)
+
+Moved the project from Phase 0 to Phase 1 per the user's explicit request.
+Planned via `EnterPlanMode` given the stakes (live production D1, must not
+lose `resources`/`people`/`tools`/`changelog`/`api_health`/`site_settings`);
+plan approved before any DDL ran.
+
+Investigation before touching anything: `courses`/`modules`/`lessons`/
+`events` already existed as stub tables but were completely empty (0 rows)
+— confirmed via `COUNT(*)` — so redesigning them outright carried zero
+data-loss risk. No migration tooling, schema files, or data-model types
+existed anywhere in the repo.
+
+Introduced `wrangler d1 migrations` (didn't exist before — all D1 changes
+this session up to now were ad-hoc SQL via the MCP query tool). New
+`worker/migrations/0001_phase1_learning_platform.sql`: drops and recreates
+the three empty stubs, adds `users`, `enrollments`, `lesson_progress`,
+`exercises`, `questions`, `answers`, `quiz_attempts` — the exact entity set
+`AGENTS.md` already named, nothing beyond it. Key decisions (recorded in
+`AGENTS.md`'s "Data and API direction" so future sessions don't rediscover
+them): lesson content is markdown files referenced by `content_path`, not
+DB blobs (matches the real notes content + git/PR contribution model,
+closer to freeCodeCamp/MDN than a TryHackMe-style CMS); quizzes are
+`lessons` rows with `type='quiz'`, not a separate table; `users.role`
+excludes `guest` (unauthenticated = no row).
+
+Applied to the live D1 instance via `wrangler d1 migrations apply
+lowlevelnotes-db --remote`, using a fresh token scoped for `D1:Edit` +
+`Workers Scripts:Edit` (the earlier Workers-only token couldn't do D1
+migrations — separate permission scope). Verified before/after: `resources`
+50, `people` 34, `tools` 50, `changelog` 27 unchanged; `api_health` grew by
+one row (an expected cron tick, not data loss). Confirmed all 10 new/updated
+tables exist, and confirmed D1 actually enforces the declared foreign keys
+(a deliberate bad insert was rejected with `SQLITE_CONSTRAINT_FOREIGNKEY`).
+
+Updated `AGENTS.md`'s roadmap to mark Phase 0 complete / Phase 1 current —
+the doc previously said Phase 0 was "current" and warned against
+"prematurely introducing database... behavior," which was now stale.
+
+## /library page: search + filter over the resources table (2026-08-26)
+
+User's idea for the "old tables" (`resources`/`people`, unused since `/tools`
+was deleted): a browsable library page. Data turned out richer than
+expected — 50 real resources across 11 real categories (Reverse
+Engineering, Windows Internals, Malware/AV/EDR, Offensive Security, etc.)
+and 4 types (pdf/website/videos/git), correctly joined to 34 credited
+people via `author_id`.
+
+- `src/app/library/page.tsx` — Server Component, fetches `getResources()` +
+  `getPeople()` (both pre-existing, no Worker changes needed for the data
+  itself).
+- `src/components/LibraryBrowser.tsx` — Client Component: search (matches
+  title+description) plus category/type/author filters, all derived
+  dynamically from the actual data rather than hardcoded, so they stay
+  accurate as resources are added. Reused the established bordered-list
+  convention from `/changelog`.
+- Found and fixed the same data-hygiene pattern as the changelog table:
+  some `resources.title` values have stray leading/trailing whitespace —
+  trimmed presentation-side.
+- Found that `resources.path` is a mix of relative paths to the site's own
+  PDFs (`./assets/pdfs/cpp.pdf`, from the asset reorg two turns ago) and
+  absolute external URLs — added `resolveHref()` to normalize the relative
+  ones (strip the leading `./`) so they don't resolve relative to
+  `/library`'s own URL and break.
+- Wired up the Worker's `POST /resource/:id` view-counter, which existed
+  since before this session but was never called from anywhere. Since that
+  endpoint needs the `x-internal-key` header (unlike the public `.svg`
+  badges, it's correctly *not* on the WAF's public-path exemption — it's a
+  write endpoint, shouldn't be publicly callable with the key exposed
+  client-side), added a thin same-origin proxy,
+  `src/app/api/resource/[id]/route.ts`, POST-only. This is the legitimate
+  version of the proxy pattern removed for the SVG badges earlier — here
+  there's an actual secret being hidden, not just habit.
+- Added `/library` to the header nav.
+- Verified end-to-end against the live Worker: clicking a resource link
+  fires the proxy, which calls the Worker, which updates D1 — confirmed the
+  view count for a real resource actually incremented (0 → 2 across two
+  test clicks).
+
+## Round of fixes: homepage polish + real library bug hunt (2026-08-26)
+
+- `src/components/CodeBlock.tsx`: keywords and types/functions were both
+  plain white — fixed with a proper multi-hue palette (purple keywords,
+  blue types/classes, yellow functions, existing orange for strings, green
+  for numbers), closer to One Dark Pro/Dracula, instead of everything
+  defaulting to white/bold.
+- Mobile: the "Straight from the notes" section wasn't just visually
+  cramped, it was forcing the **entire page** to overflow horizontally (nav
+  bar included) — a classic CSS Grid bug where a grid item needs
+  `min-width: 0` for its own `overflow-x-auto` to actually take effect,
+  otherwise the grid track just grows to fit the wide code content instead
+  of clipping it. Fixed with one `min-w-0` class on the grid item, rather
+  than hiding the code block on mobile as originally suggested — content
+  stays visible and scrolls internally now.
+- Homepage's 4 discipline cards now link to `/library` (were purely
+  decorative before).
+- Library filters: user reported search/filters "don't work" even after an
+  earlier round where automated testing showed them working. Root cause
+  had nothing to do with the filter logic — it was Next.js 15+'s dev-server
+  cross-origin protection silently 403ing the JS chunk containing
+  `LibraryBrowser.tsx` because the user was testing via a LAN IP
+  (`192.168.1.144:3000`, for phone/cross-device testing) instead of
+  `localhost`. The component never hydrated, so the search box and selects
+  were inert static HTML — no console error surfaced prominently, just a
+  background failed-resource-load. Fixed with `allowedDevOrigins` in
+  `next.config.ts`; confirmed by reproducing the exact LAN-IP scenario
+  before and after. Dev-only concern, irrelevant to production.
+- Also properly reworked the library's cascading-filter logic (a real,
+  separate bug from the above): dropdown options previously stayed static
+  regardless of other active filters, so picking e.g. a category didn't
+  narrow the author dropdown, making incompatible combinations silently
+  return zero results. First fix attempt used `useEffect` to reset invalid
+  filters — ESLint's `react-hooks/set-state-in-effect` correctly flagged
+  this as the exact anti-pattern React's docs warn against (cascading
+  renders). Reworked to validate and clear dependent filters directly
+  inside each `onChange` handler instead. Verified with real keyboard/mouse
+  interaction that filters now narrow each other bidirectionally.
+- Discussed extending the WAF `.svg`-exemption pattern to also cover
+  `POST /resource/*` (the view-counter), matching the same "the Worker's
+  own WAF + rate limiter already protect this, a Next.js proxy isn't adding
+  safety for a low-stakes endpoint" reasoning as the SVG badges. User is
+  applying the updated rule; once confirmed, the plan is to remove
+  `src/app/api/resource/[id]/route.ts` and call the Worker directly.
+
 ## Next action
 
-Get user sign-off on this round. If it lands, apply the same principles
+Phase 1's data model (courses/modules/lessons/users/etc.) is in place but
+empty — no seed content, no users. Decide next: seed real course content
+(grounded in the CSharp/Networks/Web/PostgreSQL notes, per the homepage's
+honest written-vs-not-started framing), or move to Phase 2 (API endpoints)
+first. If it lands, apply the same principles
 (real specifics over generic copy, `CodeBlock` for any code display, honest
 progress indicators over uniform placeholders) when building out other pages
 per the UI consistency protocol in AGENTS.md.

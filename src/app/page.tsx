@@ -68,7 +68,7 @@ export default function Home() {
 
           <div>
             <h1 className="max-w-3xl text-balance text-5xl font-bold leading-[0.96] tracking-[-0.07em] text-white sm:text-7xl lg:text-8xl">
-              Notes I wish I&apos;d had.
+              LowLevelNotes
             </h1>
             <p className="mt-8 max-w-lg text-pretty text-base leading-7 text-[#A1A1AA] sm:text-lg">
               Systems, networks and the languages underneath them. Written as I actually learn them.
@@ -106,7 +106,7 @@ export default function Home() {
 
         <div className="grid border-l border-t border-white/10 sm:grid-cols-2">
           {disciplines.map((discipline) => (
-            <article key={discipline.id} className="min-h-56 border-b border-r border-white/10 p-6 transition-colors hover:bg-white/[0.035] sm:p-8">
+            <Link href="/library" key={discipline.id} className="block min-h-56 border-b border-r border-white/10 p-6 transition-colors hover:bg-white/[0.035] sm:p-8">
               <span className="text-xs text-[#FF8A3D]">[{discipline.id}]</span>
               <h3 className="mt-10 text-2xl font-semibold tracking-[-0.04em] text-white">{discipline.title}</h3>
               <p className="mt-3 max-w-sm text-sm leading-6 text-[#A1A1AA]">{discipline.description}</p>
@@ -114,7 +114,7 @@ export default function Home() {
                 <span className={`h-2 w-2 ${discipline.written ? 'bg-[#3FB950]' : 'bg-white/20'}`} aria-hidden="true" />
                 <span className={discipline.written ? 'text-white/70' : 'text-white/40'}>{discipline.stat}</span>
               </div>
-            </article>
+            </Link>
           ))}
         </div>
       </section>
@@ -136,7 +136,7 @@ export default function Home() {
             </a>
           </div>
 
-          <div className="order-1 lg:order-2">
+          <div className="order-1 min-w-0 lg:order-2">
             <CodeBlock code={csharpSnippet} lang="csharp" filename="CSharp.md" />
           </div>
         </div>

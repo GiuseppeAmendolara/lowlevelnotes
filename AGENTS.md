@@ -7,10 +7,12 @@ notes, books, and learning resources. Its direction is to become a modern,
 full-featured learning platform for mastering software development, especially
 low-level and systems-oriented topics.
 
-The current priority is **Phase 0: UI design and implementation**. Build a
-cohesive, distinctive platform identity before adding product/backend features.
-Prefer considered, incremental UI work over prematurely introducing database,
-authentication, or learning-platform behavior.
+Phase 0 (UI design and identity) established the current visual system — see
+the design-system contract below. The current priority is **Phase 1: the SQL
+data model**, now live in D1. Authentication (Phase 3) and the learning
+system itself (Phase 7+) are still not implemented — the schema is
+groundwork, not a green light to start building auth flows or lesson UI
+ahead of their own phases.
 
 ## Current stack
 
@@ -21,9 +23,10 @@ authentication, or learning-platform behavior.
 
 ## Roadmap
 
-1. **Phase 0 (current):** UI design and implementation.
-2. **Phase 1:** SQL/data model for users, courses, modules, lessons, and related
-   learning data.
+1. **Phase 0 (complete):** UI design and implementation.
+2. **Phase 1 (current):** SQL/data model for users, courses, modules, lessons,
+   and related learning data. Schema is live in D1 (`worker/migrations/`) —
+   see "Data and API direction" below for the concrete tables and decisions.
 3. **Phase 2:** REST API redesign with clear HTTP methods, status codes,
    validation, pagination, rate limiting, error handling, and API versioning.
    Expected resources include courses, lessons, quizzes, enrollment, progress,
@@ -64,10 +67,22 @@ These are planning notes, not authorization to begin future phases early.
 
 ### Data and API direction
 
-- Likely data entities: users, courses, modules, lessons, exercises, questions,
-  answers, enrollments, lesson progress, and quiz attempts.
+- Schema is live in D1 (`lowlevelnotes-db`), defined in
+  `worker/migrations/0001_phase1_learning_platform.sql`: `users`, `courses`,
+  `modules`, `lessons`, `enrollments`, `lesson_progress`, `exercises`,
+  `questions`, `answers`, `quiz_attempts`.
 - Core relationships: users enroll in courses and track lesson progress; courses
   contain modules; modules contain lessons.
+- Lesson content lives in markdown files (path referenced by
+  `lessons.content_path`), not as DB blobs — matches the existing notes
+  content and the site's git/PR contribution model, not a CMS.
+- A quiz is a `lessons` row with `type = 'quiz'` (owning `questions` →
+  `answers`), not a separate `quizzes` table.
+- `users.role` does not include `guest` — a guest is an unauthenticated
+  visitor with no row, not a stored role value.
+- Schema changes go through `wrangler d1 migrations` (`worker/migrations/`),
+  not ad-hoc SQL — apply with
+  `wrangler d1 migrations apply lowlevelnotes-db --remote` from `worker/`.
 - The API should serve the web app now and remain suitable for future mobile and
   CLI clients.
 - Planned endpoints include `GET /courses`, `GET /courses/:id`,
