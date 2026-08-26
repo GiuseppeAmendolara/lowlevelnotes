@@ -19,6 +19,7 @@ export type Person = {
   role: string
   avatar: string
   profile: string
+  external: boolean
 }
 
 export type Tool = {
@@ -46,7 +47,22 @@ async function apiFetch<T>(endpoint: string): Promise<T> {
   return res.json()
 }
 
+async function fetchSvg(endpoint: string): Promise<string> {
+  const res = await fetch(`${API_BASE}${endpoint}`, {
+    next: { revalidate: 60 },
+    headers: {
+      'x-internal-key': process.env.INTERNAL_API_KEY!,
+    },
+  })
+  if (!res.ok) throw new Error(`API ${endpoint} failed: ${res.status}`)
+  return res.text()
+}
+
 export const getResources = () => apiFetch<Resource[]>('/resources')
 export const getPeople = () => apiFetch<Person[]>('/people')
 export const getTools = () => apiFetch<Tool[]>('/tools')
 export const getChangelog = () => apiFetch<ChangelogEntry[]>('/changelog')
+
+export const getStatusSvg = () => fetchSvg('/status.svg')
+export const getHistorySvg = () => fetchSvg('/history.svg')
+export const getStatsSvg = () => fetchSvg('/stats.svg')

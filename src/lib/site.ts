@@ -1,8 +1,6 @@
-import type { Metadata, Viewport } from "next";
-
 export const baseUrl = "https://lowlevelnotes.com";
 export const googleSearchConsoleVerification = "ef9KpIV_Ll2l0ggil98ixxCXyg_3_mNMf0KT61fvR2o";
-    
+
 const creator = {
     name: "Giuseppe Amendolara",
 }
@@ -15,14 +13,14 @@ const authors = [
 ];
 
 const openGraph = {
-  title: "0xLN",
+  title: "lowlevelnotes",
   description: "Organized knowledge for mastering software development.",
   url: baseUrl,
-  siteName: "0xLN",
+  siteName: "0xLLN",
 
   images: [
     {
-      url: "/og-image.png",
+      url: "/opengraph-image.png",
       /* standard 1.91:1 aspect ratio for social media sharing */
       width: 1200,
       height: 630,
@@ -63,7 +61,7 @@ const alternates = {
 
 const keywords = [
   // Core keywords
-  "0xLN",
+  "0xLLN",
   "lowlevelnotes",
   "resources",
   "programming",
@@ -116,7 +114,7 @@ export const siteConfig = {
         },
 
     metaData: {
-        title: "0xLN",
+        title: "lowlevelnotes",
         name: "lowlevelnotes",
 
         description: 
@@ -130,7 +128,7 @@ export const siteConfig = {
         category: "technology",
 
         metadataBase: new URL(baseUrl),
-        manifest: "/manifest.json",
+        manifest: "/manifest.webmanifest",
 
         icons: {
             icon: "/favicon.ico",
@@ -151,6 +149,7 @@ export const siteConfig = {
             },
         },
 
+        /* Detects phone numbers, email addresses, and physical addresses in the content and automatically converts them into clickable links. */
         formatDetection: {
             email: false,
             address: false,
@@ -166,14 +165,14 @@ export const siteConfig = {
             nocache: true,
         },
 
+        verification: {
+            /* Verify ownership of the site with Google Search Console. */
+            google: googleSearchConsoleVerification,
+        },
+
         authors: authors,
-        openGraph,
-        alternates,
-    },
-
-    keywords,
-
-    verification: {
-        google: googleSearchConsoleVerification,
+        openGraph: openGraph,
+        alternates: alternates,
+        keywords: keywords,
     },
 }

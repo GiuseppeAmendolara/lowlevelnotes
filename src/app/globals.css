@@ -2,7 +2,16 @@
 
 :root {
   --background: #171717;
+  --background-deep: #0d0d0d;
   --foreground: #ffffff;
+  --muted: #a1a1aa;
+  --accent: #ff8a3d;
+  --accent-hover: #ffa15c;
+  --accent-deep: #c95e1a;
+  --accent-dark: #3a2113;
+  --success: #3fb950;
+  --line: rgba(255, 255, 255, 0.1);
+  --font-platform-mono: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 }
 
 /* Tailwind CSS v4 directive; ignored by generic CSS linters. */
@@ -10,8 +19,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-mono);
-  --font-mono: var(--font-mono);
+  --font-sans: var(--font-platform-mono);
+  --font-mono: var(--font-platform-mono);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -24,5 +33,10 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-mono);
+  font-family: var(--font-platform-mono);
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--background-deep);
 }

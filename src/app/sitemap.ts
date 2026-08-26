@@ -9,19 +9,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1,
     },
     {
-      url: 'https://lowlevelnotes.com/tools',
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.8,
-    },
-    {
       url: 'https://lowlevelnotes.com/changelog',
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.5,
     },
     {
-      url: 'https://lowlevelnotes.com/status',
+      url: 'https://lowlevelnotes.com/transparency',
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.4,

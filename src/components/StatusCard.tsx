@@ -1,11 +1,11 @@
+import SvgBadge from './SvgBadge';
+
 export default function StatusCard() {
   return (
-    <div className="flex justify-center">
-      <img
-        src="https://api.lowlevelnotes.com/status.svg"
-        alt="lowlevelnotes-api status"
-        className="h-auto w-[440px] max-w-full"
-      />
-    </div>
+    <SvgBadge
+      src="/api/status.svg"
+      alt="LowLevelNotes API status"
+      unavailableLabel="Status unavailable"
+    />
   );
 }

@@ -1,50 +1,39 @@
-import { getChangelog } from "@/lib/api";
+import { getChangelog } from '@/lib/api'
 
 export const dynamic = 'force-dynamic'
 
 export default async function ChangelogPage() {
-  const entries = await getChangelog();
+  const entries = await getChangelog()
 
   return (
     <main className="min-h-screen bg-[#171717]">
-      <section className="max-w-4xl mx-auto px-6 pt-16 pb-10">
-        <h1 className="font-mono text-4xl font-bold text-white tracking-tight">
-          changelog
-        </h1>
-
-        <p className="font-mono text-white/50 mt-2 text-sm">
-          Updates and changes to LowLevelNotes.
-        </p>
+      <section className="mx-auto max-w-4xl px-6 pb-10 pt-20 sm:pt-28">
+        <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">Version history</p>
+        <h1 className="mt-4 text-4xl font-bold tracking-[-0.05em] text-white sm:text-5xl">Changelog</h1>
+        <p className="mt-4 max-w-xl leading-7 text-[#A1A1AA]">Every release, in order—from the first notes to whatever&apos;s shipping today.</p>
       </section>
 
-      <section className="max-w-4xl mx-auto px-6 pb-20">
-        <div className="space-y-8">
-          {entries.map((entry) => (
-            <article
-              key={entry.version}
-              className="border border-white/10 bg-white/[0.02] p-5"
-            >
-              <div className="flex items-center gap-3 mb-3">
-                <span className="font-mono text-xs text-white/40 border border-white/10 px-2 py-1">
-                  {entry.version}
-                </span>
-
-                <time className="font-mono text-xs text-white/40">
-                  {entry.releaseDate}
-                </time>
+      <section className="mx-auto max-w-4xl px-6 pb-24">
+        <div className="border-l border-t border-white/10">
+          {entries.map((entry, i) => (
+            <article key={entry.version} className="border-b border-r border-white/10 p-6 transition-colors hover:bg-white/[0.035] sm:p-8">
+              <div className="flex flex-wrap items-center gap-3 text-xs">
+                {i === 0 && (
+                  <span className="flex items-center gap-1.5 text-[#3FB950]">
+                    <span className="h-1.5 w-1.5 bg-[#3FB950]" aria-hidden="true" />
+                    Latest
+                  </span>
+                )}
+                <span className="text-[#FF8A3D]">v{entry.version.trim()}</span>
+                <span className="text-white/20">·</span>
+                <time className="text-white/40">{entry.releaseDate}</time>
               </div>
-
-              <h2 className="font-mono font-semibold text-lg text-white">
-                {entry.title}
-              </h2>
-
-              <p className="font-mono text-sm text-white/50 mt-2 leading-relaxed">
-                {entry.description}
-              </p>
+              <h2 className="mt-3 text-xl font-semibold tracking-[-0.03em] text-white">{entry.title.trim()}</h2>
+              <p className="mt-2 max-w-2xl leading-6 text-[#A1A1AA]">{entry.description.trim()}</p>
             </article>
           ))}
         </div>
       </section>
     </main>
-  );
+  )
 }

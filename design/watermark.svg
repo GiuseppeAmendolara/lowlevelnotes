@@ -1,0 +1,6 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>0xLLN logo</title>
+<desc>Boxed monospace wordmark for lowlevelnotes.com, 0x in orange, LLN in white</desc>
+<rect x="92" y="190" width="328" height="132" rx="14" fill="#171717" stroke="#FF8A3D" stroke-width="6"/>
+<text x="256" y="282" font-family="monospace" font-weight="700" font-size="80" text-anchor="middle"><tspan fill="#FF8A3D">0x</tspan><tspan fill="#ffffff">LLN</tspan></text>
+</svg>
