@@ -55,7 +55,7 @@ export default function LoginPage() {
         <AuthTextField label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" required />
         <AuthTextField label="Password" type="password" value={password} onChange={setPassword} autoComplete="current-password" required />
 
-        <TurnstileWidget ref={turnstileRef} action="login" onToken={setTurnstileToken} />
+        <TurnstileWidget ref={turnstileRef} action="login" onToken={setTurnstileToken} className="mt-8" />
 
         {error && <AuthMessage message={error} />}
 

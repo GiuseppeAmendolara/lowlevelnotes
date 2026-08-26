@@ -6,17 +6,16 @@ It supplements the durable project guidance in `AGENTS.md`.
 
 ## Status
 
-- **Active phase:** Phase 4 — Authorization roles (not yet started)
-- **Current area:** Cloudflare WAF custom rules — just finished a full
-  review (2 bugs fixed, 3 rules hardened, attacking IP blocked)
+- **Active phase:** Phase 4 — Authorization roles (complete, live)
+- **Current area:** Phase 4 admin panel + contributor pipeline — finished
+  and fully verified end to end, including live IP blocking; test data
+  cleaned up
 - **Milestone:** `/library` genuinely restricted to logged-in users, both
   the page/API (Worker session check) and the underlying asset files
   (moved from public `public/assets/` to a gated R2-backed endpoint)
-- **Pending:** today's full batch of Next.js/Worker code changes (library
-  gating, R2 frontend wiring, homepage button swap, Turnstile) still
-  uncommitted — needs a commit pass. Also `TURNSTILE_SECRET` still needs
-  setting on the Worker (`wrangler secret put`) before this actually works
-  live — see below.
+- Both `TURNSTILE_SECRET` and `CLOUDFLARE_WAF_TOKEN` are now set and
+  verified working live — see "Two secrets, two real bugs" below. No
+  outstanding Phase 4 blockers.
 - **Last updated:** 2026-08-26
 
 ## Homepage review (2026-08-26)
@@ -1089,8 +1088,7 @@ requests in a day. Blocked it via Cloudflare IP Access Rules (separate
 5-rule-cap quota from Custom Rules, requested and granted `Zone →
 Firewall Services → Edit` on `CLOUDFLARE_API_TOKEN` for this). While in
 there, reviewed all 5 existing custom WAF rules on the zone
-(`http_request_firewall_custom` phase, ruleset
-`8ed73952296d4bfd9223e77e6a2b7d3b`) end to end.
+(`http_request_firewall_custom` phase) end to end.
 
 Two real bugs found and fixed (both had been silently breaking
 legitimate functionality, confirmed via before/after `curl`):
@@ -1198,3 +1196,197 @@ routes still prerender/render correctly), `node --check worker/index.js`
 clean. Full live click-through (solve → submit → siteverify → 403 on a
 bad/replayed token) still pending the secret being set — noted in
 Status above.
+
+## WAF review, round 2 (2026-08-26)
+
+User asked for a deeper pass ("I feel like they need absolute work").
+Local backups of the live config now kept before/after each pass —
+`/cloudflare-backups/` (new, gitignored — point-in-time JSON snapshots
+via the API, not meant to ever be committed).
+
+The standout finding: this zone already runs Cloudflare's own "Content
+Signals" feature, which auto-manages a block list in `robots.txt`
+(`ai-train=no`, explicit `Disallow` for `GPTBot`, `Google-Extended`,
+`CCBot`, `ClaudeBot`, `Bytespider`, `Amazonbot`, `meta-externalagent`,
+`Applebot-Extended`) — but robots.txt is advisory only, and **none of
+those actual crawler names were in Rule 1's enforcement list**. A
+non-compliant scraper using GPTBot's real UA would ignore robots.txt and
+sail straight through the WAF. Worse, Rule 1 was blocking plain
+`Applebot` (Apple's *search* crawler — the site's own
+`Content-Signal: search=yes` explicitly wants this allowed) instead of
+`Applebot-Extended` (Apple's *AI-training* crawler, the one robots.txt
+actually blocks) — the same Googlebot/bingbot mistake from round 1,
+just on Apple.
+
+Presented the specific bot names as grouped multi-select questions
+(matching last round's pattern) rather than deciding unilaterally, since
+"which crawlers to block" is a real value judgment, not a bug fix. User
+kept `archive.org_bot`/`Arquivo-web-crawler` blocked (recommended
+unblocking them, since they're web-archival services, not AI
+training — user's call, respected) and asked to add all of: `GPTBot`,
+`Google-Extended`, `CCBot`, `ClaudeBot`, `Bytespider`, `Amazonbot`,
+`meta-externalagent`, `Applebot-Extended`, `CloudflareBrowserRenderingCrawler`.
+Rule 1's UA list now has 21 named entries; country list and the
+`/robots.txt` exemption unchanged. Verified: `GPTBot`/`ClaudeBot`/
+`Applebot-Extended` UAs now 403; plain `Applebot` (search) now 200
+(was wrongly 403 before).
+
+Also found and fixed a real bug: Rule 3's referer allowlist didn't
+include the local dev origins (`http://localhost:3000`,
+`http://localhost:5500`, `http://127.0.0.1:5500`) that `corsHeaders()`
+in `worker/index.js` already trusts — meaning local dev against the
+live `api.lowlevelnotes.com` was silently blocked by Rule 3 whenever the
+browser sent its default cross-origin referer. Added the same three
+origins to Rule 3's allowlist so it actually mirrors the CORS trust
+boundary instead of being independently (and incompletely) re-derived.
+Verified: a request with `Referer: http://localhost:3000/` now passes;
+the substring-spoofing check from round 1 still correctly blocks.
+
+Enabled Cloudflare's **Managed Free Ruleset**
+(`http_request_firewall_managed` phase, ruleset
+`REDACTED`) as a new phase entrypoint — this
+zone had no managed-ruleset layer at all before, meaning the 5
+hand-written custom rules were the *entire* defense. The Free ruleset is
+31 narrowly-targeted CVE/exploit signatures (Log4Shell, Shellshock,
+specific WordPress plugin CVEs, etc.), not a broad heuristic engine, so
+false-positive risk against a Next.js/Worker stack running none of that
+software is low — confirmed via a same-request-shape sanity pass across
+`/`, `/library`, `/login`, and `/v1/courses`, all still 200. Worth
+revisiting if anything looks off over the next few days.
+
+Noted but deliberately left alone (informational, not urgent):
+- Rule 2's UA/path checks use broad, unanchored substring matching
+  (`contains "download"`, `contains "spider"`, etc.) — a known
+  trade-off from when the rule was written, still somewhat fragile
+  against future legitimate paths/UAs containing those substrings, but
+  nothing on the site currently collides with it.
+- The `x-internal-key` bypass value in Rule 2 is a SHA-256 hash, not the
+  raw secret — visible to anyone with zone-rule-read access, which is
+  only the account holder's own tokens. Low priority, unchanged.
+- Rule 5 blocks `HEAD` requests on the main domain (only `GET`/`OPTIONS`
+  plus the resource-POST exemption pass) — a minor edge case, nothing on
+  the site currently relies on `HEAD`.
+
+## Phase 4: authorization roles — admin panel + contributor pipeline (2026-08-27)
+
+Planned via a full plan-mode pass (context, schema, endpoint table, and
+four confirmed decisions — admin-approval on both role and resource
+requests, a real Cloudflare IP block over a D1-only one, ban+delete both
+supported — asked up front rather than assumed). Full design lives in
+AGENTS.md's "Data and API direction" now; this entry is the build/verify
+log.
+
+**Schema** (`worker/migrations/0005`–`0008`): `users.banned_at`/
+`ban_reason`; new `role_requests` and `resource_requests` tables (partial
+unique index limiting one live role request per user; a CHECK constraint
+keeping resource submissions to exactly one of link-or-file);
+`resources.submitted_by_user_id`. Two follow-up migrations (`0007`,
+`0008`) fixed FK `ON DELETE` behavior that the first pass got wrong —
+`submitted_by_user_id`, `resource_id`, and `reviewed_by` all lacked
+`SET NULL`, so deleting a user or a resource would have been blocked by
+their own historical records. Found by actually hitting the constraint
+while cleaning up test data (`FOREIGN KEY constraint failed` on a plain
+`DELETE`), not anticipated in the original plan — fixed immediately
+since nothing real depended on the columns yet.
+
+**Backend** (`worker/index.js`): `requireRole()` helper; ban-aware
+`getSessionUser()` (kills the session outright, not just the one
+request) and `loginV1` (checked after the password, so a ban never
+leaks to a wrong-password attempt); ~19 new endpoints under
+`/v1/role-requests*`, `/v1/resource-requests*`, and `/v1/staff/*` (full
+list in AGENTS.md's endpoint reference). `/v1/staff/*` instead of the
+originally-planned `/v1/admin/*` — WAF Rule 2 blocks any path
+`contains "/admin"`, caught during planning and confirmed live (a
+`/v1/staff/users` request returns a clean JSON `{"error":"Forbidden"}`,
+not a WAF block page). IP blocking proxies Cloudflare's IP Access Rules
+API directly (new `CLOUDFLARE_WAF_TOKEN` Worker secret, narrowly scoped
+to `Zone → Firewall Services: Edit` — **not yet set**, see Status) —
+deliberately no D1 mirror, so it can't drift from what's actually
+enforced.
+
+**Frontend**: `/contribute` (role-aware — request form for students,
+submission form + history for contributor/instructor/administrator) and
+`/admin` (four sections: users, role requests, resource requests,
+blocked IPs), both built on the existing auth-page primitives plus two
+new small ones (`AuthTextArea`, `AuthSelect`) that match the established
+input styling rather than diverging from it. `Header.tsx` gained
+role-aware Contribute/Admin links; `/account` shows the current role and
+links students to `/contribute`. Admin actions (ban reason, reject
+reason, delete confirmation) use plain `window.prompt()`/`confirm()`
+rather than a new modal system — reasonable for an internal single-admin
+tool, not something to build out further unless it's actually needed.
+
+**Also fixed in passing**: a stray invalid JSX attribute (`mt-8/` with
+no value — a hyphenated bare prop isn't legal JSX) that had landed on
+`/login`'s `TurnstileWidget` from outside this session, which would have
+broken the build. Added a proper `className` prop to `TurnstileWidget`
+instead and used it correctly.
+
+**Verified**, live against the real Worker/D1/R2 (curl, using directly
+D1-seeded test sessions rather than the real login flow, since Turnstile
+can't be solved from curl and — separately — turned out to be fully
+broken anyway, see Status): role request → pending → duplicate rejected
+409 → admin lists/approves → requester's role actually changes on their
+*next* session check. Resource request via both link and file upload →
+admin previews the pending file through the review-only endpoint →
+approves both → R2 object correctly moved from `pending/` to
+`contributed/<id>/`, old pending copy gone, new rows appear in
+`GET /resources` and are fetchable through the real gated library
+endpoint. Rejection deletes the pending R2 object. Non-admin blocked
+from every `/v1/staff/*` route (403). User management: create (via the
+reused password-reset email path), ban (kills the existing session
+immediately — verified the *same* bearer token 401s right after), unban,
+delete (cascades), self-ban and self-delete both correctly refused.
+`GET .../ips` correctly surfaces the test machine's real egress IP from
+`auth_events`. Blocked-IPs endpoints fail cleanly with 502 (not a crash)
+without the Cloudflare secret set, confirmed on purpose since that
+secret isn't configured yet. `npx tsc --noEmit`, `next build`, and
+`node --check worker/index.js` all clean; dev server smoke-tested `/`,
+`/login`, `/account`, `/contribute`, `/admin` all 200 with no console
+errors in the dev log. All test users/sessions/resources/R2 objects
+removed afterward — confirmed back to the real 50-row `resources` count
+with no leftover test rows anywhere.
+
+Not built (deliberately out of scope): any UI for the deferred
+lesson/instructor-specific capabilities (Phase 7+) — instructors get
+exactly the same resource-request access as contributors for now, per
+the plan.
+
+## Two secrets, two real bugs (2026-08-27)
+
+Both closed out, neither purely a "just run the command" fix.
+
+**`TURNSTILE_SECRET`**: had only ever been added to `.env.local` —
+which is Next.js's env file, never read by the deployed Worker at all.
+`wrangler secret list` confirmed it was never actually set, meaning
+every register/login/forgot-password attempt had been failing with 403
+"Verification failed" since Turnstile went live. Fixed by piping the
+value from `.env.local` straight into `wrangler secret put
+TURNSTILE_SECRET` non-interactively (`printf '%s' "$VAR" | wrangler
+secret put NAME`, at the user's explicit request — the value never
+appears in any command argument or output this way). Verified genuinely
+valid, not just "accepted": posting a fake token straight to
+Cloudflare's `siteverify` with this secret returns `invalid-input-response`
+(a token complaint), not `invalid-input-secret`/`missing-input-secret` —
+confirms Cloudflare recognizes the secret itself as correct.
+
+**`CLOUDFLARE_WAF_TOKEN`**: set the same way, but the blocked-IPs
+endpoint kept 502ing with "Authentication error" from Cloudflare even
+though the identical token worked fine called directly from this shell.
+Root cause, confirmed by checking `/user/tokens/verify` from both
+contexts: the user had put a Client IP Address Filtering restriction on
+the token (also on their own `CLOUDFLARE_API_TOKEN`). That's fine for
+`CLOUDFLARE_API_TOKEN` — always called from the user's own machine — but
+fundamentally incompatible with `CLOUDFLARE_WAF_TOKEN`'s job: it's
+called from *inside the Worker*, which executes at Cloudflare's
+distributed edge, not a fixed IP. No IP value would ever have worked;
+the fix was removing the restriction entirely, not choosing a
+different IP. Re-verified after the user cleared it: `GET`, `POST`
+(with the user-attribution note folded into Cloudflare's own `notes`
+field), and `DELETE` on `/v1/staff/blocked-ips` all confirmed working
+end to end against the live API.
+
+A temporary debug branch added to `listBlockedIpsStaffV1` mid-investigation
+(surfaced the raw Cloudflare error + token presence/length in the 502
+response) was fully reverted and redeployed before this was closed out —
+confirmed clean in the live file, not just assumed.

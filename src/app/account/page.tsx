@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import AuthPageShell from '@/components/auth/AuthPageShell'
 import AuthTextField from '@/components/auth/AuthTextField'
 import AuthSubmitButton from '@/components/auth/AuthSubmitButton'
@@ -74,6 +75,16 @@ export default function AccountPage() {
   return (
     <AuthPageShell eyebrow="Account" heading={user.displayName}>
       <p className="text-sm text-[#A1A1AA]">{user.email}</p>
+      <p className="mt-1 text-xs uppercase tracking-[0.1em] text-[#FF8A3D]">{user.role}</p>
+
+      {user.role === 'student' && (
+        <p className="mt-4 text-sm text-[#A1A1AA]">
+          Want to submit resources?{' '}
+          <Link href="/contribute" className="text-white/70 underline underline-offset-2 transition-colors hover:text-white">
+            Request contributor access
+          </Link>
+        </p>
+      )}
 
       {!user.emailVerified && (
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border border-white/10 bg-[#0D0D0D] px-4 py-3 text-xs text-[#A1A1AA]">

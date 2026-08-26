@@ -31,10 +31,11 @@ export type TurnstileHandle = {
 type Props = {
   action: string
   onToken: (token: string | null) => void
+  className?: string
 }
 
 const TurnstileWidget = forwardRef<TurnstileHandle, Props>(function TurnstileWidget(
-  { action, onToken },
+  { action, onToken, className },
   ref
 ) {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -55,6 +56,7 @@ const TurnstileWidget = forwardRef<TurnstileHandle, Props>(function TurnstileWid
     widgetIdRef.current = window.turnstile.render(containerRef.current, {
       sitekey: TURNSTILE_SITE_KEY,
       action,
+      size: 'flexible',
       callback: (token: string) => onToken(token),
       'expired-callback': () => onToken(null),
       'error-callback': () => onToken(null),
@@ -75,7 +77,7 @@ const TurnstileWidget = forwardRef<TurnstileHandle, Props>(function TurnstileWid
         strategy="afterInteractive"
         onLoad={() => setScriptLoaded(true)}
       />
-      <div ref={containerRef} />
+      <div ref={containerRef} className={className}/>
     </>
   )
 })

@@ -15,12 +15,13 @@ management, password recovery, email verification, change-password) is
 also complete and live, but scoped to auth only: the user-scoped course
 endpoints it unblocks (enroll, mark-lesson-complete, quiz-attempt,
 `/me/progress`, `/me/statistics`) were deliberately deferred rather than
-bundled in, and no Next.js/frontend work exists yet against any of this.
-The current priority is **Phase 4: authorization roles**. The learning
-system itself (Phase 7+) is still not implemented — the schema and API are
-groundwork, not a green light to start building lesson UI ahead of its own
-phase. Real course content (replacing the Phase 1 test seed) is deferred to
-its own later pass, not tied to a numbered phase.
+bundled in. Phase 4 (authorization roles — an admin panel, a
+request-and-approve path from student to contributor/instructor, and a
+reviewed resource-submission pipeline) is also complete and live. The
+learning system itself (Phase 7+) is still not implemented — the schema
+and API are groundwork, not a green light to start building lesson UI
+ahead of its own phase. Real course content (replacing the Phase 1 test
+seed) is deferred to its own later pass, not tied to a numbered phase.
 
 ## Current stack
 
@@ -54,8 +55,11 @@ its own later pass, not tied to a numbered phase.
    unblocked by the `getSessionUser()` helper this phase added, but
    correctly belong to whichever next slice picks them up rather than
    having been silently smuggled into "auth."
-5. **Phase 4 (current):** Authorization roles: guest, student, contributor,
-   instructor, administrator.
+5. **Phase 4 (complete):** Authorization roles: guest, student, contributor,
+   instructor, administrator. Shipped as `/v1/staff/*`, `/v1/role-requests*`,
+   and `/v1/resource-requests*` in `worker/index.js`, plus `/admin` and
+   `/contribute` in the frontend — see "Data and API direction" below and
+   the API endpoint reference for the concrete design.
 6. **Phase 7:** Learning system: explanations, code examples, diagrams,
    interactive “try it yourself” exercises, questions, quizzes, and lesson
    completion.
@@ -209,6 +213,135 @@ These are planning notes, not authorization to begin future phases early.
   gated endpoint URL at render time rather than the data being migrated.
   R2 object keys mirror the old `public/assets/` relative paths exactly
   (e.g. `pdfs/cpp.pdf`, `drafts/Networks/networks.md`).
+- **Phase 4 (authorization roles), concrete decisions:**
+  - Role upgrades (student → contributor/instructor) and resource
+    submissions both go through an explicit request-and-approve pipeline
+    (`role_requests`, `resource_requests` — `worker/migrations/0005`),
+    not auto-grant/auto-publish — an admin reviews every one. One live
+    `role_requests` row per user at a time, enforced by a partial unique
+    index (`WHERE status = 'pending'`), not application logic alone.
+  - A resource submission is either a link (`url`) or an uploaded file
+    (`r2_key`), never both — enforced by a CHECK constraint
+    (`(url IS NOT NULL) + (r2_key IS NOT NULL) = 1`), computed *before*
+    the insert (the R2 key is a random token, not derived from the row's
+    own id, avoiding a chicken-and-egg problem with an id that doesn't
+    exist yet).
+  - Uploaded files live under a `pending/<token>/<filename>` R2 prefix
+    until reviewed. Approval copies the object to
+    `contributed/<request_id>/<filename>` (R2 has no rename) and deletes
+    the pending copy; rejection just deletes it. `resources.path` is set
+    to that same key — no `./assets/` prefix needed, since
+    `LibraryBrowser.tsx`'s `resolveHref()` only strips that prefix if
+    present, and passes an unprefixed path through unchanged.
+  - `resources.submitted_by_user_id` is a **separate** column from the
+    older `author_id` (which points at `people.id`, a display-credit
+    table for showcasing authors, external or not — unrelated to real
+    accounts). The two can name different people: `author_id` is who
+    should be *credited*, `submitted_by_user_id` is who *actually
+    submitted it* through this pipeline. Both `submitted_by_user_id` and
+    both request tables' `reviewed_by`/`resource_id` foreign keys use
+    `ON DELETE SET NULL`, not the SQLite default — a resource or a
+    request record should outlive the account that touched it, not block
+    that account's deletion (`worker/migrations/0007`, `0008` — found by
+    actually hitting the constraint while cleaning up test data, not
+    anticipated in advance).
+  - A ban (`users.banned_at`/`ban_reason`) kills the banned user's
+    session **immediately** on the next `getSessionUser()` call (deletes
+    the session row, not just refuses the one request) and blocks
+    `loginV1` from issuing a new one — checked *after* the password
+    check in login, so a ban never leaks to someone who doesn't already
+    know the password. Deleting a user is a **separate**, harsher action
+    (hard `DELETE`, cascades via the existing FKs) — both exist because
+    they serve different needs: ban is the reversible day-to-day
+    moderation tool, delete is for genuine cleanup. Both refuse to let an
+    administrator act on their own account (no self-ban, no
+    self-delete) — a safety guard against accidental lockout, not
+    enforced by D1 in any way.
+  - An admin-created account (`POST /v1/staff/users`) reuses the
+    password-reset token/email machinery exactly as-is —
+    `password_hash` starts `NULL` (the same state the Phase 1 seed users
+    use), and a `password_reset` token is issued immediately so the
+    "set your password" link is indistinguishable from a normal reset
+    email. No separate flow was built for this.
+  - IP blocking is a **real** Cloudflare edge block, not an in-app
+    check: the admin panel's "block this IP" action calls Cloudflare's
+    IP Access Rules API directly (`cloudflareApi()` in `worker/index.js`,
+    scoped to the site's Cloudflare zone via `CLOUDFLARE_ZONE_ID` — that
+    constant's actual value is deliberately not written out here or
+    anywhere else in a tracked file), using a **new**,
+    narrowly-scoped Worker secret, `CLOUDFLARE_WAF_TOKEN` (`Zone →
+    Firewall Services: Edit` only on `lowlevelnotes.com` — deliberately
+    separate from the developer's own `.env.local` token, which has
+    broader D1/R2/WAF-*rule* edit and never leaves this machine). There's
+    no D1 mirror of blocked IPs — the Cloudflare API is queried live, so
+    it can never drift out of sync with what's actually enforced. When
+    blocking an IP from a flagged user's IP list, the association is
+    folded straight into that Cloudflare rule's own `notes` field
+    (`"Blocked via admin panel — associated with user #42 (email)"`)
+    rather than a separate table, so it's visible in the Cloudflare
+    dashboard too, not just this admin panel.
+  - `/v1/staff/*`, not `/v1/admin/*` — WAF Rule 2 blocks any path
+    `contains "/admin"`, a real collision discovered while planning this
+    (not hypothetical), avoided by renaming rather than carving an
+    exemption into that rule.
+  - `getUserIpsStaffV1` reads distinct IPs from **both** `sessions.ip`
+    and `auth_events.ip` (`identifier = ` the user's numeric id as a
+    string) — no new IP-tracking table, since Phase 3 already logs both
+    on every login/session and every rate-limited action.
+  - `CLOUDFLARE_WAF_TOKEN` is set and verified working (list/block/unblock
+    all confirmed live). It must be created **without** a Client IP
+    Address Filtering restriction — the Worker calls it from Cloudflare's
+    distributed edge, not a fixed IP, so any IP restriction fails with an
+    opaque "Authentication error" regardless of which IP is chosen (hit
+    this exact issue once — see WORKLOG's "Two secrets, two real bugs").
+    The permission scope alone (`Zone → Firewall Services: Edit`) is what
+    keeps this token safe, not an IP filter.
+
+#### API endpoint reference
+
+The canonical list — kept in sync with the route dispatch table at the
+top of `worker/index.js`'s `fetch()` handler (source of truth; this
+table is a snapshot of it) whenever a route is added, removed, or its
+auth requirement changes. Also what Rule 5's non-GET lockdown on the
+main domain is scoped against — see below.
+
+**`api.lowlevelnotes.com`** (Worker):
+
+| Method | Path | Auth | Notes |
+|---|---|---|---|
+| GET | `/health` | none | also handles its own `OPTIONS` |
+| GET | `/status.svg`, `/history.svg`, `/stats.svg` | none | SVG badges, embeddable |
+| GET | `/resources`, `/tools`, `/people` | session | 401 without a valid session |
+| GET | `/changelog` | none | WAF still requires a browser or `x-internal-key` (see below) |
+| GET | `/v1/courses`, `/v1/courses/:slug`, `/v1/courses/:slug/lessons` | none | |
+| POST | `/v1/auth/register`, `/login`, `/forgot-password` | none | |
+| POST | `/v1/auth/reset-password` | none | authenticates via the single-use token in the body, not a session |
+| POST | `/v1/auth/logout` | none¹ | ¹no-ops the DB delete if there's no session, but always clears the cookie |
+| POST | `/v1/auth/resend-verification` | session | 401 without one |
+| GET | `/v1/auth/session` | session | 401 without one |
+| GET | `/v1/auth/verify-email` | none | authenticates via the query-string token |
+| PUT | `/v1/auth/change-password` | session | |
+| GET | `/v1/library/assets/*` | session | streams from R2, own 60/hour/user rate limit |
+| GET | `/resource/:id` | none | current view count |
+| POST | `/resource/:id` | none | directly callable — WAF Rule 2 explicitly exempts `POST /resource/*` from its suspicious-UA check, unlike most other paths |
+| POST | `/v1/role-requests` | session | request `contributor`/`instructor`; 409 if a pending request already exists |
+| GET | `/v1/role-requests/me` | session | own request history |
+| POST | `/v1/resource-requests` | contributor/instructor/administrator | `multipart/form-data`; exactly one of `url` or `file` |
+| GET | `/v1/resource-requests/me` | session | own submission history |
+| GET | `/v1/resource-requests/:id/file` | owner or administrator | streams a pending file for review |
+| GET, PUT | `/v1/staff/role-requests`, `/v1/staff/role-requests/:id` | administrator | list (filterable `?status=`) / approve or reject |
+| GET, PUT | `/v1/staff/resource-requests`, `/v1/staff/resource-requests/:id` | administrator | list (joined with requester email + role) / approve or reject |
+| GET, POST | `/v1/staff/users` | administrator | list / create (see below) |
+| PUT | `/v1/staff/users/:id/role`, `/ban`, `/unban` | administrator | direct role change; ban kills active sessions; both ban and delete refuse the admin's own account |
+| DELETE | `/v1/staff/users/:id` | administrator | hard delete, cascades |
+| GET | `/v1/staff/users/:id/ips` | administrator | distinct IPs from `sessions`/`auth_events` |
+| GET, POST, DELETE | `/v1/staff/blocked-ips` | administrator | proxies Cloudflare's IP Access Rules API directly — no D1 mirror |
+
+**`lowlevelnotes.com`** (Next.js — the only server-side route handler in the app):
+
+| Method | Path | Auth | Notes |
+|---|---|---|---|
+| POST | `/api/resource/[id]` | none (server-to-server via `x-internal-key`) | proxies to the Worker's `POST /resource/:id`, called by `LibraryBrowser.tsx`; this is why Rule 5's non-GET exemption only names this one path — every other mutating call (auth, library data) goes straight from the browser to `api.lowlevelnotes.com`, bypassing the Next.js server entirely (see the host-only cookie note above) |
 
 ### Security and roles
 
@@ -349,6 +482,21 @@ throughout the product:
   permission that also appears in the token editor (that one is a
   separate, thinly-documented Account permission group, unrelated to this
   domain's Security Rules page; not added, not needed here).
+- Zone security layers, outside-in: Cloudflare's **Managed Free
+  Ruleset** (`http_request_firewall_managed` phase, 31 narrow CVE/exploit
+  signatures — Log4Shell, Shellshock, WordPress plugin CVEs — enabled
+  2026-08-26), then the 5 hand-written **custom rules**
+  (`http_request_firewall_custom` phase: countries + AI-crawler UAs,
+  suspicious-UA/path-probe blocklist, anchored referer checks on the API
+  and on main-domain `/assets/`, non-GET lockdown on the main domain),
+  then **IP Access Rules** (separate quota, single-IP blocks). The
+  crawler UA list in rule 1 is meant to track this site's own
+  `robots.txt` Content-Signal policy (`ai-train=no`, Cloudflare-managed
+  block list) — if that policy ever changes, the WAF list needs a
+  matching update, since robots.txt itself is advisory only and doesn't
+  enforce anything on its own. Local point-in-time backups of the live
+  config live in `/cloudflare-backups/` (gitignored, pulled via the API
+  before/after a review pass — not automatically kept in sync).
 
 <!-- BEGIN:nextjs-agent-rules -->
 

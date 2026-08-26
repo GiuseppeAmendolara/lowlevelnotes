@@ -5,6 +5,10 @@
 # Cloudflare Worker source — kept local-only, never committed
 /worker/
 
+# Local backups of live Cloudflare config (WAF rules, IP access rules) —
+# point-in-time snapshots pulled via the API, never committed
+/cloudflare-backups/
+
 # Cloudflare Wrangler source - kept local-only, never committed
 /.wrangler/
 
