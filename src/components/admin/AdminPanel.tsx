@@ -35,7 +35,7 @@ export default function AdminPanel() {
         <h1 className="mt-4 text-4xl font-bold tracking-[-0.05em] text-white sm:text-5xl">Admin</h1>
       </section>
 
-      <section className="mx-auto max-w-5xl px-6 pb-24">
+      <section className="mx-auto flex max-w-5xl flex-col gap-16 px-6 pb-24">
         <UsersSection />
         <RoleRequestsSection />
         <ResourceRequestsSection />
@@ -46,7 +46,7 @@ export default function AdminPanel() {
 }
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
-  return <h2 className="mt-16 text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D] first:mt-0">{children}</h2>
+  return <h2 className="text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">{children}</h2>
 }
 
 const inputClass = "border border-white/15 bg-[#0D0D0D] px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none"
