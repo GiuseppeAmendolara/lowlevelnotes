@@ -57,7 +57,7 @@ seed) is deferred to its own later pass, not tied to a numbered phase.
    having been silently smuggled into "auth."
 5. **Phase 4 (complete):** Authorization roles: guest, student, contributor,
    instructor, administrator. Shipped as `/v1/staff/*`, `/v1/role-requests*`,
-   and `/v1/resource-requests*` in `worker/index.js`, plus `/admin` and
+   and `/v1/resource-requests*` in `worker/index.js`, plus `/staff` and
    `/contribute` in the frontend — see "Data and API direction" below and
    the API endpoint reference for the concrete design.
 6. **Phase 7:** Learning system: explanations, code examples, diagrams,
@@ -278,10 +278,15 @@ These are planning notes, not authorization to begin future phases early.
     (`"Blocked via admin panel — associated with user #42 (email)"`)
     rather than a separate table, so it's visible in the Cloudflare
     dashboard too, not just this admin panel.
-  - `/v1/staff/*`, not `/v1/admin/*` — WAF Rule 2 blocks any path
-    `contains "/admin"`, a real collision discovered while planning this
-    (not hypothetical), avoided by renaming rather than carving an
-    exemption into that rule.
+  - `/v1/staff/*`, not `/v1/admin/*`, **and** the frontend page is at
+    `/staff`, not `/admin` — WAF Rule 2 blocks any path
+    `contains "/admin"`. The API prefix was caught while planning this;
+    the frontend page collision wasn't — it was only found after the
+    fact, when the live page returned Cloudflare's own "Attention
+    Required" block screen instead of the app, since the WAF matches on
+    URL path alone and blocks before a request ever reaches Vercel,
+    regardless of whether that route is even deployed yet. Both are
+    avoided by renaming rather than carving an exemption into that rule.
   - `getUserIpsStaffV1` reads distinct IPs from **both** `sessions.ip`
     and `auth_events.ip` (`identifier = ` the user's numeric id as a
     string) — no new IP-tracking table, since Phase 3 already logs both

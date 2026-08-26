@@ -1306,7 +1306,7 @@ enforced.
 
 **Frontend**: `/contribute` (role-aware — request form for students,
 submission form + history for contributor/instructor/administrator) and
-`/admin` (four sections: users, role requests, resource requests,
+`/staff` (four sections: users, role requests, resource requests,
 blocked IPs), both built on the existing auth-page primitives plus two
 new small ones (`AuthTextArea`, `AuthSelect`) that match the established
 input styling rather than diverging from it. `Header.tsx` gained
@@ -1342,10 +1342,27 @@ delete (cascades), self-ban and self-delete both correctly refused.
 without the Cloudflare secret set, confirmed on purpose since that
 secret isn't configured yet. `npx tsc --noEmit`, `next build`, and
 `node --check worker/index.js` all clean; dev server smoke-tested `/`,
-`/login`, `/account`, `/contribute`, `/admin` all 200 with no console
-errors in the dev log. All test users/sessions/resources/R2 objects
-removed afterward — confirmed back to the real 50-row `resources` count
-with no leftover test rows anywhere.
+`/login`, `/account`, `/contribute`, and the admin page (then still at
+`/admin`) all 200 with no console errors in the dev log. All test
+users/sessions/resources/R2 objects removed afterward — confirmed back
+to the real 50-row `resources` count with no leftover test rows
+anywhere.
+
+**Gap in that smoke test, found right after**: the dev-server check only
+proved the *page* rendered — it never went through Cloudflare, since
+local dev isn't proxied. The live domain is, and WAF Rule 2 blocks any
+path `contains "/admin"` — including the frontend page itself, which the
+API-side rename to `/v1/staff/*` never addressed. First real symptom was
+the user asking "why am I blocked from /admin," followed by confirming
+via curl that `https://lowlevelnotes.com/admin` returns Cloudflare's own
+"Attention Required" block page, not the app — the WAF matches on URL
+path alone and blocks before the request ever reaches Vercel, regardless
+of whether Next.js even has that route deployed yet. Fixed by renaming
+the page itself to `/staff` too, matching the API. Lesson: a same-origin
+dev-server smoke test doesn't exercise anything sitting in front of the
+origin (WAF, CDN rules) — worth a live-domain check specifically for any
+new *page* path too, not just new API paths, whenever a WAF rule keys on
+substrings that a route name could collide with.
 
 Not built (deliberately out of scope): any UI for the deferred
 lesson/instructor-specific capabilities (Phase 7+) — instructors get
@@ -1390,3 +1407,23 @@ A temporary debug branch added to `listBlockedIpsStaffV1` mid-investigation
 (surfaced the raw Cloudflare error + token presence/length in the 502
 response) was fully reverted and redeployed before this was closed out —
 confirmed clean in the live file, not just assumed.
+
+## Nav bar simplification, account page as the hub (2026-08-27)
+
+User feedback: Contribute/Admin didn't belong as standalone nav items,
+and GitHub was redundant with the footer link (`Footer.tsx` already has
+it). `Header.tsx` now has just the four pill links
+(home/library/changelog/transparency) plus the single account/login
+slot — no separate Contribute, Admin, or GitHub entries. The logged-in
+state now reads `{displayName} ↗` — reusing the GitHub link's own arrow
+glyph rather than inventing a new icon, on the account/login slot
+instead of an external link.
+
+`/account` is now the actual hub `/contribute` and `/staff` are reached
+through — new `AccountLinkCard` (local to `account/page.tsx`, not
+extracted, since nothing else needs it yet) renders a bordered link row
+per relevant destination: students get "Request contributor access",
+contributor/instructor/administrator get "Contribute", administrator
+additionally gets "Admin". `/contribute` and `/staff` themselves are
+unchanged — this only changes how they're reached, not what they do
+once you're there.

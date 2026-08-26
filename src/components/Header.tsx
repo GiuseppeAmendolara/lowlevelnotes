@@ -43,41 +43,14 @@ export default function Header() {
             })}
           </div>
 
-          {user && (
-            <Link
-              href="/contribute"
-              className="ml-5 shrink-0 border-l border-white/10 pl-5 text-xs font-medium uppercase tracking-[0.12em] text-[#A1A1AA] transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF8A3D]"
-            >
-              Contribute
-            </Link>
-          )}
-
-          {user?.role === 'administrator' && (
-            <Link
-              href="/admin"
-              className="ml-5 shrink-0 border-l border-white/10 pl-5 text-xs font-medium uppercase tracking-[0.12em] text-[#A1A1AA] transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF8A3D]"
-            >
-              Admin
-            </Link>
-          )}
-
           {!loading && (
             <Link
               href={user ? '/account' : '/login'}
               className="ml-5 shrink-0 border-l border-white/10 pl-5 text-xs font-medium uppercase tracking-[0.12em] text-[#A1A1AA] transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF8A3D]"
             >
-              {user ? user.displayName : 'Login'}
+              {user ? <>{user.displayName} ↗</> : 'Login'}
             </Link>
           )}
-
-          <a
-            href="https://github.com/GiuseppeAmendolara/lowlevelnotes"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="ml-5 hidden shrink-0 border-l border-white/10 pl-5 text-xs font-medium uppercase tracking-[0.12em] text-[#A1A1AA] transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF8A3D] sm:block"
-          >
-            GitHub ↗
-          </a>
         </div>
       </nav>
     </header>

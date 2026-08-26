@@ -77,14 +77,29 @@ export default function AccountPage() {
       <p className="text-sm text-[#A1A1AA]">{user.email}</p>
       <p className="mt-1 text-xs uppercase tracking-[0.1em] text-[#FF8A3D]">{user.role}</p>
 
-      {user.role === 'student' && (
-        <p className="mt-4 text-sm text-[#A1A1AA]">
-          Want to submit resources?{' '}
-          <Link href="/contribute" className="text-white/70 underline underline-offset-2 transition-colors hover:text-white">
-            Request contributor access
-          </Link>
-        </p>
-      )}
+      <div className="mt-6 flex flex-col gap-2">
+        {user.role === 'student' && (
+          <AccountLinkCard
+            href="/contribute"
+            title="Request contributor access"
+            description="Apply to submit resources to the library."
+          />
+        )}
+        {(user.role === 'contributor' || user.role === 'instructor' || user.role === 'administrator') && (
+          <AccountLinkCard
+            href="/contribute"
+            title="Contribute"
+            description="Submit a resource for review."
+          />
+        )}
+        {user.role === 'administrator' && (
+          <AccountLinkCard
+            href="/staff"
+            title="Admin"
+            description="Manage users, requests, and blocked IPs."
+          />
+        )}
+      </div>
 
       {!user.emailVerified && (
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border border-white/10 bg-[#0D0D0D] px-4 py-3 text-xs text-[#A1A1AA]">
@@ -123,5 +138,20 @@ export default function AccountPage() {
         Log out
       </button>
     </AuthPageShell>
+  )
+}
+
+function AccountLinkCard({ href, title, description }: { href: string; title: string; description: string }) {
+  return (
+    <Link
+      href={href}
+      className="flex items-center justify-between gap-3 border border-white/10 px-4 py-3 text-sm text-white transition-colors hover:border-white/40 hover:bg-white/[0.04] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF8A3D]"
+    >
+      <span>
+        <span className="block font-medium">{title}</span>
+        <span className="mt-0.5 block text-xs text-[#A1A1AA]">{description}</span>
+      </span>
+      <span aria-hidden="true" className="shrink-0 text-white/40">→</span>
+    </Link>
   )
 }
