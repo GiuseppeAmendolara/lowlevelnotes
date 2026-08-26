@@ -266,9 +266,7 @@ These are planning notes, not authorization to begin future phases early.
   - IP blocking is a **real** Cloudflare edge block, not an in-app
     check: the admin panel's "block this IP" action calls Cloudflare's
     IP Access Rules API directly (`cloudflareApi()` in `worker/index.js`,
-    scoped to the site's Cloudflare zone via `CLOUDFLARE_ZONE_ID` — that
-    constant's actual value is deliberately not written out here or
-    anywhere else in a tracked file), using a **new**,
+    zone `REDACTED/`), using a **new**,
     narrowly-scoped Worker secret, `CLOUDFLARE_WAF_TOKEN` (`Zone →
     Firewall Services: Edit` only on `lowlevelnotes.com` — deliberately
     separate from the developer's own `.env.local` token, which has
