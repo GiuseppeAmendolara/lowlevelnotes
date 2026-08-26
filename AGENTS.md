@@ -184,6 +184,23 @@ These are planning notes, not authorization to begin future phases early.
   verify-email where the token itself is the public credential). Any
   future page that needs to call the Worker server-side must account for
   this rather than assuming a plain `fetch()` will work.
+- **Every early-return response in `fetch()` must carry `corsHeaders()`,
+  not just the ones going through `json()`.** The generic OPTIONS
+  preflight handler sits *before* the rate limiter and the
+  maintenance-mode check specifically so a preflight is never itself
+  rate-limited or blocked — it's a permission question, not a real
+  request. But the rate limiter's `429` and the maintenance check's
+  `503` are real responses to real (non-preflight) requests, and both
+  still need `corsHeaders()` merged in, or a legitimately-blocked
+  browser request surfaces as an opaque "could not reach the server"
+  instead of a readable error. Found the hard way: a page firing several
+  parallel authenticated calls on mount (four sections × their own
+  preflight, e.g.) can trip the 30-req/60s per-IP limiter during normal
+  development, and every one of the resulting bare 429s broke CORS for
+  whatever request came after it — including the session check itself,
+  which read to the frontend as being logged out. Any new early-return
+  path added to `fetch()` before the route table needs the same
+  treatment.
 - **`GET /resources`, `/tools`, `/people` now require a session** — the
   library is gated to logged-in users (user's explicit request); these
   three return 401 without `getSessionUser()` succeeding. `/library`

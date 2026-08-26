@@ -32,7 +32,7 @@ export default function AdminPanel() {
     <main className="min-h-screen bg-[#171717]">
       <section className="mx-auto max-w-5xl px-6 pb-10 pt-20 sm:pt-28">
         <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">Administration</p>
-        <h1 className="mt-4 text-4xl font-bold tracking-[-0.05em] text-white sm:text-5xl">Admin</h1>
+        <h1 className="mt-4 text-4xl font-bold tracking-[-0.05em] text-white sm:text-5xl">Staff</h1>
       </section>
 
       <section className="mx-auto flex max-w-5xl flex-col gap-16 px-6 pb-24">

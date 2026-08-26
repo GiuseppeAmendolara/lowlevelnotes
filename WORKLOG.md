@@ -1427,3 +1427,106 @@ contributor/instructor/administrator get "Contribute", administrator
 additionally gets "Admin". `/contribute` and `/staff` themselves are
 unchanged — this only changes how they're reached, not what they do
 once you're there.
+
+## Two real CORS bugs behind "delete doesn't work" (2026-08-27)
+
+User report: deleting a user "doesn't work" and "the server goes
+offline," plus unrelated-seeming symptoms (some `/staff` sections
+failing to load, being asked to log in again despite a 30-day session).
+First guess — that this was just a killed local dev server, since
+Phase 4 isn't deployed and I'd run `pkill -f "next dev"` earlier for my
+own smoke tests — was wrong, or at least incomplete. The user's actual
+browser console had the real answer: a CORS error on the DELETE
+request, `Did not find method in CORS header 'Access-Control-Allow-Methods'`.
+
+**Bug 1**: `corsHeaders()`'s `Access-Control-Allow-Methods` was hardcoded
+to `GET,POST,PUT,OPTIONS` — never updated when Phase 4 added the first
+`DELETE` endpoints (`/v1/staff/users/:id`, `/v1/staff/blocked-ips/:id`).
+The browser's preflight for the delete request got a method list without
+`DELETE` on it, so the actual request was never even sent — confirmed
+via `curl -X OPTIONS` with `Access-Control-Request-Method: DELETE`, which
+showed the exact same gap live. Verified via D1 that `user #1` (a
+harmless Phase 1 seed account, not anything real) was untouched — the
+CORS block happens client-side, before the request reaches the server,
+so nothing was ever at risk of being deleted incorrectly.
+
+**Bug 2, bigger**: the generic OPTIONS/CORS-preflight handler sat
+*after* the in-memory rate limiter and the maintenance-mode check in
+`fetch()`'s control flow, and neither of those two early-return responses
+(429, 503) included `corsHeaders()`. The admin panel's four sections
+each fire their own GET on mount, each preceded by its own preflight
+(since every `authFetch()` call sets `Content-Type: application/json`,
+which isn't a CORS-simple header) — 8 requests on a single page load,
+trivial to exceed the 30-req/60s per-IP limiter during active
+development (page reloads, React effects re-firing, hot reloads). Once
+tripped, *even the preflight itself* got a bare 429 with no
+`Access-Control-Allow-Origin` — breaking any subsequent cross-origin
+request, including the session check (`GET /v1/auth/session`), which
+would read to the frontend exactly like being logged out. This is the
+real explanation for the seemingly-unrelated symptoms (some sections
+loading fine, others not; being asked to log in again with a session
+nowhere near 30 days old) — one root cause, not several.
+
+Fixed both: `DELETE` added to the allowed-methods list; the OPTIONS
+handler moved *before* the rate limiter and maintenance check entirely
+(a preflight is a permission question, not a real request against the
+API, and shouldn't be subject to either); the 429 and 503 responses
+also now carry `corsHeaders()` for the case where a genuinely
+rate-limited or maintenance-blocked *actual* request still needs to be
+readable by the browser instead of surfacing as an opaque network
+failure.
+
+Verified live: the exact preflight-then-DELETE sequence a browser
+performs now succeeds end to end (tested with a fresh admin/target user
+pair, cleaned up after). Deliberately tripped the rate limiter with 40
+rapid sequential requests (needed sequential, not parallel — Cloudflare
+distributes parallel bursts across isolates, and the limiter is
+per-isolate in-memory, not durable) and confirmed the resulting 429
+responses now carry `Access-Control-Allow-Origin`. No frontend files
+changed — both bugs and both fixes are entirely in `worker/index.js`
+(gitignored, not part of this repo's commits), already deployed live.
+
+## Resource view counts not incrementing (2026-08-27)
+
+User report. This one genuinely wasn't the Worker — `curl`-reproducing
+the exact server-to-server call `incrementResourceViews()` makes
+(same path, same `x-internal-key` header) succeeded every time and
+incremented the count correctly. Ruled out the WAF too: `/resource/*`
+POST is explicitly exempted from Rule 2 regardless of UA or key, and a
+missing/wrong key doesn't affect this endpoint's behavior at all — it
+requires no auth. `/changelog` (another server-to-server call from
+`src/lib/api.ts`) loading fine ruled out a blanket connectivity/env-var
+problem.
+
+Found the real cause via Vercel's own runtime logs (`get_runtime_logs`,
+`get_runtime_errors` — first time reaching for those instead of
+reasoning blind), not further curl reproduction: an intermittent
+`TypeError: fetch failed` / `SocketError: other side closed`,
+`bytesRead: 0` — Vercel's connection to Cloudflare's edge closing
+before any response comes back, a classic stale-pooled-connection
+failure, not an application bug. `/changelog` mostly hides this because
+it's cached (`next: { revalidate: 60 }` — a cache hit never opens a
+new connection at all); `incrementResourceViews` has no caching, so
+it's a fresh connection on every single call, hitting the flaky path
+essentially every time. Made worse by `route.ts`'s catch block
+swallowing the error completely with no logging — every failure,
+network-level or otherwise, looked identical to "resource not found,"
+which is why this took real investigation rather than being obvious
+from the response alone.
+
+Fixed in `src/lib/api.ts`: both `apiFetch` and `incrementResourceViews`
+now go through a small `fetchWithRetry()` (one retry on a *thrown*
+fetch error specifically — not on a real HTTP error status, which is a
+legitimate response, not a dropped connection). `route.ts`'s catch
+block now logs the actual error before returning 404, so a future
+failure is visible in Vercel's logs instead of requiring this same
+investigation again. Not addressing: the theoretical double-increment
+if a retry's original request actually reached the Worker before the
+response was lost (`bytesWritten: 381, bytesRead: 0` suggests the
+request itself was fully sent) — acceptable tradeoff for a view counter,
+not worth the complexity of making this idempotent.
+
+**Needs both a commit and a push to actually take effect** — this is a
+`src/lib/` fix, not a Worker one, so unlike everything else this
+session it won't be live until deployed through the normal
+GitHub → Vercel pipeline.
