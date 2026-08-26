@@ -5,6 +5,9 @@
 # Cloudflare Worker source — kept local-only, never committed
 /worker/
 
+# personal Claude Code permission overrides for this machine
+/.claude/
+
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies

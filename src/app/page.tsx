@@ -8,7 +8,7 @@ const disciplines = [
     title: 'Foundations',
     description: 'C, C++, C#, HTTP and the DOM and SQL.',
     written: true,
-    stat: '5,300+ lines written',
+    stat: '20+ resources',
   },
   {
     id: '02',
@@ -21,8 +21,8 @@ const disciplines = [
     id: '03',
     title: 'Systems',
     description: 'Operating systems, internals, and how software meets hardware.',
-    written: false,
-    stat: 'Multiple unreleased drafts',
+    written: true,
+    stat: '10+ resources',
   },
   {
     id: '04',

@@ -1,0 +1,27 @@
+// Label + input, reusing LibraryBrowser.tsx's exact input class string so
+// this is the first form in the app, not the first visual language for one.
+
+type Props = {
+  label: string
+  type?: string
+  value: string
+  onChange: (value: string) => void
+  autoComplete?: string
+  required?: boolean
+}
+
+export default function AuthTextField({ label, type = 'text', value, onChange, autoComplete, required }: Props) {
+  return (
+    <label className="block">
+      <span className="text-xs font-medium uppercase tracking-[0.12em] text-[#A1A1AA]">{label}</span>
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        autoComplete={autoComplete}
+        required={required}
+        className="mt-2 w-full border border-white/15 bg-[#0D0D0D] px-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none"
+      />
+    </label>
+  )
+}

@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useSession } from './SessionProvider'
 
 const links = [
   { href: '/', label: 'home' },
@@ -12,6 +13,7 @@ const links = [
 
 export default function Header() {
   const pathname = usePathname()
+  const { user, loading } = useSession()
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-[#171717]/90 backdrop-blur-md">
@@ -49,6 +51,15 @@ export default function Header() {
           >
             GitHub ↗
           </a>
+
+          {!loading && (
+            <Link
+              href={user ? '/account' : '/login'}
+              className="ml-5 shrink-0 border-l border-white/10 pl-5 text-xs font-medium uppercase tracking-[0.12em] text-[#A1A1AA] transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF8A3D]"
+            >
+              {user ? user.displayName : 'Log in'}
+            </Link>
+          )}
         </div>
       </nav>
     </header>
