@@ -1,11 +1,9 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import type { Resource, Person, Tool } from '@/lib/api'
+import type { Resource, Person } from '@/lib/api'
 
-type ItemType = Resource['type'] | 'tool'
-
-const typeLabels: Record<ItemType, string> = {
+const typeLabels: Record<Resource['type'], string> = {
   pdf: 'PDF',
   website: 'Website',
   videos: 'Videos',
@@ -13,17 +11,16 @@ const typeLabels: Record<ItemType, string> = {
   tool: 'Tool',
 }
 
-// Resources and tools are different shapes in the DB (tools have no
-// description/author/views), so both get normalized into one item shape
-// here — that's what lets a single set of filters and a single list work
-// across both.
+// Normalized item shape the filters/list work over — a thin pass
+// through Resource now that tools were merged in as type='tool'
+// (worker/migrations/0011), rather than a merge of two different DB
+// shapes.
 type Item = {
   id: string
-  kind: 'resource' | 'tool'
   title: string
   description: string
   path: string
-  type: ItemType
+  type: Resource['type']
   category: string
   authorId: number | null
   views: number | null
@@ -39,8 +36,7 @@ function resolveHref(path: string) {
 }
 
 function trackView(item: Item) {
-  if (item.kind !== 'resource') return
-  fetch(`/api/resource/${item.id.replace('resource-', '')}`, { method: 'POST' }).catch(() => {})
+  fetch(`/api/resource/${item.id}`, { method: 'POST' }).catch(() => {})
 }
 
 function matchesQuery(item: Item, query: string) {
@@ -53,10 +49,9 @@ function matchesQuery(item: Item, query: string) {
 type Props = {
   resources: Resource[]
   people: Person[]
-  tools: Tool[]
 }
 
-export default function LibraryBrowser({ resources, people, tools }: Props) {
+export default function LibraryBrowser({ resources, people }: Props) {
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('')
   const [type, setType] = useState('')
@@ -64,31 +59,20 @@ export default function LibraryBrowser({ resources, people, tools }: Props) {
 
   const query = search.trim().toLowerCase()
 
-  const items = useMemo<Item[]>(() => {
-    const fromResources: Item[] = resources.map((r) => ({
-      id: `resource-${r.id}`,
-      kind: 'resource',
-      title: r.title,
-      description: r.description ?? '',
-      path: r.path,
-      type: r.type,
-      category: r.category,
-      authorId: r.authorId,
-      views: r.views,
-    }))
-    const fromTools: Item[] = tools.map((t) => ({
-      id: `tool-${t.id}`,
-      kind: 'tool',
-      title: t.name,
-      description: '',
-      path: t.path,
-      type: 'tool',
-      category: t.category,
-      authorId: null,
-      views: null,
-    }))
-    return [...fromResources, ...fromTools]
-  }, [resources, tools])
+  const items = useMemo<Item[]>(
+    () =>
+      resources.map((r) => ({
+        id: String(r.id),
+        title: r.title,
+        description: r.description ?? '',
+        path: r.path,
+        type: r.type,
+        category: r.category,
+        authorId: r.authorId,
+        views: r.views,
+      })),
+    [resources]
+  )
 
   const peopleById = useMemo(() => {
     const map = new Map<number, Person>()

@@ -16,7 +16,7 @@ export default async function ChangelogPage() {
       <section className="mx-auto max-w-4xl px-6 pb-24">
         <div className="border-l border-t border-white/10">
           {entries.map((entry, i) => (
-            <article key={entry.version} className="border-b border-r border-white/10 p-6 transition-colors hover:bg-white/[0.035] sm:p-8">
+            <article key={entry.version} className="border-b border-r border-white/10 bg-[#0D0D0D] p-6 transition-colors hover:bg-[#151515] sm:p-8">
               <div className="flex flex-wrap items-center gap-3 text-xs">
                 {i === 0 && (
                   <span className="flex items-center gap-1.5 text-[#3FB950]">

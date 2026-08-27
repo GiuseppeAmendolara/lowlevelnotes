@@ -2,6 +2,31 @@
 import Link from 'next/link'
 import CodeBlock from '@/components/CodeBlock'
 
+// Static, not fetched — /v1/courses requires a session (the library
+// data below is public), and this section renders for logged-out
+// visitors. Same tradeoff already accepted for `disciplines` below:
+// hand-written, needs a manual bump when real course content changes.
+const courses = [
+  {
+    slug: 'computer-architecture',
+    category: 'Architecture',
+    title: 'Computer Architecture',
+    description: 'Processors, memory, instruction sets, and performance.',
+  },
+  {
+    slug: 'networks',
+    category: 'Networking',
+    title: 'Networks',
+    description: 'Networking fundamentals: the OSI/TCP-IP stack, addressing, and hardware.',
+  },
+  {
+    slug: 'postgresql',
+    category: 'Data',
+    title: 'PostgreSQL',
+    description: 'Relational database fundamentals, from data types to indexing.',
+  },
+]
+
 const disciplines = [
   {
     id: '01',
@@ -71,26 +96,27 @@ export default function Home() {
               LowLevelNotes
             </h1>
             <p className="mt-8 max-w-lg text-pretty text-base leading-7 text-[#A1A1AA] sm:text-lg">
-              Systems, networks and the languages underneath them. Written as I actually learn them.
+              Organized knowledge for mastering software development. Browse the library freely, or work through it as a structured course.
             </p>
 
             <div className="mt-10 flex flex-col gap-3 sm:flex-row">
               <Link
-                href="/login"
+                href="#courses"
                 className="inline-flex items-center justify-center gap-3 bg-[#FF8A3D] px-5 py-3.5 text-sm font-semibold text-[#0D0D0D] transition-colors hover:bg-[#FFA15C] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF8A3D]"
               >
-                Login
+                Explore courses
+                <span aria-hidden="true">↓</span>
               </Link>
               <Link
-                href="#topics"
-                className="inline-flex items-center justify-center gap-3 border border-white/15 px-5 py-3.5 text-sm font-medium text-white transition-colors hover:border-white/40 hover:bg-white/[0.04] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                href="#library"
+                className="inline-flex items-center justify-center gap-3 border border-white/15 bg-[#0D0D0D] px-5 py-3.5 text-sm font-medium text-white transition-colors hover:border-white/40 hover:bg-[#171717] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
               >
-                Explore the library
+                Browse the library
                 <span aria-hidden="true">↓</span>
               </Link>
               <Link
                 href="/changelog"
-                className="inline-flex items-center justify-center gap-3 border border-white/15 px-5 py-3.5 text-sm font-medium text-white transition-colors hover:border-white/40 hover:bg-white/[0.04] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                className="inline-flex items-center justify-center gap-3 border border-white/15 bg-[#0D0D0D] px-5 py-3.5 text-sm font-medium text-white transition-colors hover:border-white/40 hover:bg-[#171717] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
               >
                 Read the changelog
                 <span aria-hidden="true">→</span>
@@ -100,19 +126,43 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="topics" className="mx-auto max-w-6xl scroll-mt-20 px-6 py-20 sm:py-28">
-        <h2 className="sr-only">Follow the thread deeper</h2>
-        <div className="flex justify-end border-b border-white/10 pb-10">
-          <div className="max-w-md text-sm italic leading-6 text-[#A1A1AA]">
-            <p><span className="not-italic text-white/50">Alice:</span> “Where should I go?”</p>
-            <p className="mt-1"><span className="not-italic text-white/50">The Cheshire Cat:</span> “That depends on where you want to end up.”</p>
-            <p className="mt-3 text-xs font-medium not-italic uppercase tracking-[0.18em] text-[#FF8A3D]">Lewis Carroll, Alice&apos;s Adventures in Wonderland</p>
+      <section id="courses" className="scroll-mt-20 border-y border-white/10 bg-[#0D0D0D]">
+        <div className="mx-auto max-w-6xl px-6 py-20 sm:py-28">
+          <div className="flex justify-end border-b border-white/10 pb-10">
+            <div className="max-w-md">
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">Structured learning</p>
+              <h2 className="mt-4 text-3xl font-bold tracking-[-0.05em] text-white sm:text-4xl">Courses</h2>
+              <p className="mt-4 leading-7 text-[#A1A1AA]">
+                Enroll, then work through lessons and quizzes in order — different from the library below, which is loose reference material you browse freely, no enrollment needed.
+              </p>
+            </div>
           </div>
+
+          <div className="grid border-l border-t border-white/10 sm:grid-cols-3">
+            {courses.map((course) => (
+              <Link href="/courses" key={course.slug} className="block min-h-48 border-b border-r border-white/10 bg-[#171717] p-6 transition-colors hover:bg-[#1f1f1f] sm:p-8">
+                <span className="text-xs font-medium uppercase tracking-[0.14em] text-[#FF8A3D]">{course.category}</span>
+                <h3 className="mt-4 text-xl font-semibold tracking-[-0.03em] text-white">{course.title}</h3>
+                <p className="mt-3 text-sm leading-6 text-[#A1A1AA]">{course.description}</p>
+                <div className="mt-6 text-sm text-white/40">View course →</div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="library" className="mx-auto max-w-6xl scroll-mt-20 px-6 py-20 sm:py-28">
+        <div className="border-b border-white/10 pb-10">
+          <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">Reference library</p>
+          <h2 className="mt-4 text-3xl font-bold tracking-[-0.05em] text-white sm:text-4xl">Library</h2>
+          <p className="mt-4 max-w-md leading-7 text-[#A1A1AA]">
+            Curated PDFs, links, and tools — browse freely, no enrollment or progress tracking. Organized by topic below.
+          </p>
         </div>
 
         <div className="grid border-l border-t border-white/10 sm:grid-cols-2">
           {disciplines.map((discipline) => (
-            <Link href="/library" key={discipline.id} className="block min-h-56 border-b border-r border-white/10 p-6 transition-colors hover:bg-white/[0.035] sm:p-8">
+            <Link href="/library" key={discipline.id} className="block min-h-56 border-b border-r border-white/10 bg-[#0D0D0D] p-6 transition-colors hover:bg-[#151515] sm:p-8">
               <span className="text-xs text-[#FF8A3D]">[{discipline.id}]</span>
               <h3 className="mt-10 text-2xl font-semibold tracking-[-0.04em] text-white">{discipline.title}</h3>
               <p className="mt-3 max-w-sm text-sm leading-6 text-[#A1A1AA]">{discipline.description}</p>

@@ -9,7 +9,7 @@
 // not through a same-origin Next.js proxy, or the cookie would end up
 // scoped to the wrong host.
 
-import type { Resource, Person, Tool } from '@/lib/api'
+import type { Resource, Person } from '@/lib/api'
 
 const AUTH_API_BASE = 'https://api.lowlevelnotes.com'
 
@@ -163,25 +163,23 @@ export function resendVerification() {
 // frontend redirect), so a logged-out request genuinely gets a 401 with
 // no data, not just a hidden-but-fetched response.
 export async function getLibrary() {
-  const [resources, people, tools] = await Promise.all([
+  const [resources, people] = await Promise.all([
     authFetch<Resource[]>('/resources'),
     authFetch<Person[]>('/people'),
-    authFetch<Tool[]>('/tools'),
   ])
 
   if (!resources.ok) return resources
   if (!people.ok) return people
-  if (!tools.ok) return tools
 
   return {
     ok: true as const,
-    data: { resources: resources.data, people: people.data, tools: tools.data },
+    data: { resources: resources.data, people: people.data },
   }
 }
 
 /* ==================== Phase 7: learning system ==================== */
 // Course/lesson catalog now requires a session, same tier as
-// /resources|/people|/tools above — moved here from src/lib/api.ts,
+// /resources|/people above — moved here from src/lib/api.ts,
 // which has no way to send the session cookie server-side (host-only on
 // api.lowlevelnotes.com, never visible to the Next.js server).
 
@@ -266,6 +264,12 @@ export function enrollCourse(slug: string) {
   return authFetch<{ message: string }>(`/v1/courses/${slug}/enroll`, { method: 'POST' })
 }
 
+// Soft-drop — lesson_progress history is preserved, re-enrolling later
+// (enrollCourse) picks back up rather than starting over.
+export function unenrollCourse(slug: string) {
+  return authFetch<{ message: string }>(`/v1/courses/${slug}/enroll`, { method: 'DELETE' })
+}
+
 export function completeLesson(id: number) {
   return authFetch<{ message: string }>(`/v1/lessons/${id}/complete`, { method: 'POST' })
 }
@@ -295,6 +299,18 @@ export type MyLessonProgress = {
 
 export function getMyProgress() {
   return authFetch<{ enrollments: MyEnrollment[]; lessonProgress: MyLessonProgress[] }>('/v1/me/progress')
+}
+
+export type MyStatistics = {
+  coursesEnrolled: number
+  coursesCompleted: number
+  lessonsCompleted: number
+  quizAttempts: number
+  averageQuizScorePercent: number | null
+}
+
+export function getMyStatistics() {
+  return authFetch<MyStatistics>('/v1/me/statistics')
 }
 
 /* ==================== Phase 4: authorization roles ==================== */

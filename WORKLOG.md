@@ -6,27 +6,37 @@ It supplements the durable project guidance in `AGENTS.md`.
 
 ## Status
 
-- **Active phase:** Phase 7 (learning system UI) — Slice 1 (session-gated
-  catalog + R2 content) live and confirmed working after today's WAF
-  fix. Slice 2 (enroll + mark-complete UI) implemented and typechecked,
-  not yet committed/deployed
+- **Active phase:** Phase 7 (learning system UI) — Slice 1 live. Slice 2
+  (enroll + mark-complete) plus its same-day follow-up (lesson gating,
+  next-lesson nav, a real quiz-copy bug fix, unenroll, `/account/courses`)
+  are implemented, backend deployed and smoke-tested against real
+  production D1, **frontend not yet committed/deployed**. Also done the
+  same day, unrelated to Phase 7: a homepage rework (courses vs. library
+  distinction, iterated three rounds on user feedback) and merging the
+  standalone `tools` table into `resources` (`type = 'tool'`) — both
+  frontend-only-pending in the same way
 - **Current area:** `worker/index.js` deployed version
-  `2b28072d-ce5b-43d3-8759-4013690cb2c9`, all four course/lesson
-  endpoints session-gated; the "block non-GET on main domain" WAF rule
-  now also exempts `POST /api/render/*`. Frontend has `enrollCourse`/
-  `completeLesson`/`getMyProgress` in `authClient.ts`, a new
-  `ActionButton` component, and enrollment/completion UI on the course
-  and lesson pages — no backend changes needed, the API was already live
+  `e7354fe9-9270-4de2-8dd9-742c34898a6d` — includes the Slice 2
+  follow-up's enroll-upsert/unenroll/statistics fixes and the
+  tools→resources merge (migration `0011`, `GET /tools` removed,
+  `mapResource()` null-safe on `authorId`). Frontend has all of the
+  above implemented and typechecked but **not committed**: lesson-page
+  enrollment gating, next-lesson nav, `/account/courses`, the reworked
+  homepage, and the simplified `LibraryBrowser`/`getLibrary` (one
+  fetch instead of two)
 - **Milestone:** deferred Phase 2 course endpoints (enroll, progress,
   lesson completion, quiz attempts, statistics) complete, live, and
   smoke-tested against real production D1 — see "Deferred Phase 2
   endpoints" above
 - Both `TURNSTILE_SECRET` and `CLOUDFLARE_WAF_TOKEN` are set and verified
   working live. Phase 4 has no outstanding blockers.
-- **Next action:** commit + push Slice 2, click through it in a real
-  browser (still no browser extension available this session), then
-  Slice 3 (interactive quiz UI) — see "Phase 7 scoping" below for the
-  remaining slices.
+- **Next action:** commit + push everything above (all backend pieces
+  are already live; only the frontend is pending), then a real browser
+  pass — still no extension available this session, and there's now a
+  real backlog of unverified visual/interactive changes (homepage,
+  library filters, lesson gating, unenroll flows). After that, Slice 3
+  (interactive quiz UI) — see "Phase 7 scoping" below for the remaining
+  slices.
 - **Last updated:** 2026-08-27
 
 ## Homepage review (2026-08-26)
@@ -1995,3 +2005,321 @@ correct in a prior session's real-D1 smoke test, but the actual
 click-and-see-it-update behavior has not been watched happen. Asked the
 user to click through it themselves once deployed rather than claiming
 this is fully verified.
+
+## Slice 2 follow-up: lesson gating, next-lesson nav, unenroll, /account/courses (2026-08-27)
+
+User feedback on Slice 2, same day: the bottom-of-lesson enroll nag
+"feels weird" (their preference — don't render lesson content at all
+pre-enrollment, title/type from the course list is enough to decide);
+wanted a "Next lesson" button; found a real bug — the quiz lesson said
+"Enroll in this course to take it" while actually enrolled; wanted an
+"Enrolled courses" account card for every role with stats + enrollment
+management; wanted an Unenroll button. Two of these came with explicit
+"not sure this is right" — proceeded on judgment, reasoning in the plan
+file and below, matching how design/asset calls got made earlier this
+session rather than re-asking.
+
+**The quiz bug was a real, simple miss**: `QuizPlaceholder` never
+received `isEnrolled` at all — its "enroll to take it" copy was
+unconditional, so it said that to everyone regardless of actual
+enrollment. Confirmed by reading the component signature directly
+rather than guessing. Fixed by making the enrollment check unnecessary
+in the first place: once the lesson page gates its *content* behind
+enrollment (not just the mark-complete button), `QuizPlaceholder` can
+no longer render for an unenrolled visitor, so the branch causing the
+bug doesn't exist anymore, and the copy just says "coming soon"
+unconditionally.
+
+**Lesson-content gating is a UX decision, not a security one** — worth
+being precise about, since it could read as tightening access. The API
+was already session-gated (Slice 1) and stays exactly that; enrollment
+was already the gate on the *write* actions (`/complete`, `/attempt`)
+and stays exactly that too. What changed is purely what the lesson page
+*renders* for a logged-in-but-not-enrolled visitor: a `LockedLesson`
+view (module, title, type badge, Enroll button) instead of fetching and
+showing the actual content. No API change needed for this at all.
+
+**Unenroll needed real backend work, not just a new endpoint** — this
+is the part worth remembering. `enrollments.status` has had an unused
+`'dropped'` value in its CHECK constraint since Phase 1; nothing had
+ever written it. Choosing to actually use it (soft-drop, preserving
+`lesson_progress` — no FK between the tables, so nothing cascades) meant
+`enrollCourseV1`'s original bare `INSERT` would 409-forever on anyone
+who unenrolled and tried to come back, since the dropped row still
+occupies the `UNIQUE(user_id, course_id)` slot. Rewrote it as an upsert:
+`INSERT ... ON CONFLICT(user_id, course_id) DO UPDATE SET status='active', enrolled_at=..., completed_at=NULL WHERE enrollments.status = 'dropped'`,
+checking `meta.changes` afterward (`0` → the conflict existed but
+wasn't `'dropped'`, i.e. already active/completed → still the same 409;
+`>=1` → fresh insert or reactivation, both read as 201 to the client).
+D1/SQLite's upsert supports a `WHERE` on `DO UPDATE` — confirmed by
+using it and testing, not assumed.
+
+Introducing a real `'dropped'` state also surfaced **two more real
+bugs**, in queries written before that state could ever exist and so
+never needed to filter it out: `getMyStatisticsV1`'s `coursesEnrolled`
+and `getMyProgressV1`'s `enrollments` list both selected with a bare
+`WHERE user_id = ?` — either would have kept counting/showing a dropped
+course as still enrolled the moment `'dropped'` rows started existing.
+Both scoped to `status IN ('active', 'completed')` now. Wouldn't have
+been caught without deliberately testing the unenroll → re-enroll cycle
+end to end rather than just the new endpoint in isolation.
+
+**Verified locally first**, same harness as every other Worker change
+this session (`wrangler dev` + the local test D1/session token setup):
+enroll → unenroll (200) → unenroll again (404, correctly "not
+enrolled") → statistics/progress both correctly exclude the dropped
+course, `lesson_progress` untouched → re-enroll (201, upsert path) →
+immediate re-enroll (409, correctly no-op) → progress shows the old
+completed-lesson data still intact under the reactivated enrollment.
+
+**Deployed and smoke-tested against real production D1** after
+explicit sign-off (version `a0e3fcdb-5004-4f57-b43e-42c384bd6928`),
+same throwaway-user technique as every other real-prod check this
+session: enroll → statistics shows `coursesEnrolled: 1` → unenroll →
+statistics correctly drops to `0`, `/me/progress` shows empty
+enrollments → re-enroll succeeds → unenrolling a course never enrolled
+in returns 404. Cleaned up the test user, session, and its
+`auth_events` row afterward; verified zero rows remain.
+
+New `/account/courses` page (`getMyStatistics()` + `getMyProgress()`,
+stat tiles + one card per enrollment with progress/continue-link/
+Unenroll) and an unconditional `AccountLinkCard` on `/account` pointing
+to it, ahead of the existing role-conditional Contribute/Admin cards.
+
+**Not yet committed or pushed** — the backend is live, but none of the
+frontend changes (lesson-page gating, next-lesson nav, unenroll UI,
+`/account/courses`) are deployed. Same verification gap as every
+frontend piece this session: no browser extension available, so the
+actual click-through (locked-lesson view, next-lesson link, the
+`window.confirm()` unenroll flow) still needs the user to check
+visually once it ships.
+
+## Homepage rework: courses vs. library, distinct sections (2026-08-27)
+
+User felt the homepage no longer communicated what the site is —
+"Explore the courses" wasn't a real button (the hero's only scroll link
+went to a discipline grid whose cards all point at `/library`), and
+nothing distinguished the library from the new course system. Also
+flagged the Alice in Wonderland quote as possibly misplaced, and asked
+for something like "the first version" of the homepage that made the
+library framing obvious. Explicitly invited using design/marketing
+judgment rather than asking for a spec.
+
+**Checked git history instead of guessing what "the first version"
+meant**: the actual first Next.js homepage (`bc9699e`, before
+`/library` existed as its own route) *was* the resource browser —
+heading "resources", subtext the site's actual tagline ("Organized
+knowledge for mastering software development" — still in
+`src/lib/site.ts` today), then the live grouped list. It read as
+obviously a database because there was no marketing layer in front of
+it. The abstract hero + unlabeled topic grid that replaced it (commit
+`9d6b573`) is where that clarity got lost.
+
+Reworked `src/app/page.tsx`: hero subhead now leads with the site's own
+tagline and states the library/courses split directly. Three hero CTAs
+(`Login`, `Explore courses ↓`, `Browse the library ↓`) — dropped "Read
+the changelog" from the hero row (already in the header nav, four
+buttons was one too many for the decision that matters most). New
+`#courses` section, positioned before `#library` (leading with the
+newer/flagship product), real three real courses
+(`computer-architecture`/`networks`/`postgresql`, actual titles and
+descriptions, not placeholder copy) each explicitly framed as
+enroll-and-track. `#library`'s heading went from `sr-only` (genuinely
+invisible — the section had no visible name at all) to a real
+eyebrow/heading/subtext explicitly framed as browse-freely,
+no-enrollment, contrasting directly with the courses section above it.
+
+**Courses section is a static array, not a live fetch** — `/v1/courses`
+requires a session per the user's own explicit Slice 1 correction, and
+the homepage is public. A live call there would mean either reopening
+that gate (not asked for) or an empty section for every logged-out
+visitor (worse than a static one). Matches the existing `disciplines`
+array's own already-accepted tradeoff: hand-written, needs a manual
+bump when real course content changes — not new maintenance burden,
+just the same one already live elsewhere on this page.
+
+**Alice quote**: moved into the courses section rather than deleted —
+cut it from the library section since "which path should I take" reads
+oddly next to "browse freely, no structure," but it's a genuinely good
+fit for choosing between structured *courses*, which is what the quote
+is actually about. Kept a piece of the site's voice instead of just
+removing it because it no longer fit where it was.
+
+**Not yet verified visually** — no browser extension this session,
+same gap as everything frontend, but this one matters more than most:
+it's the literal front door, and the point of this change is
+first-impression clarity. `npm run build`/`tsc --noEmit` clean, no
+new dependencies, no new security surface (pure static copy + existing
+component reuse) — but a real look before calling this done is worth
+prioritizing here specifically.
+
+**Corrected, same day, per direct user feedback** on three of the
+judgment calls above: the changelog link belongs back in the hero (user
+disagreed with dropping it) — hero is now three buttons, `Login`
+removed instead: `Explore courses` (now the filled-orange primary,
+taking over that visual weight from the removed Login button) →
+`Browse the library` → `Read the changelog`. To compensate for losing
+the homepage's Login CTA, the nav bar's Login link (`Header.tsx`) now
+renders in the accent color when logged out (was flat muted gray,
+matching every other nav link) — attention shifts from the homepage
+button to the nav, rather than disappearing. The Alice quote — moved
+into the courses section in the first pass — is cut entirely, not
+relocated; user was explicit about wanting it gone, not repositioned.
+Courses' eyebrow/heading/subtext block is now right-aligned
+(`flex justify-end`, reusing the exact container pattern the Alice
+quote itself used before removal) while Library's stays left — each
+section gets a distinct visual anchor now that they're not sharing a
+two-column row.
+
+User caught a real spacing inconsistency between the two sections'
+heading-to-grid gap and asked for a judgment call, not just a match.
+Checked the pre-split homepage (`git show HEAD:src/app/page.tsx`)
+instead of guessing: the original single topics section used `pb-10`
+alone between its heading block and grid, no extra margin — Courses
+already matches that. Library's grid wrapper had an `mt-10` added when
+the sections were split, doubling the gap for no stated reason and
+breaking the design contract's "compact rhythm within panels" guidance.
+Removed the `mt-10` from Library rather than adding it to Courses —
+the original pattern is the one both should follow.
+
+User asked for the Courses section to match the homepage's existing
+"Code explained, not just pasted" section — full-bleed dark band
+(`bg-[#0D0D0D]`) with `border-y`, rather than sitting on the page's
+default background like Library. Restructured `#courses` to that exact
+pattern: `border-y border-white/10 bg-[#0D0D0D]` on the outer
+`<section>` (full width), an inner `mx-auto max-w-6xl` wrapper holding
+the actual content — same two-layer structure the code section already
+uses. Left Library on the default background; the ask was specifically
+to differentiate Courses further, not make the two sections match.
+
+## Merge tools into resources, drop the tools table (2026-08-27)
+
+Picked back up from earlier in the day — user's original ask
+("`tools` and `resources` should be one endpoint") got scoped but not
+built while the homepage work was in progress; reminded to actually do
+it.
+
+**Checked the live schema instead of assuming**: `resources`/`tools`
+predate `wrangler d1 migrations` entirely, so neither table's real
+definition lives in any tracked migration file — pulled both directly
+from `sqlite_master` on production. `resources.type` turned out to have
+**no CHECK constraint** at all (just a TEXT column with a default),
+which simplified this a lot — adding `'tool'` as a value needed zero
+schema change, just a data move and a table drop.
+
+**Found a real collision before writing the migration, not after**: a
+join on `path` between the two tables turned up exactly one match —
+`tools` had "Refactoring Guru" at `https://refactoring.guru/`, and
+`resources` already had "Refactoring & Design Patterns" at the identical
+URL. Same real-world thing cataloged twice under two different titles.
+`resources.path` is `UNIQUE`, so a blind `INSERT ... SELECT` would have
+failed on this row anyway — excluded it explicitly in the migration
+(`WHERE id != 22`) with a comment explaining why, rather than either
+silently erroring in production or creating a duplicate resource
+pointing at a URL that already existed.
+
+New migration `worker/migrations/0011_merge_tools_into_resources.sql`:
+inserts the other 49 tools as `resources` rows with `type = 'tool'`,
+`author_id = NULL`, `description = ''` (not `NULL` — every existing
+resource has always had a non-null description, and the frontend's
+`Resource.description` type is `string`; `''` keeps that invariant
+instead of introducing a shape nothing expects), `views = 0`, then
+drops `tools`. `worker/index.js`: removed `/tools`, `getTools()`,
+`mapTools()`; `mapResource()`'s `authorId` is now null-safe
+(`Number(null)` was silently becoming `0` before, which happened to
+work since no real person has id 0, but wasn't honest about it and
+this merge is exactly the kind of change that could have made that
+matter).
+
+**`LibraryBrowser.tsx` already treated resources and tools as one
+unified `Item[]` client-side** (merging two fetched arrays into one
+list for filtering) — this merge mostly just deleted code: dropped the
+`tools` prop, the `Tool` import, the `kind` field (only existed to gate
+view-tracking away from synthetic tool entries), and the two-array
+merge in favor of a direct map over `resources`. `authClient.ts`'s
+`getLibrary()` drops its third parallel fetch. `api.ts`: `ResourceType`
+gains `'tool'`, `Resource.authorId` becomes `number | null`, `Tool`
+type removed entirely.
+
+**View tracking now applies to former tools** — `POST /resource/:id`
+already worked generically by id with no type check; only the
+frontend's `kind !== 'resource'` guard was skipping tools. Once they're
+real `resources` rows, dropping that guard means every library entry
+gets tracked uniformly. Confirmed working against a real migrated
+row in production (Godbolt Compiler Explorer, id 54: incremented to 1,
+then reset back to 0 after the smoke test to leave production data
+as found).
+
+**Verified locally first**: since neither table exists in the local D1
+harness (same predates-migrations issue), hand-built matching local
+copies with a deliberate path-collision row, ran the actual migration
+file against them, confirmed the exact expected outcome (dropped
+`tools`, collision row excluded, migrated rows shaped correctly) before
+touching anything real. Then `wrangler dev` against that local data
+confirmed `GET /resources` returns the merged set with `type: 'tool'`
+rows correctly null-`authorId`, and `GET /tools` genuinely 404s.
+
+**Deployed and smoke-tested against real production D1** after
+explicit sign-off — this one's irreversible (`DROP TABLE tools`), so
+backed up all 50 tools rows to a local file first as a safety net
+before applying. Migration applied cleanly (`99` resources total, `49`
+type='tool', zero duplicates of the excluded collision), Worker
+deployed (version `e7354fe9-9270-4de2-8dd9-742c34898a6d`). Confirmed
+`GET /tools` 404s, `GET /resources` returns all 99 rows with correct
+shapes via a throwaway test session, and the view-tracking behavior
+above, live. Cleaned up the test user/session/auth_events afterward.
+
+**Deliberately not extended**: `resource_requests.type` keeps its own
+`CHECK (type IN ('pdf','website','videos','git'))` and the `/contribute`
+form its own four hardcoded options — letting contributors submit new
+`'tool'`-type resources is a reasonable future step but wasn't asked
+for here and needs its own CHECK-constraint migration.
+
+**Frontend not yet committed/deployed** — same as the homepage work,
+`npm run build`/`tsc --noEmit` clean, no browser extension available to
+actually click through the library page's filters against the new
+unified data.
+
+User caught that the homepage's Courses/Library card grids had no
+background of their own — they inherited their section's color
+directly, so nothing distinguished a card from the section around it,
+unlike `CodeBlock` sitting visibly lighter (`#171717`) against the
+darker `#0D0D0D` "Code explained" section. Gave both grids' cards an
+explicit background matching that same lighter-on-darker relationship:
+Courses cards (`#0D0D0D` section) get `bg-[#171717]`; Library cards
+(default `#171717` section, no bg of its own) get `bg-[#0D0D0D]`.
+
+Caught a real cascade issue while making that change, not asked about
+but worth fixing rather than shipping: both grids used
+`hover:bg-white/[0.035]` for their hover state, which worked fine
+against a transparent card (translucent white blends with whatever's
+behind it) but would have been wrong once the cards got an opaque
+background — `hover:bg-white/[0.035]:hover` has higher CSS specificity
+than the base `bg-*` class, so it fully replaces the card's own color
+on hover rather than blending with it, meaning hover would jump to a
+translucent white composited against the *section's* color, not a
+subtle lightening of the card itself. Replaced with precomputed solid
+hover tones (`#171717` → `hover:bg-[#1f1f1f]`, `#0D0D0D` →
+`hover:bg-[#151515]`, both ~3.5% white blended in, matching the
+opacity the old utility implied) on just these two elements.
+
+Same request extended to `/changelog`'s entry cards (same fix: explicit
+`bg-[#0D0D0D]` against the page's `#171717`, `hover:bg-[#151515]`
+instead of the same broken `hover:bg-white/[0.035]` pattern) and the
+homepage hero's two secondary buttons ("Browse the library", "Read the
+changelog" — the primary orange "Explore courses" button was already
+solid and untouched). Both buttons get `bg-[#0D0D0D]` and
+`hover:bg-[#171717]` instead of `hover:bg-white/[0.04]` — same cascade
+fix as everywhere else today, and `#171717` happens to be almost
+exactly what a 4%-white blend of `#0D0D0D` computes to, so reused that
+existing token instead of inventing a new one.
+
+`Footer.tsx`: the "Free & open source · Full privacy · Zero ads" line
+was the most washed-out text on the page (`text-white/30`, barely
+legible against the footer's `#171717`) and already had the eyebrow
+style's basic shape (`text-xs`, `tracking-wide`) — swapped it for the
+exact "Straight from the notes" treatment (`text-xs font-medium
+uppercase tracking-[0.18em] text-[#FF8A3D]`). Left "License:"/
+"Repository:" and the copyright line alone — conventionally quiet
+footnote text, and the design contract calls for using orange sparingly
+as a signal, not applying it to everything that happens to be muted.

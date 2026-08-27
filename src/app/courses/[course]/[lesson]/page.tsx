@@ -13,9 +13,24 @@ import {
   getLessonContent,
   getMyProgress,
   completeLesson,
+  enrollCourse,
   type Course,
+  type Lesson,
   type LessonDetail,
 } from '@/lib/authClient'
+
+const TYPE_LABEL: Record<Lesson['type'], string> = {
+  article: 'Article',
+  video: 'Video',
+  exercise: 'Exercise',
+  quiz: 'Quiz',
+}
+
+// Same order as the course page's module/lesson list: by module position,
+// then lesson position within it — used to find "next lesson."
+function orderLessons(lessons: Lesson[]): Lesson[] {
+  return [...lessons].sort((a, b) => a.modulePosition - b.modulePosition || a.position - b.position)
+}
 
 // content_path's directory, e.g. "drafts/Data/postgresql.md" -> "drafts/Data"
 // — used to resolve relative image references in the markdown. Avoids
@@ -49,10 +64,13 @@ export default function LessonPage({ params }: { params: Promise<{ course: strin
   const { user, loading: sessionLoading } = useSession()
 
   const [course, setCourse] = useState<Course | null>(null)
+  const [lessons, setLessons] = useState<Lesson[] | null>(null)
   const [lesson, setLesson] = useState<LessonDetail | null>(null)
   const [isEnrolled, setIsEnrolled] = useState(false)
   const [isCompleted, setIsCompleted] = useState(false)
   const [error, setError] = useState<{ message: string; notFound: boolean } | null>(null)
+  const [enrolling, setEnrolling] = useState(false)
+  const [enrollError, setEnrollError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!sessionLoading && !user) {
@@ -94,6 +112,7 @@ export default function LessonPage({ params }: { params: Promise<{ course: strin
 
       if (!cancelled) {
         setCourse(courseResult.data)
+        setLessons(lessonsResult.data)
         setLesson(lessonResult.data)
 
         if (progressResult.ok) {
@@ -109,6 +128,20 @@ export default function LessonPage({ params }: { params: Promise<{ course: strin
       cancelled = true
     }
   }, [user, courseSlug, lessonSlug])
+
+  async function handleEnroll() {
+    setEnrolling(true)
+    setEnrollError(null)
+    const result = await enrollCourse(courseSlug)
+    setEnrolling(false)
+
+    if (!result.ok) {
+      setEnrollError(result.error)
+      return
+    }
+
+    setIsEnrolled(true)
+  }
 
   if (sessionLoading || !user) {
     return (
@@ -136,7 +169,7 @@ export default function LessonPage({ params }: { params: Promise<{ course: strin
     )
   }
 
-  if (!course || !lesson) {
+  if (!course || !lesson || !lessons) {
     return (
       <main className="min-h-screen bg-[#171717]">
         <section className="mx-auto max-w-3xl px-6 pb-10 pt-20 sm:pt-28">
@@ -145,6 +178,10 @@ export default function LessonPage({ params }: { params: Promise<{ course: strin
       </main>
     )
   }
+
+  const ordered = orderLessons(lessons)
+  const currentIndex = ordered.findIndex((l) => l.slug === lessonSlug)
+  const nextLesson = currentIndex >= 0 ? ordered[currentIndex + 1] : undefined
 
   return (
     <main className="min-h-screen bg-[#171717]">
@@ -157,19 +194,25 @@ export default function LessonPage({ params }: { params: Promise<{ course: strin
       </section>
 
       <section className="mx-auto max-w-3xl px-6 pb-24">
-        {lesson.type === 'article' && <ArticleBody contentPath={lesson.contentPath} />}
-        {lesson.type === 'video' && <VideoBody videoUrl={lesson.videoUrl} />}
-        {lesson.type === 'exercise' && lesson.exercise && <ExerciseBody exercise={lesson.exercise} />}
-        {lesson.type === 'quiz' && lesson.quiz && <QuizPlaceholder questionCount={lesson.quiz.questions.length} />}
+        {!isEnrolled ? (
+          <LockedLesson type={lesson.type} onEnroll={handleEnroll} enrolling={enrolling} error={enrollError} />
+        ) : (
+          <>
+            {lesson.type === 'article' && <ArticleBody contentPath={lesson.contentPath} />}
+            {lesson.type === 'video' && <VideoBody videoUrl={lesson.videoUrl} />}
+            {lesson.type === 'exercise' && lesson.exercise && <ExerciseBody exercise={lesson.exercise} />}
+            {lesson.type === 'quiz' && lesson.quiz && <QuizPlaceholder questionCount={lesson.quiz.questions.length} />}
 
-        {lesson.type !== 'quiz' && (
-          <CompletionControl
-            lessonId={lesson.id}
-            courseSlug={courseSlug}
-            isEnrolled={isEnrolled}
-            isCompleted={isCompleted}
-            onCompleted={() => setIsCompleted(true)}
-          />
+            {lesson.type !== 'quiz' && (
+              <CompletionControl
+                lessonId={lesson.id}
+                isCompleted={isCompleted}
+                onCompleted={() => setIsCompleted(true)}
+              />
+            )}
+
+            <LessonNav courseSlug={courseSlug} nextLesson={nextLesson} />
+          </>
         )}
       </section>
     </main>
@@ -299,14 +342,10 @@ function ExerciseBody({ exercise }: { exercise: { prompt: string; language: stri
 
 function CompletionControl({
   lessonId,
-  courseSlug,
-  isEnrolled,
   isCompleted,
   onCompleted,
 }: {
   lessonId: number
-  courseSlug: string
-  isEnrolled: boolean
   isCompleted: boolean
   onCompleted: () => void
 }) {
@@ -327,17 +366,6 @@ function CompletionControl({
     onCompleted()
   }
 
-  if (!isEnrolled) {
-    return (
-      <p className="mt-10 border-t border-white/10 pt-6 text-sm text-[#A1A1AA]">
-        <Link href={`/courses/${courseSlug}`} className="text-[#FF8A3D] underline underline-offset-2">
-          Enroll in this course
-        </Link>{' '}
-        to track your progress.
-      </p>
-    )
-  }
-
   if (isCompleted) {
     return (
       <p className="mt-10 border-t border-white/10 pt-6 text-sm text-[#3FB950]">✓ Completed</p>
@@ -354,11 +382,68 @@ function CompletionControl({
   )
 }
 
+// A logged-out-but-authenticated visitor can see a lesson exists (title,
+// module, type — all visible from the course page's list already) but
+// not its actual content, which only unlocks on enrolling. This is a UX
+// call, not a security boundary — the API itself only requires a
+// session to read lesson content, not enrollment; enrollment still gates
+// the write actions (complete/attempt) at the API layer regardless of
+// what this page shows.
+function LockedLesson({
+  type,
+  onEnroll,
+  enrolling,
+  error,
+}: {
+  type: Lesson['type']
+  onEnroll: () => void
+  enrolling: boolean
+  error: string | null
+}) {
+  return (
+    <div className="border border-white/10 bg-[#0D0D0D] p-6">
+      <p className="text-xs uppercase tracking-[0.1em] text-white/40">{TYPE_LABEL[type]}</p>
+      <p className="mt-3 text-sm leading-6 text-[#A1A1AA]">
+        Enroll in this course to view this lesson and track your progress.
+      </p>
+      <div className="mt-5">
+        <ActionButton onClick={onEnroll} loading={enrolling}>
+          Enroll
+        </ActionButton>
+        {error && <p className="mt-2 text-sm text-[#F85149]">{error}</p>}
+      </div>
+    </div>
+  )
+}
+
+function LessonNav({ courseSlug, nextLesson }: { courseSlug: string; nextLesson: Lesson | undefined }) {
+  return (
+    <div className="mt-6 flex justify-end">
+      {nextLesson ? (
+        <Link
+          href={`/courses/${courseSlug}/${nextLesson.slug}`}
+          className="inline-flex items-center gap-2 text-sm font-medium text-white transition-colors hover:text-[#FF8A3D]"
+        >
+          Next lesson: {nextLesson.title} →
+        </Link>
+      ) : (
+        <Link
+          href={`/courses/${courseSlug}`}
+          className="inline-flex items-center gap-2 text-sm font-medium text-white transition-colors hover:text-[#FF8A3D]"
+        >
+          ← Back to course
+        </Link>
+      )}
+    </div>
+  )
+}
+
 function QuizPlaceholder({ questionCount }: { questionCount: number }) {
   return (
     <div className="border border-white/10 bg-[#0D0D0D] p-6">
       <p className="text-sm text-[#A1A1AA]">
-        This quiz has {questionCount} question{questionCount === 1 ? '' : 's'}. Enroll in this course to take it.
+        This quiz has {questionCount} question{questionCount === 1 ? '' : 's'}. Taking quizzes isn&apos;t built yet
+        — coming soon.
       </p>
     </div>
   )

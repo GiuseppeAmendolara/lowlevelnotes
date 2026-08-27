@@ -78,6 +78,11 @@ export default function AccountPage() {
       <p className="mt-1 text-xs uppercase tracking-[0.1em] text-[#FF8A3D]">{user.role}</p>
 
       <div className="mt-6 flex flex-col gap-2">
+        <AccountLinkCard
+          href="/account/courses"
+          title="Enrolled courses"
+          description="Manage your enrollments and view your progress."
+        />
         {user.role === 'student' && (
           <AccountLinkCard
             href="/contribute"

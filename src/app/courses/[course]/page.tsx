@@ -10,6 +10,7 @@ import {
   getCourseLessons,
   getMyProgress,
   enrollCourse,
+  unenrollCourse,
   type Course,
   type Lesson,
   type MyEnrollment,
@@ -52,6 +53,8 @@ export default function CoursePage({ params }: { params: Promise<{ course: strin
   const [error, setError] = useState<{ message: string; notFound: boolean } | null>(null)
   const [enrolling, setEnrolling] = useState(false)
   const [enrollError, setEnrollError] = useState<string | null>(null)
+  const [unenrolling, setUnenrolling] = useState(false)
+  const [unenrollError, setUnenrollError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!sessionLoading && !user) {
@@ -114,6 +117,24 @@ export default function CoursePage({ params }: { params: Promise<{ course: strin
     })
   }
 
+  async function handleUnenroll() {
+    if (!window.confirm('Unenroll from this course? Your progress is kept — re-enrolling picks up where you left off.')) {
+      return
+    }
+
+    setUnenrolling(true)
+    setUnenrollError(null)
+    const result = await unenrollCourse(slug)
+    setUnenrolling(false)
+
+    if (!result.ok) {
+      setUnenrollError(result.error)
+      return
+    }
+
+    setEnrollment(null)
+  }
+
   if (sessionLoading || !user) {
     return (
       <main className="min-h-screen bg-[#171717]">
@@ -165,13 +186,26 @@ export default function CoursePage({ params }: { params: Promise<{ course: strin
 
         <div className="mt-6">
           {enrollment ? (
-            <p className="text-sm text-[#A1A1AA]">
-              <span className={enrollment.status === 'completed' ? 'text-[#3FB950]' : 'text-[#FF8A3D]'}>
-                {enrollment.status === 'completed' ? 'Completed' : 'Enrolled'}
-              </span>
-              {' — '}
-              {enrollment.completedLessons}/{enrollment.totalLessons} lessons complete
-            </p>
+            <>
+              <p className="flex flex-wrap items-center gap-3 text-sm text-[#A1A1AA]">
+                <span>
+                  <span className={enrollment.status === 'completed' ? 'text-[#3FB950]' : 'text-[#FF8A3D]'}>
+                    {enrollment.status === 'completed' ? 'Completed' : 'Enrolled'}
+                  </span>
+                  {' — '}
+                  {enrollment.completedLessons}/{enrollment.totalLessons} lessons complete
+                </span>
+                <button
+                  type="button"
+                  onClick={handleUnenroll}
+                  disabled={unenrolling}
+                  className="text-white/50 underline underline-offset-2 transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {unenrolling ? 'Unenrolling…' : 'Unenroll'}
+                </button>
+              </p>
+              {unenrollError && <p className="mt-2 text-sm text-[#F85149]">{unenrollError}</p>}
+            </>
           ) : (
             <>
               <ActionButton onClick={handleEnroll} loading={enrolling}>

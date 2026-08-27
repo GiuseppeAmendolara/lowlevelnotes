@@ -1,6 +1,8 @@
 const API_BASE = 'https://api.lowlevelnotes.com'
 
-export type ResourceType = 'pdf' | 'website' | 'videos' | 'git'
+// 'tool' merged in from the now-dropped tools table — see
+// worker/migrations/0011_merge_tools_into_resources.sql.
+export type ResourceType = 'pdf' | 'website' | 'videos' | 'git' | 'tool'
 
 export type Resource = {
   id: number
@@ -9,7 +11,7 @@ export type Resource = {
   path: string
   type: ResourceType
   category: string
-  authorId: number
+  authorId: number | null
   views: number
 }
 
@@ -20,13 +22,6 @@ export type Person = {
   avatar: string
   profile: string
   external: boolean
-}
-
-export type Tool = {
-  id: number
-  name: string
-  path: string
-  category: string
 }
 
 export type ChangelogEntry = {

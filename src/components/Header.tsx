@@ -47,7 +47,9 @@ export default function Header() {
           {!loading && (
             <Link
               href={user ? '/account' : '/login'}
-              className="ml-5 shrink-0 border-l border-white/10 pl-5 text-xs font-medium uppercase tracking-[0.12em] text-[#A1A1AA] transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF8A3D]"
+              className={`ml-5 shrink-0 border-l border-white/10 pl-5 text-xs font-medium uppercase tracking-[0.12em] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF8A3D] ${
+                user ? 'text-[#A1A1AA] hover:text-white' : 'text-[#FF8A3D] hover:text-[#FFA15C]'
+              }`}
             >
               {user ? <>{user.displayName} ↗</> : 'Login'}
             </Link>

@@ -141,8 +141,8 @@ These are planning notes, not authorization to begin future phases early.
 - New Phase 2+ endpoints are versioned under a `/v1` path prefix (e.g.
   `/v1/courses`), so a future breaking change can ship as `/v2` without
   disrupting existing clients. Pre-Phase-2 endpoints (`/resources`,
-  `/tools`, `/people`, `/changelog`, `/resource/:id`, the `.svg` badges)
-  are intentionally left unversioned at their current paths — they're
+  `/people`, `/changelog`, `/resource/:id`, the `.svg` badges) are
+  intentionally left unversioned at their current paths — they're
   already live and consumed by the site and external embeds, so adding a
   prefix now would itself be a breaking change.
 - **User-scoped course endpoints, concrete decisions** — deferred during
@@ -204,7 +204,7 @@ These are planning notes, not authorization to begin future phases early.
     this stack; real grading is Phase 8's ("Exercises") job, not this
     one's.
   - **`/courses/*` requires a session, same tier as `/resources`,
-    `/tools`, `/people`** — `getCoursesV1`/`getCourseV1`/
+    `/people`** — `getCoursesV1`/`getCourseV1`/
     `getCourseLessonsV1`/`getLessonV1` all gate on `getSessionUser()`
     now (reversed from Slice 1's original "catalog is public" call, per
     explicit user correction). The three `/courses/*` frontend pages are
@@ -275,22 +275,73 @@ These are planning notes, not authorization to begin future phases early.
     `27fd9d0`, "four topic links plus a single account slot") — judged
     acceptable since courses are the platform's core content, same tier
     as `library`, not an account-scoped action.
-  - **Slice 2 (enroll + mark-complete)**: pure frontend wiring, no
-    Worker changes — the enroll/complete/progress endpoints were already
-    live and tested from the deferred-Phase-2-endpoints work.
-    `enrollCourse`/`completeLesson`/`getMyProgress` added to
-    `authClient.ts`. Enrollment stays explicit everywhere — no page
-    auto-enrolls, matching the Worker's own no-side-effect design.
-    New `src/components/ActionButton.tsx` (filled-orange, loading state)
-    is a sibling to `AuthSubmitButton`, not a reuse of it — that
-    component is `type="submit"`/`w-full`, purpose-built for the
-    single-form auth pages; Enroll/Mark-complete aren't form
-    submissions. A lesson page not enrolled in its course shows an
-    inline "Enroll in this course" prompt instead of a disabled button;
-    once completed, "Mark complete" becomes a static "✓ Completed"
-    label — there's no un-complete endpoint. Progress is fetched
-    per-page (no global cache/store in this app) and mark-complete
-    updates local state optimistically rather than refetching.
+  - **Slice 2 (enroll + mark-complete)**: originally pure frontend
+    wiring against the already-live enroll/complete/progress endpoints
+    from the deferred-Phase-2-endpoints work — `enrollCourse`/
+    `completeLesson`/`getMyProgress` in `authClient.ts`. Enrollment
+    stays explicit everywhere — no page auto-enrolls, matching the
+    Worker's own no-side-effect design. New
+    `src/components/ActionButton.tsx` (filled-orange, loading state) is
+    a sibling to `AuthSubmitButton`, not a reuse of it — that component
+    is `type="submit"`/`w-full`, purpose-built for the single-form auth
+    pages; Enroll/Mark-complete aren't form submissions. Once completed,
+    "Mark complete" becomes a static "✓ Completed" label — there's no
+    un-complete endpoint. Progress is fetched per-page (no global
+    cache/store in this app) and mark-complete updates local state
+    optimistically rather than refetching.
+  - **Slice 2 follow-up, from user feedback on the above**:
+    - **Lesson content is now gated behind enrollment at the page
+      level** (a UX call, not a security one — the API itself still
+      only requires a session to read, not enrollment, unchanged from
+      Slice 1; enrollment still only gates the *write* actions
+      server-side). A `LockedLesson` view (module/title/type badge +
+      an Enroll button) replaces the old bottom-of-page "enroll to
+      track progress" nag, which the user found "feels weird" —
+      content just doesn't render at all pre-enrollment now, title and
+      type are already visible from the course page's list.
+    - **"Next lesson" nav** — computed client-side from the course's
+      full lesson list (`modulePosition` then `position`, same sort as
+      the course page's module grouping), shown next to the completion
+      control for every enrolled lesson type including `quiz`, since
+      it's navigation, not gated on completion. Last lesson → "Back to
+      course" instead.
+    - **Real bug fixed**: `QuizPlaceholder` said "Enroll in this course
+      to take it" even for enrolled users — it never received
+      `isEnrolled` in the first place, the copy was unconditional. Once
+      page-level gating (above) ships, that branch is unreachable
+      anyway (an unenrolled visitor never reaches `QuizPlaceholder` at
+      all) — simplified to an unconditional "quiz-taking isn't built
+      yet" message rather than re-threading enrollment state through.
+    - **Unenroll**: `enrollments.status` already had an unused
+      `'dropped'` value in its Phase 1 CHECK constraint — used it
+      rather than deleting rows, so `lesson_progress` history (no FK
+      between the two tables) survives an unenroll/re-enroll cycle.
+      New `DELETE /v1/courses/:slug/enroll` (`unenrollCourseV1`).
+      This required also fixing `enrollCourseV1`, previously a bare
+      `INSERT` that would 409 forever on re-enrolling after a drop
+      (the dropped row still exists, same `UNIQUE(user_id, course_id)`)
+      — now an `INSERT ... ON CONFLICT(user_id, course_id) DO UPDATE
+      SET status='active', ... WHERE enrollments.status = 'dropped'`
+      upsert; `meta.changes === 0` after means the conflicting row
+      wasn't `'dropped'` (already active/completed) → still 409.
+      Uncovered two more real bugs while at it, both in queries that
+      predate `'dropped'` ever being written and so never needed a
+      status filter before: `getMyStatisticsV1`'s `coursesEnrolled`
+      and `getMyProgressV1`'s `enrollments` list both did
+      `WHERE user_id = ?` with no status scoping — either would have
+      kept counting/listing a dropped course as still enrolled. Both
+      now scope to `status IN ('active', 'completed')`. All three
+      fixes verified locally (`wrangler dev` + the local test D1
+      harness) before deploy — unenroll → re-enroll → confirm
+      `lesson_progress` rows survive, confirm `coursesEnrolled`/
+      `/me/progress` correctly exclude the dropped state in between.
+    - **`/account/courses`** (new page) — every role gets an
+      unconditional "Enrolled courses" `AccountLinkCard` on `/account`
+      (unlike Contribute/Admin, which stay role-conditional). Shows a
+      `getMyStatistics()` stat-tile row plus one card per enrollment
+      with its progress count, a continue link, and the same Unenroll
+      action as the course page (duplicated, not extracted into a
+      shared hook — matches this app's existing low-abstraction style).
 - **Phase 3 (authentication), concrete decisions** — see WORKLOG's "Phase
   3" entry for the full security reasoning:
   - Password hashing: PBKDF2-HMAC-SHA256, 100,000 iterations, via
@@ -356,19 +407,44 @@ These are planning notes, not authorization to begin future phases early.
   which read to the frontend as being logged out. Any new early-return
   path added to `fetch()` before the route table needs the same
   treatment.
-- **`GET /resources`, `/tools`, `/people` now require a session** — the
+- **`GET /resources`, `/people` now require a session** — the
   library is gated to logged-in users (user's explicit request); these
-  three return 401 without `getSessionUser()` succeeding. `/library`
+  return 401 without `getSessionUser()` succeeding. `/library`
   fetches them client-side only, after confirming a session, matching
   `/account`'s pattern — not server-rendered, since the Next.js server
   can't see the session cookie anyway (see the host-only cookie note
   above) and a server-rendered-then-hidden page wouldn't actually
-  restrict the data. Any response carrying per-session data (these three,
+  restrict the data. Any response carrying per-session data (these,
   plus `GET /v1/auth/session`) sets `Cache-Control: private, no-store`
   explicitly (the `NO_STORE` constant near `json()`) — don't rely on
   Cloudflare's default cache-bypass for dynamic Worker responses; it was
   observed serving a stale pre-deploy response for about a minute after
   this gate first shipped.
+- **The standalone `tools` table is gone — merged into `resources` as
+  `type = 'tool'`** (`worker/migrations/0011_merge_tools_into_resources.sql`).
+  `GET /tools` no longer exists; `LibraryBrowser.tsx` already merged the
+  two client-side before this, so the frontend now just talks to one
+  endpoint instead of unifying two. `resources.type` has no CHECK
+  constraint (this table predates `wrangler d1 migrations` entirely, so
+  its real definition only ever lived on the live D1 instance — checked
+  via `sqlite_master`, not assumed), so adding `'tool'` needed no schema
+  change, just the data move. One real path collision found and handled
+  during migration, not assumed clean: a tool and an existing resource
+  pointed at the identical URL (`refactoring.guru`) — the tool row was
+  dropped as a genuine duplicate, not inserted twice. Migrated rows get
+  `author_id = NULL` (tools never had one — `mapResource()`'s
+  `authorId` is now null-safe, `Resource.authorId` is `number | null`)
+  and `description = ''`, not `NULL` (every other resource has always
+  had a non-null description; `''` preserves that invariant rather than
+  introducing a shape the frontend's `string`-typed field doesn't
+  expect). View tracking (`POST /resource/:id`) now applies uniformly to
+  former tools too — it already worked generically by id with no type
+  check; only `LibraryBrowser.tsx`'s client-side guard was skipping
+  them. `resource_requests.type` (the contribution pipeline) keeps its
+  own separate `CHECK (type IN ('pdf','website','videos','git'))` and
+  the `/contribute` form its own four options — deliberately not
+  extended to `'tool'` here; that's a future call, not part of this
+  merge.
 - **Library asset files live in R2 (`lowlevelnotes-assets` bucket, `ASSETS`
   binding), not `public/`.** Gating the `/library` page and its JSON
   endpoints did nothing for the actual PDFs/notes as long as they sat in
@@ -486,7 +562,7 @@ main domain is scoped against — see below.
 |---|---|---|---|
 | GET | `/health` | none | also handles its own `OPTIONS` |
 | GET | `/status.svg`, `/history.svg`, `/stats.svg` | none | SVG badges, embeddable |
-| GET | `/resources`, `/tools`, `/people` | session | 401 without a valid session |
+| GET | `/resources`, `/people` | session | 401 without a valid session; `/resources` includes former `tools` rows as `type = 'tool'` |
 | GET | `/changelog` | none | WAF still requires a browser or `x-internal-key` (see below) |
 | GET | `/v1/courses`, `/v1/courses/:slug`, `/v1/courses/:slug/lessons` | none | |
 | POST | `/v1/auth/register`, `/login`, `/forgot-password` | none | |

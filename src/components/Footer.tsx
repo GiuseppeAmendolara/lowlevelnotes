@@ -29,7 +29,7 @@ export default function Footer() {
         </div>
 
         <div className="flex flex-col gap-3 border-t border-white/10 pt-6 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs tracking-wide text-white/30">
+          <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">
             Free &amp; open source · Full privacy · Zero ads
           </p>
           <p className="text-xs text-white/30">
