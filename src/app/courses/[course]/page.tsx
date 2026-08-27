@@ -176,8 +176,11 @@ export default function CoursePage({ params }: { params: Promise<{ course: strin
   return (
     <main className="min-h-screen bg-[#171717]">
       <section className="mx-auto max-w-4xl px-6 pb-10 pt-20 sm:pt-28">
+        <Link href="/courses" className="text-xs uppercase tracking-[0.12em] text-white/40 transition-colors hover:text-white">
+          ← Courses
+        </Link>
         {course.category && (
-          <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">{course.category}</p>
+          <p className="mt-4 text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">{course.category}</p>
         )}
         <h1 className="mt-4 text-4xl font-bold tracking-[-0.05em] text-white sm:text-5xl">{course.title}</h1>
         {course.description && (

@@ -23,7 +23,7 @@ export default function AdminPage() {
 
   if (sessionLoading || !user || user.role !== 'administrator') {
     return (
-      <AuthPageShell eyebrow="Admin" heading="Admin">
+      <AuthPageShell eyebrow="Admin" heading="Admin" backHref="/account">
         <p className="text-sm text-[#A1A1AA]">Loading…</p>
       </AuthPageShell>
     )

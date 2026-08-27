@@ -37,7 +37,7 @@ export default function ContributePage() {
 
   if (sessionLoading || !user) {
     return (
-      <AuthPageShell eyebrow="Contribute" heading="Contribute">
+      <AuthPageShell eyebrow="Contribute" heading="Contribute" backHref="/account">
         <p className="text-sm text-[#A1A1AA]">Loading…</p>
       </AuthPageShell>
     )
@@ -80,7 +80,7 @@ function RoleRequestPanel() {
 
   if (requests === null) {
     return (
-      <AuthPageShell eyebrow="Contribute" heading="Contribute">
+      <AuthPageShell eyebrow="Contribute" heading="Contribute" backHref="/account">
         <p className="text-sm text-[#A1A1AA]">Loading…</p>
       </AuthPageShell>
     )
@@ -91,7 +91,7 @@ function RoleRequestPanel() {
 
   if (pending) {
     return (
-      <AuthPageShell eyebrow="Contribute" heading="Request pending">
+      <AuthPageShell eyebrow="Contribute" heading="Request pending" backHref="/account">
         <p className="text-sm leading-6 text-[#A1A1AA]">
           Your request to become a {pending.requestedRole} is waiting on review.
         </p>
@@ -102,7 +102,7 @@ function RoleRequestPanel() {
 
   if (done) {
     return (
-      <AuthPageShell eyebrow="Contribute" heading="Request sent">
+      <AuthPageShell eyebrow="Contribute" heading="Request sent" backHref="/account">
         <AuthMessage message="Your request has been submitted for review." tone="success" />
       </AuthPageShell>
     )
@@ -113,6 +113,7 @@ function RoleRequestPanel() {
       eyebrow="Contribute"
       heading="Request access"
       subtext="Contributors and instructors can submit resources for the library. Every submission is reviewed before it goes live."
+      backHref="/account"
     >
       {latest?.status === 'rejected' && (
         <AuthMessage
@@ -209,6 +210,7 @@ function ResourceRequestPanel() {
       eyebrow="Contribute"
       heading="Submit a resource"
       subtext="Every submission is reviewed before it appears in the library."
+      backHref="/account"
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <AuthTextField label="Title" value={title} onChange={setTitle} required />

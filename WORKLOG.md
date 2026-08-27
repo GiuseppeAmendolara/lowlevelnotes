@@ -2337,3 +2337,37 @@ fixed with three `replace_all` edits rather than one-by-one). No
 hover-cascade issue this time — none of these rows had a `hover:bg-*`
 class to conflict with the new background, unlike the homepage/
 changelog fixes earlier today.
+
+Two follow-up fixes after the user noticed `/account` itself still had
+no contrast and that the back-navigation was inconsistent:
+
+`src/app/account/page.tsx`: `AccountLinkCard` and the "Log out" button
+both had the same blend-into-`#171717`-background bug as everywhere
+else, plus the same `hover:bg-white/[0.04]`-gets-replaced-not-blended
+cascade bug once a real background was added. Fixed both with
+`bg-[#0D0D0D]` + `hover:bg-[#171717]`, the same established pair used
+throughout today.
+
+Back-link consistency: `/account/courses` had a "← Account" link back
+to the hub it's reached from; `/contribute` and `/staff` didn't, despite
+both being reached the same way (an `AccountLinkCard` on `/account`).
+Added `backHref` as a new optional prop on `AuthPageShell` (renders the
+same "← Account" link, styled identically —
+`text-xs uppercase tracking-[0.12em] text-white/40 hover:text-white`
+— above the eyebrow, only when passed) and wired `backHref="/account"`
+into every `AuthPageShell` call on `/contribute` and the loading state
+of `/staff`. `AuthPageShell` is also used by `/login`, `/register`,
+`/forgot-password`, `/reset-password`, and `/verify-email` — none of
+those got the prop, since none of them are reached from `/account`.
+`/staff`'s real content lives in `AdminPanel.tsx`, which has its own
+`<main>` wrapper rather than `AuthPageShell` — added the same
+"← Account" link there directly, matching the exact style rather than
+routing it through the shared prop.
+
+Extended the same idea one layer deeper: `src/app/courses/[course]/page.tsx`
+had a "← Back to courses" link on its error state only — the normal,
+successful render had no way back to `/courses` at all. Added the same
+"← Courses" link (identical style, `text-xs uppercase tracking-[0.12em]
+text-white/40 hover:text-white`) to the top of the real course view.
+`src/app/courses/[course]/[lesson]/page.tsx` already had an equivalent
+"← {course title}" link back to the course, so no change needed there.
