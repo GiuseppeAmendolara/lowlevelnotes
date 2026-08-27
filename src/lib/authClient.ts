@@ -19,6 +19,7 @@ export type AuthUser = {
   displayName: string
   role: string
   emailVerified: boolean
+  isSuperAdmin: boolean
 }
 
 type Result<T> = { ok: true; data: T } | { ok: false; error: string; status: number }
@@ -365,6 +366,7 @@ export type StaffUser = {
   emailVerified: boolean
   bannedAt: string | null
   banReason: string | null
+  isSuperAdmin: boolean
   createdAt: string
 }
 
@@ -493,4 +495,19 @@ export function blockIp(ip: string, note?: string, userId?: number) {
 
 export function unblockIp(id: string) {
   return authFetch<{ message: string }>(`/v1/staff/blocked-ips/${id}`, { method: 'DELETE' })
+}
+
+// -------- Audit log --------
+
+export type AuditLogEntry = {
+  id: number
+  actorEmail: string
+  action: string
+  targetLabel: string | null
+  detail: string | null
+  createdAt: string
+}
+
+export function getStaffAuditLog() {
+  return authFetch<AuditLogEntry[]>('/v1/staff/audit-log')
 }

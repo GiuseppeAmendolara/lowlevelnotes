@@ -2371,3 +2371,165 @@ successful render had no way back to `/courses` at all. Added the same
 text-white/40 hover:text-white`) to the top of the real course view.
 `src/app/courses/[course]/[lesson]/page.tsx` already had an equivalent
 "← {course title}" link back to the course, so no change needed there.
+
+**Real bug, self-caused earlier this session and now fixed**: the user
+(an administrator) changed their own role to "student" via the `/staff`
+role dropdown and got a confusing "Forbidden" error — but the role
+change had actually gone through. Root cause: `updateUserRoleStaffV1`
+in `worker/index.js` was the one mutating admin endpoint with no
+self-protection check — `banUserStaffV1` and `deleteUserStaffV1` both
+already guard `Number(id) === sessionUser.id`, role-change didn't. What
+happened: the `PUT .../role` request succeeded and demoted the account
+immediately; the "Forbidden" only appeared on the *next* request
+(`load()`'s re-fetch of the user list), because by then the session no
+longer held the administrator role required for that endpoint. Fixed
+by adding the same self-check role/ban/delete already share
+(`"You can't change your own role"`, 400). Also fixed
+`AdminPanel.tsx`'s `handleRoleChange`, which never checked
+`result.ok` at all — every mutation in this file silently swallowed
+errors this way except `handleCreate`/`handleAdd`; now shows the error
+via the section's existing `error` state instead of failing silently.
+**Not yet deployed** — this is a live gap in production until the
+Worker ships.
+
+Styling pass on `/staff` per feedback: the shared `buttonClass` (Create
+user, Ban/Unban, Delete, View/Hide IPs, Approve/Reject, Block/Unblock —
+every small bordered button on the page) changed from a flat
+`border-white/15`/`text-white` look to an orange-accented outline
+(`border-[#FF8A3D]/50 text-[#FF8A3D]`, `hover:border-[#FF8A3D]
+hover:bg-[#FF8A3D]/10`), matching the accent color used as a contrast
+signal elsewhere on the site. The Blocked-IPs section's "Block" submit
+button specifically felt short next to the `p-4` list rows below it —
+gave it its own `blockButtonClass` with taller padding (`px-5 py-3.5`)
+so its height reads closer to those rows, same orange treatment.
+
+Copy pass on the homepage and `/courses`, per the user's own final wording
+(proposed alternatives first, user picked their own phrasing over mine
+for most of them): hero's second sentence now says "...or enroll in
+structured courses" instead of "...work through it as a structured
+course"; the homepage Courses section blurb is now "Enroll in a
+structured course and track your progress as you go."; the Library
+section blurb is now "Browse the library freely, it's a collection of
+curated PDFs, links, tools, etc."; `/courses`'s subhead is now "Track
+your progress, participate in quizzes and read real code." Footer's
+tagline deliberately left untouched — user wants it to keep matching
+the hero's (unchanged) first sentence verbatim.
+
+Deployed the self-role-change fix above (Worker version
+`2f6b6af8-9cca-4b0f-9b2a-094acc954a00`).
+
+**New: super admin flag**, in response to a real gap the role-change bug
+exposed — every other check in `/staff` only stops an administrator
+from acting on *their own* account; nothing stopped one administrator
+from banning, deleting, or role-changing *another* administrator,
+including locking out the actual owner. Rather than a new `role` string
+(the `users.role` column has a CHECK constraint limited to four values,
+and `users` has enough foreign keys pointing at it that a table-recreate
+migration felt like unnecessary risk for this), added a boolean
+`is_super_admin` column instead (`worker/migrations/
+0012_super_admin_flag.sql`, plain additive `ALTER TABLE`, no CHECK
+involved — dry-run confirmed clean against the local D1 harness).
+Deliberately, no API endpoint anywhere sets this column — it can only
+ever be flipped by a direct database write, so a fully compromised
+administrator session can never mint itself (or anyone else) a super
+admin.
+
+`getSessionUser`/`sessionV1` now carry `isSuperAdmin` on the session
+object; `updateUserRoleStaffV1`, `banUserStaffV1`, and
+`deleteUserStaffV1` each gained a check (via new helper
+`isTargetSuperAdmin`) that blocks the action with a 403 if the target
+is a super admin and the requester isn't. Left `unbanUserStaffV1`
+unguarded on purpose — restoring someone's access isn't the threat
+this closes. Also checked every other `UPDATE users`/`DELETE FROM
+users` in the file for a bypass: the role-request approval path
+(`reviewRoleRequestV1`) can only ever set a role to `contributor` or
+`instructor` (its own separate CHECK constraint on
+`role_requests.requested_role`), never `administrator`, so it can't be
+used to touch the admin tier at all — no fix needed there.
+
+Frontend: `AdminPanel.tsx`'s Users list now shows a "Super admin"
+badge and disables the role select, Ban/Unban, and Delete controls for
+any row where the target is a super admin and the signed-in user isn't
+(server-side check is the real boundary — this is just so a regular
+admin doesn't get a confusing 403 from a button that was never going to
+work). "View IPs" stays enabled since it's read-only.
+
+**Not yet applied to production** — the migration needs to run against
+prod D1, the Worker needs a fresh deploy, and someone's account needs
+its `is_super_admin` flipped to 1 by hand (the whole point being that
+this can't happen through the app itself).
+
+Follow-up round, in response to feedback that the super-admin feature
+above was hollow without it: a super admin's whole reason to exist is
+oversight ("admins do the actual administration, super admins just ban
+them if they go rogue, check the logs to see they aren't rejecting
+people's contributions for nothing") — but there was no log to check.
+
+**New: `staff_audit_log`** (`worker/migrations/0013_staff_audit_log.sql`,
+dry-run confirmed clean locally) — append-only, `actor_id`/`actor_email`,
+`action`, `target_label`, `detail`, `created_at`. `actor_id` is
+`ON DELETE SET NULL` rather than cascading, and the actor's email is
+snapshotted as text alongside it — deleting a staff account later must
+never delete the record of what they did, and the log should stay
+legible even if the account that did it is long gone. New helper
+`logStaffAction(env, sessionUser, action, targetLabel, detail)`, called
+from every staff mutation with a real effect on someone else's account
+or content: role change, ban, unban, delete user, create user, block
+IP, unblock IP, and both approve and reject on role requests and
+resource requests (the user only asked about rejections explicitly,
+but an unfair *approval* — e.g. waving through a bad submission — is
+just as much an oversight concern, so approvals are logged too).
+`getStaffTargetUser` (renamed from the narrower `isTargetSuperAdmin`
+added earlier) now returns email + role + the super-admin flag in one
+query, since the mutation handlers needed that data anyway and it also
+supplies the audit label without a second lookup. `unbanUserStaffV1`
+picked up the same pre-fetch, mainly to get the target's email for
+logging — it didn't fetch anything before this. `deleteBlockedIpStaffV1`
+does one extra Cloudflare GET before the DELETE purely to capture the
+IP for the log entry (rule id alone means nothing once the rule's
+gone); falls back to the raw id if that lookup fails rather than
+blocking the actual unblock on it.
+
+New read endpoint `GET /v1/staff/audit-log` (any administrator, not
+just super admins — nothing in the log lets anyone cover their tracks,
+since there's no edit or delete path for it, so there's no reason to
+restrict who can read it) returns the latest 200 entries. New
+`AuditLogSection` in `AdminPanel.tsx`, rendered as a fifth section
+after Blocked IPs.
+
+Also fixed the confusing error wording flagged directly: "Only a super
+admin can delete a super admin" reads ambiguously (super admin used for
+both actor and target). Reworded all three guards to "You need super
+admin access to change/ban/delete another super admin('s role)."
+
+Also asked directly whether the super-admin concept holds together at
+all: yes, now that the log exists — a role whose entire job is
+oversight was meaningless without something to oversee. Answered in
+the conversation, not written here since it's not a decision, just an
+assessment.
+
+Applied both migrations to production D1 and deployed (Worker version
+`fbd5077c-1e2a-480c-aaf6-621d71b8c777`). Smoke-tested against
+production with a throwaway administrator+super-admin account (same
+pattern as every prod smoke test this session): confirmed
+`GET /v1/auth/session` returns `isSuperAdmin`, confirmed
+`GET /v1/staff/users` carries it per-row, then actually exercised the
+audit-log write path by blocking and unblocking a junk IP
+(`203.0.113.99`) through the real endpoints and confirming both actions
+landed in `GET /v1/staff/audit-log` in the right order with the right
+IP captured on each. Hit one real bug during the test setup itself —
+not app code, but worth recording since it'll bite again otherwise: a
+hand-inserted `sessions.expires_at` using SQLite's `datetime('now',
+'+1 hour')` (space-separated, no `T`/`Z`) sorts as *already expired*
+against `getSessionUser`'s `expires_at > ?` string comparison, because
+the app always writes ISO `...T...Z` timestamps and `' '` < `'T'`
+lexicographically — any future manual session insert for testing needs
+to match that exact format (`new Date(...).toISOString()`), not
+SQLite's own `datetime()` output. Cleaned up all throwaway rows
+(user, session, both audit-log test entries) afterward; verified zero
+remain.
+
+Still outstanding: the user's real administrator account needs
+`is_super_admin` flipped to 1 by hand — waiting on which email that
+account uses (the email on file for this conversation didn't match
+any production user).

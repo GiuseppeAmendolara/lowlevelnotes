@@ -96,7 +96,7 @@ export default function Home() {
               LowLevelNotes
             </h1>
             <p className="mt-8 max-w-lg text-pretty text-base leading-7 text-[#A1A1AA] sm:text-lg">
-              Organized knowledge for mastering software development. Browse the library freely, or work through it as a structured course.
+              Organized knowledge for mastering software development. Browse the library freely, or enroll in structured courses.
             </p>
 
             <div className="mt-10 flex flex-col gap-3 sm:flex-row">
@@ -133,7 +133,7 @@ export default function Home() {
               <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">Structured learning</p>
               <h2 className="mt-4 text-3xl font-bold tracking-[-0.05em] text-white sm:text-4xl">Courses</h2>
               <p className="mt-4 leading-7 text-[#A1A1AA]">
-                Enroll, then work through lessons and quizzes in order — different from the library below, which is loose reference material you browse freely, no enrollment needed.
+                Enroll in a structured course and track your progress as you go.
               </p>
             </div>
           </div>
@@ -156,7 +156,7 @@ export default function Home() {
           <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">Reference library</p>
           <h2 className="mt-4 text-3xl font-bold tracking-[-0.05em] text-white sm:text-4xl">Library</h2>
           <p className="mt-4 max-w-md leading-7 text-[#A1A1AA]">
-            Curated PDFs, links, and tools — browse freely, no enrollment or progress tracking. Organized by topic below.
+            Browse the library freely, it&apos;s a collection of curated PDFs, links, tools, etc.
           </p>
         </div>
 

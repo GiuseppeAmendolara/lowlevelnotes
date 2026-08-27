@@ -52,7 +52,7 @@ export default function CoursesPage() {
         <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">Learning system</p>
         <h1 className="mt-4 text-4xl font-bold tracking-[-0.05em] text-white sm:text-5xl">Courses</h1>
         <p className="mt-4 max-w-lg leading-7 text-[#A1A1AA]">
-          Structured paths through the notes — explanations, code, and quizzes, organized into modules and lessons.
+          Track your progress, participate in quizzes and read real code.
         </p>
       </section>
 

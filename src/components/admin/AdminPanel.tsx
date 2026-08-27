@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useSession } from '@/components/SessionProvider'
 import {
   getStaffUsers,
   createStaffUser,
@@ -18,13 +19,29 @@ import {
   getStaffBlockedIps,
   blockIp,
   unblockIp,
+  getStaffAuditLog,
   type StaffUser,
   type StaffRoleRequest,
   type StaffResourceRequest,
   type BlockedIp,
+  type AuditLogEntry,
   type Role,
   type RequestStatus,
 } from '@/lib/authClient'
+
+const ACTION_LABELS: Record<string, string> = {
+  role_change: 'Role change',
+  ban: 'Ban',
+  unban: 'Unban',
+  delete_user: 'Delete user',
+  create_user: 'Create user',
+  block_ip: 'Block IP',
+  unblock_ip: 'Unblock IP',
+  approve_role_request: 'Approve role request',
+  reject_role_request: 'Reject role request',
+  approve_resource_request: 'Approve resource request',
+  reject_resource_request: 'Reject resource request',
+}
 
 const ROLES: Role[] = ['student', 'contributor', 'instructor', 'administrator']
 
@@ -44,6 +61,7 @@ export default function AdminPanel() {
         <RoleRequestsSection />
         <ResourceRequestsSection />
         <BlockedIpsSection />
+        <AuditLogSection />
       </section>
     </main>
   )
@@ -54,11 +72,13 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
 }
 
 const inputClass = "border border-white/15 bg-[#0D0D0D] px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none"
-const buttonClass = "border border-white/15 px-3 py-1.5 text-xs text-white transition-colors hover:border-white/40 hover:bg-white/[0.04] disabled:opacity-50"
+const buttonClass = "border border-[#FF8A3D]/50 px-3 py-1.5 text-xs font-medium text-[#FF8A3D] transition-colors hover:border-[#FF8A3D] hover:bg-[#FF8A3D]/10 disabled:opacity-50"
+const blockButtonClass = "border border-[#FF8A3D]/50 px-5 py-3.5 text-xs font-medium text-[#FF8A3D] transition-colors hover:border-[#FF8A3D] hover:bg-[#FF8A3D]/10 disabled:opacity-50"
 
 /* ==================== Users ==================== */
 
 function UsersSection() {
+  const { user: currentUser } = useSession()
   const [users, setUsers] = useState<StaffUser[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [expandedIps, setExpandedIps] = useState<Record<number, string[]>>({})
@@ -95,7 +115,13 @@ function UsersSection() {
   }
 
   async function handleRoleChange(id: number, role: Role) {
-    await updateStaffUserRole(id, role)
+    const result = await updateStaffUserRole(id, role)
+    if (!result.ok) {
+      setError(result.error)
+      load()
+      return
+    }
+    setError(null)
     load()
   }
 
@@ -150,23 +176,26 @@ function UsersSection() {
 
       <div className="mt-6 border-l border-t border-white/10">
         {users === null && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA]">Loading…</p>}
-        {users?.map((u) => (
+        {users?.map((u) => {
+          const locked = u.isSuperAdmin && !currentUser?.isSuperAdmin
+          return (
           <div key={u.id} className="border-b border-r border-white/10 bg-[#0D0D0D] p-4">
             <div className="flex flex-wrap items-center gap-3">
               <span className="text-sm font-medium text-white">{u.displayName}</span>
               <span className="text-xs text-[#A1A1AA]">{u.email}</span>
+              {u.isSuperAdmin && <span className="text-xs uppercase tracking-[0.1em] text-[#FF8A3D]">Super admin</span>}
               {u.bannedAt && <span className="text-xs uppercase tracking-[0.1em] text-[#F85149]">Banned{u.banReason ? `: ${u.banReason}` : ''}</span>}
               {!u.emailVerified && <span className="text-xs uppercase tracking-[0.1em] text-white/40">Unverified</span>}
             </div>
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <select value={u.role} onChange={(e) => handleRoleChange(u.id, e.target.value as Role)} className={inputClass}>
+              <select value={u.role} disabled={locked} onChange={(e) => handleRoleChange(u.id, e.target.value as Role)} className={`${inputClass} disabled:opacity-50`}>
                 {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
               </select>
               {u.bannedAt
-                ? <button type="button" onClick={() => handleUnban(u.id)} className={buttonClass}>Unban</button>
-                : <button type="button" onClick={() => handleBan(u.id)} className={buttonClass}>Ban</button>}
-              <button type="button" onClick={() => handleDelete(u.id, u.email)} className={buttonClass}>Delete</button>
+                ? <button type="button" disabled={locked} onClick={() => handleUnban(u.id)} className={buttonClass}>Unban</button>
+                : <button type="button" disabled={locked} onClick={() => handleBan(u.id)} className={buttonClass}>Ban</button>}
+              <button type="button" disabled={locked} onClick={() => handleDelete(u.id, u.email)} className={buttonClass}>Delete</button>
               <button type="button" onClick={() => handleViewIps(u.id)} className={buttonClass}>
                 {expandedIps[u.id] ? 'Hide IPs' : 'View IPs'}
               </button>
@@ -186,7 +215,8 @@ function UsersSection() {
               </div>
             )}
           </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )
@@ -377,7 +407,7 @@ function BlockedIpsSection() {
       <form onSubmit={handleAdd} className="mt-4 flex flex-wrap items-end gap-3">
         <input type="text" required placeholder="IP address" value={newIp} onChange={(e) => setNewIp(e.target.value)} className={inputClass} />
         <input type="text" placeholder="Note (optional)" value={newNote} onChange={(e) => setNewNote(e.target.value)} className={inputClass} />
-        <button type="submit" disabled={submitting} className={buttonClass}>{submitting ? '…' : 'Block'}</button>
+        <button type="submit" disabled={submitting} className={blockButtonClass}>{submitting ? '…' : 'Block'}</button>
       </form>
 
       {error && <p className="mt-4 text-sm text-[#F85149]">{error}</p>}
@@ -392,6 +422,52 @@ function BlockedIpsSection() {
               {r.note && <span className="ml-3 text-xs text-[#A1A1AA]">{r.note}</span>}
             </div>
             <button type="button" onClick={() => handleRemove(r.id)} className={buttonClass}>Unblock</button>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* ==================== Audit log ==================== */
+
+// What makes the super-admin role above actually mean something — a
+// super admin isn't meant to do day-to-day administration, they're meant
+// to spot-check this. Read-only, no filters yet: at this scale scrolling
+// the latest 200 entries is enough, and every administrator can see it
+// (not just super admins) — there's nothing here anyone could use to
+// cover their tracks, so there's no reason to hide it.
+function AuditLogSection() {
+  const [entries, setEntries] = useState<AuditLogEntry[] | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    getStaffAuditLog().then((result) => {
+      if (result.ok) setEntries(result.data)
+      else setError(result.error)
+    })
+  }, [])
+
+  return (
+    <div>
+      <SectionHeading>Activity log</SectionHeading>
+
+      {error && <p className="mt-4 text-sm text-[#F85149]">{error}</p>}
+
+      <div className="mt-6 border-l border-t border-white/10">
+        {entries === null && !error && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA]">Loading…</p>}
+        {entries?.length === 0 && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA]">Nothing logged yet.</p>}
+        {entries?.map((e) => (
+          <div key={e.id} className="border-b border-r border-white/10 bg-[#0D0D0D] p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <span className="text-sm font-medium text-white">{ACTION_LABELS[e.action] ?? e.action}</span>
+                {e.targetLabel && <span className="ml-2 text-xs text-[#A1A1AA]">→ {e.targetLabel}</span>}
+              </div>
+              <span className="shrink-0 text-xs text-white/40">{new Date(e.createdAt).toLocaleString()}</span>
+            </div>
+            <p className="mt-1 text-xs text-[#A1A1AA]">by {e.actorEmail}</p>
+            {e.detail && <p className="mt-2 text-sm text-[#A1A1AA]">{e.detail}</p>}
           </div>
         ))}
       </div>
