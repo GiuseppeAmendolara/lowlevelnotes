@@ -6,17 +6,28 @@ It supplements the durable project guidance in `AGENTS.md`.
 
 ## Status
 
-- **Active phase:** Phase 4 — Authorization roles (complete, live)
-- **Current area:** Phase 4 admin panel + contributor pipeline — finished
-  and fully verified end to end, including live IP blocking; test data
-  cleaned up
-- **Milestone:** `/library` genuinely restricted to logged-in users, both
-  the page/API (Worker session check) and the underlying asset files
-  (moved from public `public/assets/` to a gated R2-backed endpoint)
-- Both `TURNSTILE_SECRET` and `CLOUDFLARE_WAF_TOKEN` are now set and
-  verified working live — see "Two secrets, two real bugs" below. No
-  outstanding Phase 4 blockers.
-- **Last updated:** 2026-08-26
+- **Active phase:** Phase 7 (learning system UI) — scoped into four
+  staged slices; Slice 1 reworked per user feedback (courses now
+  session-gated, content moved from git to R2) — complete, deployed,
+  and smoke-tested against real production data
+- **Current area:** `worker/index.js` deployed version
+  `2b28072d-ce5b-43d3-8759-4013690cb2c9`, all four course/lesson
+  endpoints session-gated. `worker/migrations/0010_phase7_test_courses.sql`
+  applied — `postgresql`/`networks` courses live, pointing at real
+  content already in R2 under `drafts/`. Frontend `/courses` pages are
+  client-gated-fetch; two new same-origin render Route Handlers
+  (`src/app/api/render/{markdown,code}`); `content/` is gitignored, its
+  two files pushed to R2 via `npm run content:push`
+- **Milestone:** deferred Phase 2 course endpoints (enroll, progress,
+  lesson completion, quiz attempts, statistics) complete, live, and
+  smoke-tested against real production D1 — see "Deferred Phase 2
+  endpoints" above
+- Both `TURNSTILE_SECRET` and `CLOUDFLARE_WAF_TOKEN` are set and verified
+  working live. Phase 4 has no outstanding blockers.
+- **Next action:** Slice 2 (enrollment + mark-complete actions on the
+  `/courses/*` pages, wiring the already-live enroll/complete API to the
+  UI) — see "Phase 7 scoping" below for the remaining slices.
+- **Last updated:** 2026-08-27
 
 ## Homepage review (2026-08-26)
 
@@ -1530,3 +1541,364 @@ not worth the complexity of making this idempotent.
 `src/lib/` fix, not a Worker one, so unlike everything else this
 session it won't be live until deployed through the normal
 GitHub → Vercel pipeline.
+
+## Deferred Phase 2 endpoints: enroll, progress, completion, quiz attempts, statistics (2026-08-27)
+
+Picked up the user-scoped course endpoints deferred twice now (Phase 2
+kickoff, then again explicitly out of Phase 3) — `getSessionUser()` has
+unblocked them since Phase 3 and Phase 4 has no open items, so this is
+the natural next slice. Confirmed with the user first that "phase 5"
+isn't a real phase — the roadmap jumps 4 → 7 (5/6 undefined), and this
+work is unnumbered, same status as "real course content."
+
+All schema needed already existed from Phase 1
+(`enrollments`, `lesson_progress`, `quiz_attempts`, `questions`,
+`answers`) — this was API-only work in `worker/index.js`, plus
+`worker/migrations/0009_quiz_attempt_rate_limit.sql` adding
+`'quiz_attempt'` to `auth_events`' CHECK (same recreate-the-table
+pattern as 0004 and 0006, SQLite having no `ALTER` for CHECK
+constraints), for a 20/hour-per-user limit on quiz submissions — grading
+is server-side against a small answer set, so unlimited attempts would
+let someone brute-force correct answers by repeated submission.
+
+Shipped: `POST /v1/courses/:slug/enroll`, `POST /v1/lessons/:id/complete`,
+`POST /v1/lessons/:id/attempt`, `GET /v1/me/progress`,
+`GET /v1/me/statistics`. Two deliberate departures from AGENTS.md's old
+planning note: courses are addressed by slug not id (matches every other
+`/v1/courses/*` route — the note predates Phase 2's actual slug-based
+routing), and there's no `/v1/quizzes/*` — a quiz is just a `lessons`
+row per Phase 1's decision, so attempts live under `/v1/lessons/:id/*`
+like everything else lesson-shaped, one addressing scheme instead of
+two. `/complete` rejects quiz-type lessons (400) — a quiz only completes
+by actually being attempted, never by a bare "mark done." Both
+`/complete` and `/attempt` require active-or-completed enrollment in the
+lesson's course (403 otherwise, no auto-enroll) — enrollment gates
+access, but only `dropped` should exclude it, not `completed` (see the
+bug below). Completing every lesson in a course auto-flips its
+enrollment to `completed` via a shared helper (`maybeCompleteEnrollmentV1`),
+giving `enrollments.completed_at` an actual writer for the first time.
+
+**Real bug caught by local testing, not by reasoning about the code**:
+the first cut of the enrollment gate (`isEnrolledV1`) only accepted
+`status = 'active'`. Once a test user finished every lesson in a course
+and the auto-complete helper flipped their enrollment to `completed`,
+every subsequent call to `/complete` or `/attempt` against that same
+course started 403ing — finishing a course locked the user out of ever
+reviewing a lesson or retaking its quiz again, including immediately
+after the very request that completed it. Fixed by accepting `status IN
+('active', 'completed')`; only `dropped` (not reachable by any endpoint
+yet) excludes access. Would not have been caught without actually
+exercising the full sequence end to end.
+
+**Verification**: no `CLOUDFLARE_API_TOKEN` in this environment, so
+`wrangler dev --remote` against the real D1 instance wasn't possible.
+`resources`/`tools`/`people`/`site_settings` predate `wrangler d1
+migrations` entirely (see "Removed `worker/` from git" and "Introduced
+`wrangler d1 migrations`" above) and aren't reconstructable from the
+tracked migration files, so a full local replay of `worker/migrations/`
+doesn't work either — `fetch()`'s maintenance check alone needs
+`site_settings`. Instead, hand-built a local-only schema covering just
+what these endpoints touch (`users`, `courses`, `modules`, `lessons`,
+`enrollments`, `lesson_progress`, `questions`, `answers`,
+`quiz_attempts`, `sessions`, `auth_tokens`, `auth_events`, plus a
+one-row `site_settings` stub), loaded via `wrangler d1 execute --local`,
+then ran the real `worker/index.js` against it with `wrangler dev`
+(local mode). Registering through the real endpoint wasn't feasible
+headlessly (Turnstile has no local bypass), so two test sessions were
+inserted directly (`sessions.token_hash` = SHA-256 of a random raw
+token, same as `getSessionUser()` computes) and used as
+`Authorization: Bearer` tokens. Exercised end to end: enroll +
+duplicate-enroll 409, complete-without-enrolling 403, complete a
+non-quiz lesson, quiz-lesson rejected by `/complete` (400), non-quiz
+lesson rejected by `/attempt` (400), a real quiz attempt graded correctly
+(1/2, with `correctAnswerId` on the missed question), incomplete-answers
+and mismatched-answer/question both 400, completing the last lesson
+auto-completing the enrollment, `/me/progress` and `/me/statistics`
+matching manual tallies, and the `quiz_attempt` rate limit eventually
+kicking in on repeated submission (though the generic 30/60s per-IP
+limiter fired first in this run, from the density of test requests, not
+the new limiter — real coverage of the new limiter would need a longer,
+slower run or a separate test IP).
+
+**Deployed and smoke-tested against real production D1**, same session:
+found `CLOUDFLARE_API_TOKEN` already sat in `.env.local` (edit rights to
+Worker/D1/R2/WAF, restricted by IP, meant for exactly this) — used it to
+apply migration 0009 remotely, then `wrangler deploy`
+(version `dd2148bd-be4b-4588-a1c1-815feda25fd4`). Two production-write
+actions here (the migration apply, then a direct test-data insert into
+prod D1) both got stopped by the auto-mode permission classifier and
+required explicit user sign-off before proceeding — correctly, since
+neither is something to infer consent for from a general "yes, deploy."
+
+Real-D1 smoke test used a throwaway user (`smoketest+phase2endpoints@
+lowlevelnotes.com`, not any seeded account) inserted directly via
+`wrangler d1 execute --remote`, with a session row built the same way
+`getSessionUser()` verifies one (SHA-256 of a random raw token), used as
+an `Authorization: Bearer` token against `https://api.lowlevelnotes.com`
+through the `x-internal-key` WAF-bypass header. Exercised against the
+live seeded `computer-architecture` course (5 real lessons, real
+question/answer ids queried from prod first): enroll → 201, duplicate
+enroll → 409, complete an article lesson → 200, complete the quiz lesson
+via `/complete` → 400 (correctly rejected), attempt the quiz with both
+answers correct → 200 with `score: 2, total: 2`, `/me/progress` showing
+2/5 lessons complete and the enrollment still `active` (not all lessons
+done yet), `/me/statistics` showing `100` for `averageQuizScorePercent`.
+All matched expectations. Fully cleaned up afterward — deleted the test
+user (cascades to its session/enrollment/lesson_progress/quiz_attempts)
+and its one `auth_events` row (not FK-linked, needed a separate delete);
+verified zero rows remain under that identity.
+
+## Phase 7 scoping + Slice 1: read-only course/lesson catalog (2026-08-27)
+
+Picked up Phase 7 next, per AGENTS.md's roadmap and the user's go-ahead.
+Confirmed first that "phase 5" (asked at the very start of this session)
+isn't real — the roadmap jumps 4 → 7. Scoped Phase 7 into a plan
+(`.claude/plans/dazzling-jingling-shamir.md`) before writing any code,
+per standing practice for architecturally significant work.
+
+**Scoping found one real gap**: no endpoint existed to fetch a single
+lesson's full detail — `getCourseLessonsV1` only returns list metadata,
+nothing from `exercises` or `questions`/`answers`. Added
+`GET /v1/lessons/:id` (public, mirrors the rest of the catalog).
+Deliberately keeps `quiz.questions[].answers` free of `is_correct` —
+same non-negotiable as the existing attempt-grading endpoint, verified
+again here (both locally, with a hand-added exercise-type lesson since
+the earlier local test schema didn't have one, and against real prod
+data for id 1/3/4 after deploy).
+
+**Confirmed with the user before scoping further**: the `exercise`
+lesson type is informational-only in Phase 7 (prompt + starter code + a
+solution-notes reveal, no submission/grading) — Phase 8 ("Exercises")
+owns real grading, and there's no `exercise_attempts` table or
+code-execution sandbox anywhere in this stack to build that on top of
+right now.
+
+**Slice 1 shipped**: `/courses`, `/courses/[course]`,
+`/courses/[course]/[lesson]` (all server-rendered, public — the catalog
+needs no session, matching the Worker's own auth boundary), a
+`unified`/`remark`/`rehype-pretty-code` markdown pipeline for
+`type = 'article'` lessons (`src/lib/markdown.ts`), and two real
+content files under `content/courses/computer-architecture/
+cpu-fundamentals/` (the seed's `content_path` values pointed at files
+that didn't exist until now). Pulled the Shiki theme out of
+`CodeBlock.tsx` into `src/lib/shikiTheme.ts` so article code blocks and
+the standalone `<CodeBlock>` render identically. Added a `NotFoundError`
+class to `src/lib/api.ts` so a bad course/lesson URL calls Next's
+`notFound()` instead of hitting the generic error boundary — `apiFetch`
+previously threw one generic `Error` for every non-2xx status.
+Exercise lessons render read-only (prompt, `<CodeBlock>` starter code, a
+client-side `SolutionReveal` toggle); quiz lessons show a "sign in and
+enroll to take it" placeholder — the real interactive quiz form is
+Slice 3. Added `courses` to `Header.tsx`'s nav, cutting against the
+recent deliberate four-link simplification (commit `27fd9d0`) but judged
+core-content-tier, not account-scoped.
+
+**One real snag, not a design bug this time**: after building and
+locally verifying the new Worker endpoint, tested the new frontend
+pages against the live Worker (`src/lib/api.ts` always calls the real
+`api.lowlevelnotes.com`, never localhost) and got plain-text 404s —
+turned out the endpoint had only been verified with local `wrangler
+dev`, never actually deployed. Asked the user, deployed
+(`wrangler deploy`, version `3740d74c-19dd-426a-8980-03569df649d7`),
+confirmed `GET /v1/lessons/1` and `/3` live, then re-tested the frontend
+successfully. A reminder that "locally verified" and "deployed" are
+different claims, worth keeping straight even mid-slice.
+
+`rehype-pretty-code@0.14`'s published types don't match `unified@11`'s
+`Plugin` generics (a real upstream gap — confirmed by inspecting both
+packages' `.d.ts` files, not just guessing) — building the pipeline
+threw a `[boolean]`-overload type error that had nothing to do with the
+actual options being passed. Fixed with a scoped `@ts-expect-error`
+directly on that `.use()` call rather than a broader suppression.
+
+**No browser extension available this session** (`claude-in-chrome` not
+connected) — verified via `curl` against the rendered HTML instead:
+headings/tables/GFM/shiki-highlighted code all present on the article
+pages, video placeholder text on the null-`video_url` lesson, starter
+code + reveal toggle on the exercise lesson, correct question count on
+the quiz placeholder. This is not a substitute for an actual visual
+check — flagged to the user as a real gap in this session's
+verification, not silently treated as equivalent.
+
+**Next**: Slice 2 (enroll button + mark-complete actions, wiring the
+pages above to the already-live enrollment API), then Slice 3
+(interactive quiz UI), then Slice 4 (progress surfacing on `/account`)
+— see the plan file for the full breakdown.
+
+## Brand assets brought in line with the design-system contract (2026-08-27)
+
+User flagged that everything in `/design/` (and the derived
+`favicon.ico`/`apple-icon.png`) "doesn't match the style of the
+website." Checked against the design-system contract in AGENTS.md and
+confirmed: every asset used `rx` rounding (favicon: 90, watermark box:
+14, og-image box: 16) against a contract that says "Square/straight
+edges; use no decorative rounding," and both the watermark and og-image
+wrapped the wordmark in a bordered box that doesn't exist anywhere in
+the real site — `Header.tsx` renders `0x`/`LLN` as plain colored text,
+no container at all.
+
+Asked the user how the wordmark box should be handled; they left it to
+judgment. Went with dropping it entirely for the flat/standalone marks
+(watermark, og-image) to match `Header.tsx` exactly — one visual
+language instead of inventing a second one for exported assets — while
+the small app-icon mark (`favicon.svg`) keeps its solid charcoal square
+background (icons need a fill to read at 16–32px) but loses the
+rounding. Also nudged og-image's topic-tag color from `#a0a0a0` to the
+exact `--muted` token `#A1A1AA` (23 occurrences) while in there.
+
+Regenerated every derived raster from the corrected SVGs: `icon.png`,
+`apple-icon.png`, `favicon.ico` (all 5 sizes: 256/128/64/32/16, same
+set as before) from `favicon.svg`; `opengraph-image.png` from
+`og-image.svg`; `design/watermark.png` from `watermark.svg`. Used
+`rsvg-convert`/`imagemagick` locally — no font-rendering service
+available in this environment, and `JetBrains Mono` isn't installed
+system-wide here (confirmed via `fc-list`), so the watermark/og-image
+previews rendered with a fallback monospace face; the SVG source
+correctly declares the real `--font-platform-mono` stack, so it'll
+render with the actual font wherever that's available — same situation
+the live site itself is already in, since **`globals.css` never
+actually loads a JetBrains Mono webfont** (no `@font-face`, no Google
+Fonts `<link>`, no `next/font`) — it only sets `font-family` and trusts
+the visitor's OS to have it installed. Not fixed here (out of scope for
+"revamp the design assets"), but flagged to the user as a real,
+separate gap: most visitors are likely seeing the CSS fallback stack
+(`SFMono-Regular`/Consolas/`Liberation Mono`/generic monospace), not
+JetBrains Mono, sitewide.
+
+Verified via `rsvg-convert` renders viewed directly (no browser
+extension available this session either) and `npm run build` — clean,
+all icon/opengraph routes present.
+
+Apple's own guidance is to hand `apple-touch-icon` a square image and
+let iOS apply its own rounded mask — the corner fix is doubly correct
+there, not just a style match.
+
+## Course content moves to R2 + auth gate (2026-08-27)
+
+User feedback on Phase 7 Slice 1, three corrections: lesson markdown
+must never end up in the public GitHub repo (reverses Slice 1's
+git/PR-content call), `/courses/*` must require authentication (it was
+public), and real draft content already sitting in R2 under `drafts/`
+should seed test courses instead of more hand-written placeholders.
+Scoped as its own plan
+(`.claude/plans/snappy-puzzling-hinton.md`) before touching code, since
+gating `/courses` cascades further than it sounds — see below.
+
+**Found via the Cloudflare API directly, not assumed**: no `wrangler r2
+object list` subcommand exists, so listed `drafts/` by calling
+`GET /accounts/{id}/r2/buckets/{bucket}/objects?prefix=drafts/` with the
+existing `CLOUDFLARE_API_TOKEN` (account id fetched once via
+`GET /accounts`, used transiently, never written to a tracked file per
+standing instruction). Real content: `CSharp/CSharp.md` (55KB, images
+in a nested `Images/` subfolder), `Data/postgresql.md` (27KB,
+text-only), `Networks/networks.md` (186KB + ~50 images sitting
+alongside the .md file directly, not nested), `Web/web.md` (74KB +
+images + a PDF). Also queried D1 for `resources` rows pointing at
+`drafts/%` first (found none) before falling back to the R2 API — these
+objects predate the resource-request pipeline, not cataloged anywhere.
+
+**Why gating `/courses` isn't just adding a session check**: the
+session cookie is `HttpOnly` and host-only on `api.lowlevelnotes.com` —
+the Next.js server can never see it (established back in the auth
+frontend work). That's the whole reason `/library` is client-fetched
+instead of server-rendered. Gating `/courses` the same way meant the
+three catalog endpoints plus `GET /v1/lessons/:id` all needed the
+standard `getSessionUser()` → 401 gate (mirrors
+`getResources`/`getPeople`/`getTools` exactly), the three `/courses/*`
+pages had to become client components matching `library/page.tsx`'s
+shape, and — the part that actually reshaped the plan — the existing
+markdown-rendering pipeline (`unified`/`remark`/`rehype-pretty-code`/
+`shiki`) and `<CodeBlock>` are both server-only code that can't run
+inside a now fully client-fetched page. Fix: two new same-origin Route
+Handlers, `POST /api/render/markdown` and `POST /api/render/code`
+(`src/app/api/render/*/route.ts`) — the browser fetches raw,
+already-authenticated content from the Worker via a new
+`getLessonContent()`/`authFetchText()` pair in `authClient.ts` (separate
+from `authFetch<T>` since this response is raw markdown text, not
+JSON), then POSTs it to these routes, which run the exact same
+server-side rendering code Slice 1 already built and hand back HTML.
+Kept 100% of the existing pipeline — no browser-side shiki, no bundle
+hit — just moved *when* it runs from "at request time on the server"
+to "on demand from an authenticated client."
+
+No new Worker endpoint for content bytes: `lessons.content_path` values
+are already valid R2 keys, so lesson content reads reuse
+`GET /v1/library/assets/:key` (`getLibraryAssetV1`) exactly as-is —
+same session gate, same 60/hour rate limit already shared with real
+library downloads, accepted as a tradeoff rather than building a second
+limiter for this.
+
+**Content workflow**: `content/` stays the local editing workspace
+(same relative structure as R2 keys) but is now gitignored instead of
+tracked — the two files written last session
+(`what-is-a-cpu.md`, `registers.md`) were pushed to R2 at their existing
+`content_path` keys via the new `scripts/push-content.sh`
+(`npm run content:push`, wraps `wrangler r2 object put --remote` per
+file) before removing them from git tracking. They were never actually
+committed yet (still `??` in `git status`), so no history rewrite was
+needed, just the `.gitignore` entry.
+
+**Two real bugs caught by testing against the actual draft content**,
+not assumed to work:
+- The real drafts carry **Pandoc-style YAML frontmatter**
+  (`title`/`author`/PDF `listings` export settings) — `remark-parse`
+  alone renders the `---` fences as thematic breaks and the frontmatter
+  block as a stray paragraph. Added `remark-frontmatter` to strip it.
+  Verified directly: a standalone script rendering the real downloaded
+  `postgresql.md` confirmed no `colorlinks`/YAML leaking into the output
+  before this was considered done.
+- Image references in the real drafts are **bare relative filenames**
+  (`![img.png](p2p.png)` in `networks.md`), resolved against the
+  content file's own directory — not a separate `Images/` subfolder in
+  every case (CSharp nests one, Networks doesn't). Added
+  `rehypeRewriteImages` (a small `unist-util-visit`-based rehype step,
+  `src/lib/markdown.ts`) that resolves each `src` against a `basePath`
+  argument (the lesson's `content_path` directory) and rewrites it to
+  an absolute `https://api.lowlevelnotes.com/v1/library/assets/...`
+  URL. Confirmed the *specific* rewritten keys
+  (`drafts/Networks/p2p.png`, etc.) match real objects that actually
+  exist in the bucket, not just that the code ran without throwing.
+  This also depends on the session cookie attaching to a same-site but
+  cross-subdomain `<img>` request — `api.lowlevelnotes.com` and
+  `lowlevelnotes.com` share a registrable domain, so `SameSite=Strict`
+  still allows it; not yet confirmed with a real browser (see gaps
+  below).
+
+New migration `worker/migrations/0010_phase7_test_courses.sql`: two
+courses/modules/lessons pointing `content_path` directly at the
+existing `drafts/Data/postgresql.md` and `drafts/Networks/networks.md`
+— no re-upload needed, they're already in R2. Deliberately scoped as a
+pipeline test, not a curriculum build (real course content stays its
+own deferred, unnumbered pass per AGENTS.md).
+
+**Verified so far**: `npm run build` clean after every stage; the four
+endpoints' auth gate confirmed locally (`wrangler dev` + the same local
+test D1/session-token harness from last session — 401 with no auth, 200
+with a bearer token); the rendering pipeline (frontmatter strip +
+image rewrite) verified directly against the real downloaded
+`postgresql.md`/`networks.md` text via a standalone script, not through
+the full stack.
+
+**Deployed and smoke-tested against real production data**, same
+session: got explicit sign-off, applied migration 0010, deployed
+(version `2b28072d-ce5b-43d3-8759-4013690cb2c9`). Confirmed
+`GET /v1/courses` genuinely 401s with no auth and 200s with a session;
+fetched the real `postgresql.md` and `networks.md` through the gated
+`/v1/library/assets/*` endpoint with a throwaway user's session token,
+then POSTed that real content to the (locally running) `/api/render/markdown`
+route — frontmatter stripped cleanly, all 48 of `networks.md`'s images
+rewrote to the correct `https://api.lowlevelnotes.com/v1/library/assets/
+drafts/Networks/...` URLs, and directly confirmed one of those exact
+URLs (`p2p.png`) actually serves the image (`200`, `image/png`) through
+the same gate. Also confirmed `/api/render/code` highlights `asm`
+correctly with the shared theme. Cleaned up the throwaway user,
+session, and its `auth_events` row afterward — verified zero rows
+remain.
+
+**Not verified**: an actual browser walkthrough (React state/hooks
+executing, images rendering visually in a real page) — no browser
+extension available this session, same gap as Slice 1's first pass.
+Every individual link in the chain was verified directly with real
+data instead (session gate, content stream, markdown render, image
+render), which is strong evidence but isn't the same as watching the
+page actually work. Worth an eyeball check when a browser's available.

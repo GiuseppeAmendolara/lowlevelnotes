@@ -13,15 +13,25 @@ the design-system contract below. Phase 1 (SQL data model) and Phase 2
 (authentication primitives — registration, login/logout, session
 management, password recovery, email verification, change-password) is
 also complete and live, but scoped to auth only: the user-scoped course
-endpoints it unblocks (enroll, mark-lesson-complete, quiz-attempt,
-`/me/progress`, `/me/statistics`) were deliberately deferred rather than
-bundled in. Phase 4 (authorization roles — an admin panel, a
-request-and-approve path from student to contributor/instructor, and a
-reviewed resource-submission pipeline) is also complete and live. The
-learning system itself (Phase 7+) is still not implemented — the schema
-and API are groundwork, not a green light to start building lesson UI
-ahead of its own phase. Real course content (replacing the Phase 1 test
-seed) is deferred to its own later pass, not tied to a numbered phase.
+endpoints it unblocked were deliberately deferred rather than bundled
+in. Phase 4 (authorization roles — an admin panel, a request-and-approve
+path from student to contributor/instructor, and a reviewed
+resource-submission pipeline) is also complete and live. Those deferred
+course endpoints (enroll, mark-lesson-complete, quiz-attempt,
+`/me/progress`, `/me/statistics`) are now complete and live — see
+"Data and API direction" below for the concrete design. Phase 7 (the
+learning system UI) is underway: scoped into four staged slices (see
+WORKLOG's "Phase 7 scoping" entry), Slice 1 (session-gated course/lesson
+catalog pages, the new `GET /v1/lessons/:id` endpoint, and the
+R2-backed markdown content pipeline — see "Data and API direction"
+below) is complete and live; enrollment/completion
+actions, the interactive quiz UI, and progress surfacing on `/account`
+remain. Two of the Phase 1 test-seed courses were replaced with real
+draft notes (`postgresql`, `networks` — see "Data and API direction"
+below) specifically to prove the content pipeline against real content,
+not as a curriculum pass — a full, properly structured course-content
+build is still deferred to its own later pass, not tied to a numbered
+phase.
 
 ## Current stack
 
@@ -60,9 +70,12 @@ seed) is deferred to its own later pass, not tied to a numbered phase.
    and `/v1/resource-requests*` in `worker/index.js`, plus `/staff` and
    `/contribute` in the frontend — see "Data and API direction" below and
    the API endpoint reference for the concrete design.
-6. **Phase 7:** Learning system: explanations, code examples, diagrams,
-   interactive “try it yourself” exercises, questions, quizzes, and lesson
-   completion.
+6. **Phase 7 (in progress):** Learning system: explanations, code examples,
+   diagrams, interactive “try it yourself” exercises (informational only
+   this phase — see "Data and API direction" below), questions, quizzes,
+   and lesson completion. Slice 1 (session-gated catalog + R2-backed
+   content pipeline) complete and live; see WORKLOG's "Phase 7 scoping"
+   entry for the remaining staged slices.
 7. **Phase 8:** Exercises, including standard-library-free programming tasks and
    x86-64 assembly tasks.
 8. **Phase 9:** Progress: course/lesson progress, quiz scores, exercise results,
@@ -107,8 +120,14 @@ These are planning notes, not authorization to begin future phases early.
 - Core relationships: users enroll in courses and track lesson progress; courses
   contain modules; modules contain lessons.
 - Lesson content lives in markdown files (path referenced by
-  `lessons.content_path`), not as DB blobs — matches the existing notes
-  content and the site's git/PR contribution model, not a CMS.
+  `lessons.content_path`), not as DB blobs — but **not in git either**.
+  This reverses Phase 7 Slice 1's original call (see the Phase 7 block
+  below for why): content lives in R2 (`lowlevelnotes-assets`,
+  `content_path` doubling as the R2 key), edited locally under a
+  gitignored `content/` folder and pushed with
+  `npm run content:push` (`scripts/push-content.sh`). Never committed,
+  never publicly downloadable — same non-CMS reasoning as before
+  (no admin UI, no database blobs), just not git either.
 - A quiz is a `lessons` row with `type = 'quiz'` (owning `questions` →
   `answers`), not a separate `quizzes` table.
 - `users.role` does not include `guest` — a guest is an unauthenticated
@@ -125,13 +144,136 @@ These are planning notes, not authorization to begin future phases early.
   are intentionally left unversioned at their current paths — they're
   already live and consumed by the site and external embeds, so adding a
   prefix now would itself be a breaking change.
-- User-scoped endpoints (`enroll`, `/me/progress`, `lessons/:id/complete`,
-  `quizzes/:id/attempt`, `/me/statistics`) were deferred during Phase 2
-  rather than built behind an invented/unverified identity — see
-  WORKLOG's "Phase 2 kickoff" entry for the reasoning. Real identity now
-  exists (Phase 3's `getSessionUser()`), but these were deliberately kept
-  out of Phase 3 too, on the same strict-scoping principle — they're an
-  explicit next slice, not silently bundled into "auth."
+- **User-scoped course endpoints, concrete decisions** — deferred during
+  Phase 2 (no identity yet) and kept out of Phase 3 too (strict scoping —
+  see WORKLOG's "Phase 2 kickoff" entry), then implemented as their own
+  unnumbered slice once Phase 4 landed. See WORKLOG's "Deferred Phase 2
+  endpoints" entry for the full reasoning and how it was verified:
+  - Shipped: `POST /v1/courses/:slug/enroll`, `POST
+    /v1/lessons/:id/complete`, `POST /v1/lessons/:id/attempt`,
+    `GET /v1/me/progress`, `GET /v1/me/statistics`. No new tables — all
+    of `enrollments`, `lesson_progress`, `quiz_attempts`, `questions`,
+    `answers` already existed from Phase 1.
+  - Courses are addressed **by slug**, lessons **by numeric id** —
+    matches every other `/v1/courses/*` route for the former; lessons
+    are only slug-unique within a module, not globally, so id is the
+    only unambiguous handle for the latter.
+  - No `/v1/quizzes/*` namespace — a quiz is a `lessons` row (Phase 1's
+    decision), so attempts live at `/v1/lessons/:id/attempt`, one
+    addressing scheme instead of two.
+  - `/complete` rejects `type = 'quiz'` lessons (400) — a quiz only
+    completes by being attempted, never by a bare "mark done" that
+    bypasses answering anything.
+  - Both `/complete` and `/attempt` require the session user be enrolled
+    in the lesson's course (403 otherwise, no auto-enroll side effect) —
+    but enrollment `status IN ('active', 'completed')` counts, only
+    `dropped` excludes. A first cut that required `'active'` only was a
+    real bug caught by local end-to-end testing: finishing a course
+    (auto-completing its enrollment) immediately locked the same user
+    out of reviewing lessons or retaking the quiz in it.
+  - Completing every lesson in a course auto-flips its enrollment to
+    `completed` with `completed_at` set (`maybeCompleteEnrollmentV1` in
+    `worker/index.js`) — those columns existed since Phase 1 with
+    nothing writing them until now.
+  - Quiz attempts are rate-limited (20/hour/user, `quiz_attempt` in
+    `auth_events` — `worker/migrations/0009_quiz_attempt_rate_limit.sql`,
+    same recreate-the-table pattern as 0004/0006) since grading is
+    server-side against a small answer set; unbounded attempts would let
+    someone brute-force correct answers by repeated submission.
+- **Phase 7 (learning system UI), concrete decisions so far** — scoping
+  and Slice 1 (catalog + content pipeline) done; see WORKLOG's "Phase 7
+  scoping" and "Course content moves to R2 + auth gate" entries for the
+  full plans:
+  - New endpoint: `GET /v1/lessons/:id` (session-gated, like the rest of
+    the catalog) — the one gap found during scoping. `getCourseLessonsV1`
+    (`GET /v1/courses/:slug/lessons`) only ever returns lesson metadata;
+    the lesson detail page needs the type-specific payload too. Returns
+    lesson metadata plus `exercise`
+    (prompt/language/starterCode/solutionNotes, only when
+    `type = 'exercise'`) or `quiz` (`questions[].answers[]`, only when
+    `type = 'quiz'`) — both `null` otherwise. **`quiz.questions[].answers`
+    never includes `is_correct`** — that stays secret until a real
+    `POST /v1/lessons/:id/attempt`, same as the grading endpoint already
+    guarantees. Per-user completion state still isn't in this response —
+    the frontend cross-references `GET /v1/me/progress` separately.
+  - The `exercise` lesson type is **informational only** in this phase —
+    prompt, starter code, a solution-notes reveal, no submission or
+    grading (confirmed with the user during scoping). There's no
+    `exercise_attempts` table and no code-execution sandbox anywhere in
+    this stack; real grading is Phase 8's ("Exercises") job, not this
+    one's.
+  - **`/courses/*` requires a session, same tier as `/resources`,
+    `/tools`, `/people`** — `getCoursesV1`/`getCourseV1`/
+    `getCourseLessonsV1`/`getLessonV1` all gate on `getSessionUser()`
+    now (reversed from Slice 1's original "catalog is public" call, per
+    explicit user correction). The three `/courses/*` frontend pages are
+    therefore client-gated-fetch, same pattern as `src/app/library/page.tsx`
+    — not server-rendered, since the Next.js server can never see the
+    session cookie (host-only on `api.lowlevelnotes.com`). `getCourses`/
+    `getCourse`/`getCourseLessons`/`getLesson` live in
+    `src/lib/authClient.ts` now, not `src/lib/api.ts` — there's no more
+    server-rendering path that needs the `x-internal-key` version.
+  - **Lesson content never touches git.** Reversed from Slice 1's
+    original "matches the site's git/PR contribution model" call — the
+    user was explicit that content must not end up on GitHub. Content
+    lives in R2 (`lowlevelnotes-assets`), `content_path` doubling as the
+    R2 key. Local editing workspace is a gitignored `content/` folder;
+    `npm run content:push` (`scripts/push-content.sh`) uploads it via
+    `wrangler r2 object put --remote`, one file per key. Reading a
+    lesson's content bytes reuses the existing gated
+    `GET /v1/library/assets/:key` endpoint (`getLibraryAssetV1`) as-is —
+    no new Worker endpoint for content, since `content_path` values are
+    already valid keys into that same bucket. Accepted tradeoff: shares
+    that endpoint's 60/download-per-hour rate limit with real library
+    downloads.
+  - Because content now requires an authenticated browser fetch (not a
+    server-side file read), rendering moved to two new same-origin
+    Route Handlers — `POST /api/render/markdown` and
+    `POST /api/render/code` (`src/app/api/render/*/route.ts`, ~500KB
+    body cap each). The browser fetches raw, already-authenticated
+    content client-side via `authClient.ts`'s `getLessonContent()`, then
+    POSTs it to these routes, which run the same server-side pipeline
+    Slice 1 originally called directly from a Server Component
+    (`renderLessonMarkdown()` for articles, `shiki`'s `codeToHtml()` for
+    exercise starter code — replacing the `<CodeBlock>` Server Component
+    on this page specifically; `CodeBlock.tsx` itself is untouched and
+    still used on the homepage). Keeps the heavy deps (`shiki`,
+    `rehype-pretty-code`, the `unified` pipeline) server-side only, no
+    browser bundle-size hit.
+  - Markdown → HTML via a `unified`/`remark`/`rehype` pipeline
+    (`renderLessonMarkdown()` in `src/lib/markdown.ts`), with
+    `rehype-pretty-code` for fenced code blocks — it uses `shiki`
+    internally, so the theme object was pulled out of `CodeBlock.tsx`
+    into `src/lib/shikiTheme.ts` and shared. `rehype-pretty-code@0.14`'s
+    published types don't line up with `unified@11`'s `Plugin` generics
+    (an upstream typing gap between the two packages, not a real type
+    error) — silenced with a scoped `@ts-expect-error` right at that
+    `.use()` call, not a broader suppression. Also runs
+    `remark-frontmatter` — the real draft notes seeded as test courses
+    (below) carry Pandoc-style YAML frontmatter (title/author/PDF-export
+    settings); without stripping it, remark renders the `---` fences as
+    thematic breaks and the YAML as a stray paragraph. And a custom
+    rehype step (`rehypeRewriteImages`, same file) rewrites relative
+    `<img src>` references to absolute gated URLs, resolved against the
+    lesson's own `content_path` directory — verified this actually
+    matches how the real drafts reference their images (sitting
+    alongside the `.md` file, e.g. `drafts/Networks/p2p.png` referenced
+    as just `p2p.png`), not assumed. Works cookie-wise with no extra
+    plumbing: `api.lowlevelnotes.com` and `lowlevelnotes.com` share a
+    registrable domain, so the `SameSite=Strict` session cookie still
+    attaches to this same-site (cross-subdomain) `<img>` request.
+  - Two courses seeded from real existing content instead of more
+    hand-written placeholders: `postgresql` (→
+    `drafts/Data/postgresql.md`, text-only) and `networks` (→
+    `drafts/Networks/networks.md`, ~50 embedded images) — both objects
+    already sat in R2 under `drafts/` from before this pipeline existed.
+    Proves the pipeline against real content without taking on a full
+    curriculum build, which stays its own deferred pass.
+  - Added `courses` to `Header.tsx`'s nav (`src/components/Header.tsx`).
+    Cuts against the recent deliberate nav simplification (commit
+    `27fd9d0`, "four topic links plus a single account slot") — judged
+    acceptable since courses are the platform's core content, same tier
+    as `library`, not an account-scoped action.
 - **Phase 3 (authentication), concrete decisions** — see WORKLOG's "Phase
   3" entry for the full security reasoning:
   - Password hashing: PBKDF2-HMAC-SHA256, 100,000 iterations, via
@@ -165,10 +307,6 @@ These are planning notes, not authorization to begin future phases early.
     `POST .../logout`, `GET .../session`, `PUT .../change-password`,
     `POST .../forgot-password`, `POST .../reset-password`,
     `GET .../verify-email`, `POST .../resend-verification`.
-- Planned endpoints include `GET /courses`, `GET /courses/:id`,
-  `GET /courses/:id/lessons`, `POST /courses/:id/enroll`,
-  `GET /me/progress`, `POST /lessons/:id/complete`,
-  `POST /quizzes/:id/attempt`, and `GET /me/statistics`.
 - **`api.lowlevelnotes.com`'s WAF blocks generic scripted HTTP clients**
   (bare `curl`, Node's own `fetch` — sends `User-Agent: node`) on almost
   every path except `/health`, regardless of the path being otherwise

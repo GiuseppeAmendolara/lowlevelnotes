@@ -54,6 +54,30 @@ async function authFetch<T>(path: string, init?: RequestInit): Promise<Result<T>
   return { ok: true, data: body as T }
 }
 
+// Separate from authFetch because lesson content comes back as raw
+// markdown text (from the gated R2 asset stream), not JSON — reusing
+// authFetch's res.json() would throw on every call.
+async function authFetchText(path: string): Promise<Result<string>> {
+  let res: Response
+  try {
+    res = await fetch(`${AUTH_API_BASE}${path}`, { credentials: 'include' })
+  } catch {
+    return { ok: false, error: 'Could not reach the server. Check your connection.', status: 0 }
+  }
+
+  if (!res.ok) {
+    let error = 'Something went wrong.'
+    try {
+      error = ((await res.json()) as { error?: string })?.error ?? error
+    } catch {
+      // Non-JSON error body (e.g. a plain-text 404) — fall back to the default.
+    }
+    return { ok: false, error, status: res.status }
+  }
+
+  return { ok: true, data: await res.text() }
+}
+
 // Separate from authFetch because a multipart body needs the browser to
 // set its own Content-Type (with the boundary) — sending a fixed
 // 'application/json' header, or JSON.stringify-ing a FormData object,
@@ -153,6 +177,86 @@ export async function getLibrary() {
     ok: true as const,
     data: { resources: resources.data, people: people.data, tools: tools.data },
   }
+}
+
+/* ==================== Phase 7: learning system ==================== */
+// Course/lesson catalog now requires a session, same tier as
+// /resources|/people|/tools above — moved here from src/lib/api.ts,
+// which has no way to send the session cookie server-side (host-only on
+// api.lowlevelnotes.com, never visible to the Next.js server).
+
+export type Course = {
+  id: number
+  slug: string
+  title: string
+  description: string | null
+  category: string | null
+  position: number
+}
+
+export type LessonType = 'article' | 'video' | 'exercise' | 'quiz'
+
+export type Lesson = {
+  id: number
+  slug: string
+  title: string
+  type: LessonType
+  contentPath: string | null
+  videoUrl: string | null
+  position: number
+  moduleSlug: string
+  moduleTitle: string
+  modulePosition: number
+}
+
+export type Exercise = {
+  prompt: string
+  language: string | null
+  starterCode: string | null
+  solutionNotes: string | null
+}
+
+export type QuizAnswer = { id: number; body: string; position: number }
+export type QuizQuestion = { id: number; prompt: string; position: number; answers: QuizAnswer[] }
+export type Quiz = { questions: QuizQuestion[] }
+
+export type LessonDetail = {
+  id: number
+  slug: string
+  title: string
+  type: LessonType
+  contentPath: string | null
+  videoUrl: string | null
+  position: number
+  moduleSlug: string
+  moduleTitle: string
+  courseSlug: string
+  courseTitle: string
+  exercise: Exercise | null
+  quiz: Quiz | null
+}
+
+export function getCourses() {
+  return authFetch<{ data: Course[]; pagination: { total: number; limit: number; offset: number } }>('/v1/courses')
+}
+
+export function getCourse(slug: string) {
+  return authFetch<Course>(`/v1/courses/${slug}`)
+}
+
+export function getCourseLessons(slug: string) {
+  return authFetch<Lesson[]>(`/v1/courses/${slug}/lessons`)
+}
+
+export function getLesson(id: number) {
+  return authFetch<LessonDetail>(`/v1/lessons/${id}`)
+}
+
+// Raw lesson content bytes (markdown, images) stream from R2 through the
+// existing gated library-asset endpoint — content_path values are
+// already valid keys into that same bucket, no separate endpoint needed.
+export function getLessonContent(contentPath: string) {
+  return authFetchText(`/v1/library/assets/${contentPath}`)
 }
 
 /* ==================== Phase 4: authorization roles ==================== */

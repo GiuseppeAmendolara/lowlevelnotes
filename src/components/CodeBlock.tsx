@@ -1,24 +1,5 @@
 import { codeToHtml } from 'shiki'
-import type { ThemeRegistration } from 'shiki'
-
-const theme: ThemeRegistration = {
-  name: '0xLLN',
-  type: 'dark',
-  colors: {
-    'editor.background': '#171717',
-    'editor.foreground': '#FFFFFF',
-  },
-  tokenColors: [
-    { scope: ['comment'], settings: { foreground: '#6B7280', fontStyle: 'italic' } },
-    { scope: ['keyword', 'storage.type', 'storage.modifier'], settings: { foreground: '#C678DD' } },
-    { scope: ['string'], settings: { foreground: '#FF8A3D' } },
-    { scope: ['constant.numeric'], settings: { foreground: '#3FB950' } },
-    { scope: ['entity.name.class', 'entity.name.type', 'support.class'], settings: { foreground: '#61AFEF' } },
-    { scope: ['entity.name.function', 'support.function'], settings: { foreground: '#E5C07B' } },
-    { scope: ['variable', 'variable.parameter'], settings: { foreground: '#ABB2BF' } },
-    { scope: ['punctuation'], settings: { foreground: '#A1A1AA' } },
-  ],
-}
+import { shikiTheme } from '@/lib/shikiTheme'
 
 type CodeBlockProps = {
   code: string
@@ -27,7 +8,7 @@ type CodeBlockProps = {
 }
 
 export default async function CodeBlock({ code, lang, filename }: CodeBlockProps) {
-  const html = await codeToHtml(code, { lang, theme })
+  const html = await codeToHtml(code, { lang, theme: shikiTheme })
 
   return (
     <div className="border border-white/10 bg-[#171717]">

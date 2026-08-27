@@ -6,6 +6,7 @@ import { useSession } from './SessionProvider'
 
 const links = [
   { href: '/', label: 'home' },
+  { href: '/courses', label: 'courses' },
   { href: '/library', label: 'library' },
   { href: '/changelog', label: 'changelog' },
   { href: '/transparency', label: 'transparency' },
