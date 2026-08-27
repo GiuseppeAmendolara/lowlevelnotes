@@ -74,8 +74,9 @@ phase.
    diagrams, interactive “try it yourself” exercises (informational only
    this phase — see "Data and API direction" below), questions, quizzes,
    and lesson completion. Slice 1 (session-gated catalog + R2-backed
-   content pipeline) complete and live; see WORKLOG's "Phase 7 scoping"
-   entry for the remaining staged slices.
+   content pipeline) complete and live; Slice 2 (enroll + mark-complete
+   actions) implemented, pending deploy — see WORKLOG's "Phase 7
+   scoping" entry for the remaining staged slices.
 7. **Phase 8:** Exercises, including standard-library-free programming tasks and
    x86-64 assembly tasks.
 8. **Phase 9:** Progress: course/lesson progress, quiz scores, exercise results,
@@ -274,6 +275,22 @@ These are planning notes, not authorization to begin future phases early.
     `27fd9d0`, "four topic links plus a single account slot") — judged
     acceptable since courses are the platform's core content, same tier
     as `library`, not an account-scoped action.
+  - **Slice 2 (enroll + mark-complete)**: pure frontend wiring, no
+    Worker changes — the enroll/complete/progress endpoints were already
+    live and tested from the deferred-Phase-2-endpoints work.
+    `enrollCourse`/`completeLesson`/`getMyProgress` added to
+    `authClient.ts`. Enrollment stays explicit everywhere — no page
+    auto-enrolls, matching the Worker's own no-side-effect design.
+    New `src/components/ActionButton.tsx` (filled-orange, loading state)
+    is a sibling to `AuthSubmitButton`, not a reuse of it — that
+    component is `type="submit"`/`w-full`, purpose-built for the
+    single-form auth pages; Enroll/Mark-complete aren't form
+    submissions. A lesson page not enrolled in its course shows an
+    inline "Enroll in this course" prompt instead of a disabled button;
+    once completed, "Mark complete" becomes a static "✓ Completed"
+    label — there's no un-complete endpoint. Progress is fetched
+    per-page (no global cache/store in this app) and mark-complete
+    updates local state optimistically rather than refetching.
 - **Phase 3 (authentication), concrete decisions** — see WORKLOG's "Phase
   3" entry for the full security reasoning:
   - Password hashing: PBKDF2-HMAC-SHA256, 100,000 iterations, via
@@ -499,7 +516,8 @@ main domain is scoped against — see below.
 
 | Method | Path | Auth | Notes |
 |---|---|---|---|
-| POST | `/api/resource/[id]` | none (server-to-server via `x-internal-key`) | proxies to the Worker's `POST /resource/:id`, called by `LibraryBrowser.tsx`; this is why Rule 5's non-GET exemption only names this one path — every other mutating call (auth, library data) goes straight from the browser to `api.lowlevelnotes.com`, bypassing the Next.js server entirely (see the host-only cookie note above) |
+| POST | `/api/resource/[id]` | none (server-to-server via `x-internal-key`) | proxies to the Worker's `POST /resource/:id`, called by `LibraryBrowser.tsx` |
+| POST | `/api/render/markdown`, `/api/render/code` | none (renders text the caller already fetched authenticated) | runs the server-side markdown/shiki pipeline (`src/lib/markdown.ts`) against content the browser fetched from the gated Worker endpoint; called from `src/app/courses/[course]/[lesson]/page.tsx`. **Any new POST/PUT/DELETE route added here needs a matching exemption in Rule 5 below** — these two were missed on first ship and silently WAF-blocked in production (zero errors anywhere, since the block happens at the edge before Vercel) until caught by a user report; see WORKLOG's "Real bug found live" entry for how it was diagnosed |
 
 ### Security and roles
 
@@ -646,8 +664,13 @@ throughout the product:
   2026-08-26), then the 5 hand-written **custom rules**
   (`http_request_firewall_custom` phase: countries + AI-crawler UAs,
   suspicious-UA/path-probe blocklist, anchored referer checks on the API
-  and on main-domain `/assets/`, non-GET lockdown on the main domain),
-  then **IP Access Rules** (separate quota, single-IP blocks). The
+  and on main-domain `/assets/`, non-GET lockdown on the main domain —
+  currently exempts `POST /api/resource/*` and `POST /api/render/*`;
+  **any new non-GET Next.js Route Handler needs adding here too, or it
+  silently 403s at the edge with nothing in Vercel's logs to explain
+  why** — this exact thing happened to `/api/render/*` on first ship,
+  caught only by a user report, see WORKLOG's "Real bug found live"
+  entry), then **IP Access Rules** (separate quota, single-IP blocks). The
   crawler UA list in rule 1 is meant to track this site's own
   `robots.txt` Content-Signal policy (`ai-train=no`, Cloudflare-managed
   block list) — if that policy ever changes, the WAF list needs a

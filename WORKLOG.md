@@ -6,27 +6,27 @@ It supplements the durable project guidance in `AGENTS.md`.
 
 ## Status
 
-- **Active phase:** Phase 7 (learning system UI) — scoped into four
-  staged slices; Slice 1 reworked per user feedback (courses now
-  session-gated, content moved from git to R2) — complete, deployed,
-  and smoke-tested against real production data
+- **Active phase:** Phase 7 (learning system UI) — Slice 1 (session-gated
+  catalog + R2 content) live and confirmed working after today's WAF
+  fix. Slice 2 (enroll + mark-complete UI) implemented and typechecked,
+  not yet committed/deployed
 - **Current area:** `worker/index.js` deployed version
   `2b28072d-ce5b-43d3-8759-4013690cb2c9`, all four course/lesson
-  endpoints session-gated. `worker/migrations/0010_phase7_test_courses.sql`
-  applied — `postgresql`/`networks` courses live, pointing at real
-  content already in R2 under `drafts/`. Frontend `/courses` pages are
-  client-gated-fetch; two new same-origin render Route Handlers
-  (`src/app/api/render/{markdown,code}`); `content/` is gitignored, its
-  two files pushed to R2 via `npm run content:push`
+  endpoints session-gated; the "block non-GET on main domain" WAF rule
+  now also exempts `POST /api/render/*`. Frontend has `enrollCourse`/
+  `completeLesson`/`getMyProgress` in `authClient.ts`, a new
+  `ActionButton` component, and enrollment/completion UI on the course
+  and lesson pages — no backend changes needed, the API was already live
 - **Milestone:** deferred Phase 2 course endpoints (enroll, progress,
   lesson completion, quiz attempts, statistics) complete, live, and
   smoke-tested against real production D1 — see "Deferred Phase 2
   endpoints" above
 - Both `TURNSTILE_SECRET` and `CLOUDFLARE_WAF_TOKEN` are set and verified
   working live. Phase 4 has no outstanding blockers.
-- **Next action:** Slice 2 (enrollment + mark-complete actions on the
-  `/courses/*` pages, wiring the already-live enroll/complete API to the
-  UI) — see "Phase 7 scoping" below for the remaining slices.
+- **Next action:** commit + push Slice 2, click through it in a real
+  browser (still no browser extension available this session), then
+  Slice 3 (interactive quiz UI) — see "Phase 7 scoping" below for the
+  remaining slices.
 - **Last updated:** 2026-08-27
 
 ## Homepage review (2026-08-26)
@@ -1902,3 +1902,96 @@ Every individual link in the chain was verified directly with real
 data instead (session gate, content stream, markdown render, image
 render), which is strong evidence but isn't the same as watching the
 page actually work. Worth an eyeball check when a browser's available.
+
+## Real bug found live: WAF blocked both render routes on prod (2026-08-27)
+
+User reported "None of the lessons are rendered live on prod" shortly
+after committing and pushing the Slice 1 rework — this is exactly the
+gap flagged above: no browser check happened, and the one thing every
+individual piece of server-side verification couldn't catch was a
+same-origin POST actually reaching the Next.js app in a real browser.
+
+**Diagnosed without guessing**, in order: confirmed the Vercel deploy
+for the new commit was `READY` (`list_deployments`); checked
+`get_runtime_errors` — nothing on the new routes; checked
+`get_runtime_logs` grouped by `requestPath` — `/courses/*` pages were
+being hit repeatedly (real navigation happened) but `/api/render/markdown`
+and `/api/render/code` had **zero hits, ever** — not even an error, a
+genuine absence. Before assuming a client bug, checked whether the
+*first* step (fetching content from the Worker) even succeeded: queried
+`auth_events` in D1 directly for `asset_download` rows from the actual
+user's session in the relevant window — they were there, timestamps
+matching the page navigations exactly. So the content fetch worked; the
+second step (POSTing it to the same-origin render route) never even
+reached Vercel.
+
+That narrowed it to something intercepting the request before origin —
+tested directly with `curl -X POST https://lowlevelnotes.com/api/render/markdown`
+and got a **Cloudflare WAF block page**, not a 403 from the app. Pulled
+the live custom ruleset via the Cloudflare API and found the exact
+cause: a pre-existing rule, "Block non-GET on main domain," blocks every
+non-GET request to `lowlevelnotes.com` except `POST /api/resource/*`
+(documented in AGENTS.md's API reference table, which explicitly notes
+that exemption is why that's the *only* named path — missed this while
+building Slice 1's rework, since the render routes were designed
+against the Worker's WAF rules, not the main domain's). Both new routes
+are on the main domain and got silently blocked at the edge — no error
+ever reached the app, which is exactly why nothing showed up in Vercel's
+logs no matter how it was queried.
+
+**Fixed**: PATCHed the "Block non-GET on main domain" rule (Cloudflare
+Rulesets API, zone `http_request_firewall_custom` phase) to also
+exempt `POST /api/render/*`, same shape as the existing `/api/resource/*`
+exemption. Confirmed live immediately after: both routes now return
+real rendered output instead of a WAF block page.
+
+**Lesson for next time**: any new POST/PUT/DELETE route added to the
+Next.js app itself (not the Worker) needs to be checked against the
+main-domain WAF rules before considering it done — AGENTS.md's WAF
+section documents this exact rule and its single exemption, and it
+should have been cross-referenced while designing the render routes,
+not discovered after a user report. Recorded in AGENTS.md's WAF rule
+description and the endpoint reference table so this doesn't repeat.
+
+## Phase 7 Slice 2: enroll + mark-complete UI (2026-08-27)
+
+Picked up next per the Phase 7 plan. Pure frontend work — no Worker
+changes at all, since `POST /v1/courses/:slug/enroll`,
+`POST /v1/lessons/:id/complete`, and `GET /v1/me/progress` have been
+live and tested since the deferred-Phase-2-endpoints session. This slice
+just connects them to the UI.
+
+Added `enrollCourse`/`completeLesson`/`getMyProgress` to
+`authClient.ts` (`MyEnrollment`/`MyLessonProgress` types copied field-
+for-field from `mapMyEnrollment`/`mapMyLessonProgress` in
+`worker/index.js`, not guessed). New `src/components/ActionButton.tsx`
+— same filled-orange/loading-state look as `AuthSubmitButton`, but a
+deliberate sibling rather than a reuse: `AuthSubmitButton` is
+`type="submit"`/`w-full`, built for the single-form auth pages, and
+Enroll/Mark-complete aren't form submissions.
+
+Course page (`/courses/[course]`) now fetches `getMyProgress()`
+alongside the existing course/lesson data: shows an "Enroll" button
+when not enrolled, an "Enrolled"/"Completed" status line with a
+lessons-complete count when it is, and swaps each lesson row's orange
+dot marker for green when that lesson's already done. Lesson page
+(`/courses/[course]/[lesson]`) does the same lookup and renders one of
+three states below the content for `article`/`video`/`exercise` types
+(not `quiz` — untouched, still Slice 1's placeholder, gets the real
+form and its own auto-complete path in Slice 3): an inline "Enroll in
+this course" prompt if not enrolled, a static "✓ Completed" label if
+already done, or a "Mark complete" button that calls `completeLesson()`
+and flips to the completed label on success — optimistically, no
+refetch, matching this app's existing no-cache-layer style everywhere
+else.
+
+**Verification gap, same as Slice 1's**: no browser extension available
+this session. Unlike Slice 1 (mostly read-only, verifiable end-to-end
+via curl against the real rendering pipeline), this slice is genuinely
+interactive — click Enroll, watch the button become a status line;
+click Mark complete, watch it become a checkmark. `npm run build` and
+`tsc --noEmit` are both clean, and the API side was already proven
+correct in a prior session's real-D1 smoke test, but the actual
+click-and-see-it-update behavior has not been watched happen. Asked the
+user to click through it themselves once deployed rather than claiming
+this is fully verified.

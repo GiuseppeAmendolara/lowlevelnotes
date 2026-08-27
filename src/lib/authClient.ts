@@ -259,6 +259,44 @@ export function getLessonContent(contentPath: string) {
   return authFetchText(`/v1/library/assets/${contentPath}`)
 }
 
+// Enroll/complete — live since the deferred Phase 2 endpoints work,
+// wired into the UI here for Slice 2. Enrollment is always explicit:
+// neither endpoint auto-enrolls, matching the Worker's own design.
+export function enrollCourse(slug: string) {
+  return authFetch<{ message: string }>(`/v1/courses/${slug}/enroll`, { method: 'POST' })
+}
+
+export function completeLesson(id: number) {
+  return authFetch<{ message: string }>(`/v1/lessons/${id}/complete`, { method: 'POST' })
+}
+
+export type MyEnrollment = {
+  id: number
+  courseId: number
+  courseSlug: string
+  courseTitle: string
+  status: 'active' | 'completed'
+  enrolledAt: string
+  completedAt: string | null
+  totalLessons: number
+  completedLessons: number
+}
+
+export type MyLessonProgress = {
+  lessonId: number
+  lessonSlug: string
+  lessonTitle: string
+  lessonType: LessonType
+  moduleSlug: string
+  courseSlug: string
+  status: 'not_started' | 'in_progress' | 'completed'
+  completedAt: string | null
+}
+
+export function getMyProgress() {
+  return authFetch<{ enrollments: MyEnrollment[]; lessonProgress: MyLessonProgress[] }>('/v1/me/progress')
+}
+
 /* ==================== Phase 4: authorization roles ==================== */
 
 export type Role = 'student' | 'contributor' | 'instructor' | 'administrator'

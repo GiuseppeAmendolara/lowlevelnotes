@@ -4,7 +4,17 @@ import { use, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useSession } from '@/components/SessionProvider'
-import { getCourse, getCourseLessons, type Course, type Lesson } from '@/lib/authClient'
+import ActionButton from '@/components/ActionButton'
+import {
+  getCourse,
+  getCourseLessons,
+  getMyProgress,
+  enrollCourse,
+  type Course,
+  type Lesson,
+  type MyEnrollment,
+  type MyLessonProgress,
+} from '@/lib/authClient'
 
 const TYPE_LABEL: Record<Lesson['type'], string> = {
   article: 'Article',
@@ -37,7 +47,11 @@ export default function CoursePage({ params }: { params: Promise<{ course: strin
 
   const [course, setCourse] = useState<Course | null>(null)
   const [lessons, setLessons] = useState<Lesson[] | null>(null)
+  const [enrollment, setEnrollment] = useState<MyEnrollment | null>(null)
+  const [completedLessonIds, setCompletedLessonIds] = useState<Set<number>>(new Set())
   const [error, setError] = useState<{ message: string; notFound: boolean } | null>(null)
+  const [enrolling, setEnrolling] = useState(false)
+  const [enrollError, setEnrollError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!sessionLoading && !user) {
@@ -48,19 +62,57 @@ export default function CoursePage({ params }: { params: Promise<{ course: strin
   useEffect(() => {
     if (!user) return
 
-    Promise.all([getCourse(slug), getCourseLessons(slug)]).then(([courseResult, lessonsResult]) => {
-      if (!courseResult.ok) {
-        setError({ message: courseResult.error, notFound: courseResult.status === 404 })
-        return
+    Promise.all([getCourse(slug), getCourseLessons(slug), getMyProgress()]).then(
+      ([courseResult, lessonsResult, progressResult]) => {
+        if (!courseResult.ok) {
+          setError({ message: courseResult.error, notFound: courseResult.status === 404 })
+          return
+        }
+        if (!lessonsResult.ok) {
+          setError({ message: lessonsResult.error, notFound: lessonsResult.status === 404 })
+          return
+        }
+        setCourse(courseResult.data)
+        setLessons(lessonsResult.data)
+
+        if (progressResult.ok) {
+          const found = progressResult.data.enrollments.find((e) => e.courseSlug === slug)
+          setEnrollment(found ?? null)
+          setCompletedLessonIds(
+            new Set(
+              progressResult.data.lessonProgress
+                .filter((p) => p.courseSlug === slug && p.status === 'completed')
+                .map((p) => p.lessonId)
+            )
+          )
+        }
       }
-      if (!lessonsResult.ok) {
-        setError({ message: lessonsResult.error, notFound: lessonsResult.status === 404 })
-        return
-      }
-      setCourse(courseResult.data)
-      setLessons(lessonsResult.data)
-    })
+    )
   }, [user, slug])
+
+  async function handleEnroll() {
+    setEnrolling(true)
+    setEnrollError(null)
+    const result = await enrollCourse(slug)
+    setEnrolling(false)
+
+    if (!result.ok) {
+      setEnrollError(result.error)
+      return
+    }
+
+    setEnrollment({
+      id: 0,
+      courseId: course?.id ?? 0,
+      courseSlug: slug,
+      courseTitle: course?.title ?? '',
+      status: 'active',
+      enrolledAt: new Date().toISOString(),
+      completedAt: null,
+      totalLessons: lessons?.length ?? 0,
+      completedLessons: 0,
+    })
+  }
 
   if (sessionLoading || !user) {
     return (
@@ -110,6 +162,25 @@ export default function CoursePage({ params }: { params: Promise<{ course: strin
         {course.description && (
           <p className="mt-4 max-w-xl leading-7 text-[#A1A1AA]">{course.description}</p>
         )}
+
+        <div className="mt-6">
+          {enrollment ? (
+            <p className="text-sm text-[#A1A1AA]">
+              <span className={enrollment.status === 'completed' ? 'text-[#3FB950]' : 'text-[#FF8A3D]'}>
+                {enrollment.status === 'completed' ? 'Completed' : 'Enrolled'}
+              </span>
+              {' — '}
+              {enrollment.completedLessons}/{enrollment.totalLessons} lessons complete
+            </p>
+          ) : (
+            <>
+              <ActionButton onClick={handleEnroll} loading={enrolling}>
+                Enroll
+              </ActionButton>
+              {enrollError && <p className="mt-2 text-sm text-[#F85149]">{enrollError}</p>}
+            </>
+          )}
+        </div>
       </section>
 
       <section className="mx-auto max-w-4xl px-6 pb-24">
@@ -127,7 +198,10 @@ export default function CoursePage({ params }: { params: Promise<{ course: strin
                       className="flex items-center justify-between gap-4 border-b border-r border-white/10 px-5 py-4 transition-colors hover:bg-white/[0.035] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#FF8A3D]"
                     >
                       <span className="flex items-center gap-3">
-                        <span className="h-1.5 w-1.5 shrink-0 bg-[#FF8A3D]" aria-hidden="true" />
+                        <span
+                          className={`h-1.5 w-1.5 shrink-0 ${completedLessonIds.has(lesson.id) ? 'bg-[#3FB950]' : 'bg-[#FF8A3D]'}`}
+                          aria-hidden="true"
+                        />
                         <span className="text-sm text-white">{lesson.title}</span>
                       </span>
                       <span className="shrink-0 text-xs uppercase tracking-[0.1em] text-white/40">

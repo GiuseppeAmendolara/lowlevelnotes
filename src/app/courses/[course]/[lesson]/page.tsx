@@ -5,11 +5,14 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useSession } from '@/components/SessionProvider'
 import SolutionReveal from '@/components/SolutionReveal'
+import ActionButton from '@/components/ActionButton'
 import {
   getCourse,
   getCourseLessons,
   getLesson,
   getLessonContent,
+  getMyProgress,
+  completeLesson,
   type Course,
   type LessonDetail,
 } from '@/lib/authClient'
@@ -47,6 +50,8 @@ export default function LessonPage({ params }: { params: Promise<{ course: strin
 
   const [course, setCourse] = useState<Course | null>(null)
   const [lesson, setLesson] = useState<LessonDetail | null>(null)
+  const [isEnrolled, setIsEnrolled] = useState(false)
+  const [isCompleted, setIsCompleted] = useState(false)
   const [error, setError] = useState<{ message: string; notFound: boolean } | null>(null)
 
   useEffect(() => {
@@ -60,7 +65,11 @@ export default function LessonPage({ params }: { params: Promise<{ course: strin
 
     let cancelled = false
     ;(async () => {
-      const [courseResult, lessonsResult] = await Promise.all([getCourse(courseSlug), getCourseLessons(courseSlug)])
+      const [courseResult, lessonsResult, progressResult] = await Promise.all([
+        getCourse(courseSlug),
+        getCourseLessons(courseSlug),
+        getMyProgress(),
+      ])
 
       if (!courseResult.ok) {
         if (!cancelled) setError({ message: courseResult.error, notFound: courseResult.status === 404 })
@@ -86,6 +95,13 @@ export default function LessonPage({ params }: { params: Promise<{ course: strin
       if (!cancelled) {
         setCourse(courseResult.data)
         setLesson(lessonResult.data)
+
+        if (progressResult.ok) {
+          setIsEnrolled(progressResult.data.enrollments.some((e) => e.courseSlug === courseSlug))
+          setIsCompleted(
+            progressResult.data.lessonProgress.some((p) => p.lessonId === summary.id && p.status === 'completed')
+          )
+        }
       }
     })()
 
@@ -145,6 +161,16 @@ export default function LessonPage({ params }: { params: Promise<{ course: strin
         {lesson.type === 'video' && <VideoBody videoUrl={lesson.videoUrl} />}
         {lesson.type === 'exercise' && lesson.exercise && <ExerciseBody exercise={lesson.exercise} />}
         {lesson.type === 'quiz' && lesson.quiz && <QuizPlaceholder questionCount={lesson.quiz.questions.length} />}
+
+        {lesson.type !== 'quiz' && (
+          <CompletionControl
+            lessonId={lesson.id}
+            courseSlug={courseSlug}
+            isEnrolled={isEnrolled}
+            isCompleted={isCompleted}
+            onCompleted={() => setIsCompleted(true)}
+          />
+        )}
       </section>
     </main>
   )
@@ -267,6 +293,63 @@ function ExerciseBody({ exercise }: { exercise: { prompt: string; language: stri
         </div>
       )}
       {exercise.solutionNotes && <SolutionReveal notes={exercise.solutionNotes} />}
+    </div>
+  )
+}
+
+function CompletionControl({
+  lessonId,
+  courseSlug,
+  isEnrolled,
+  isCompleted,
+  onCompleted,
+}: {
+  lessonId: number
+  courseSlug: string
+  isEnrolled: boolean
+  isCompleted: boolean
+  onCompleted: () => void
+}) {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleComplete() {
+    setLoading(true)
+    setError(null)
+    const result = await completeLesson(lessonId)
+    setLoading(false)
+
+    if (!result.ok) {
+      setError(result.error)
+      return
+    }
+
+    onCompleted()
+  }
+
+  if (!isEnrolled) {
+    return (
+      <p className="mt-10 border-t border-white/10 pt-6 text-sm text-[#A1A1AA]">
+        <Link href={`/courses/${courseSlug}`} className="text-[#FF8A3D] underline underline-offset-2">
+          Enroll in this course
+        </Link>{' '}
+        to track your progress.
+      </p>
+    )
+  }
+
+  if (isCompleted) {
+    return (
+      <p className="mt-10 border-t border-white/10 pt-6 text-sm text-[#3FB950]">✓ Completed</p>
+    )
+  }
+
+  return (
+    <div className="mt-10 border-t border-white/10 pt-6">
+      <ActionButton onClick={handleComplete} loading={loading}>
+        Mark complete
+      </ActionButton>
+      {error && <p className="mt-2 text-sm text-[#F85149]">{error}</p>}
     </div>
   )
 }
