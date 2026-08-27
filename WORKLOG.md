@@ -2718,3 +2718,24 @@ Deployed (Worker version `00ab782e-c5cb-4a80-bfe4-f9dcaf5eddd7`).
 Smoke-tested `/v1/auth/session` and `/health` post-deploy — both
 responding normally. The SessionProvider and Turnstile fixes are
 frontend, pushed with everything else once the user commits.
+
+**Turnstile fix above was wrong, caught immediately by the user seeing
+it live**: "it keeps saying Verification didn't load. Retry" — the
+retry button's whole mechanism (remount `<Script>` via a changed `key`,
+hoping Next re-fires `onLoad` for an already-loaded script) was an
+unverified assumption, and evidently a wrong one — retry was a no-op,
+so the same stall-and-fail loop just repeated. Rewrote properly:
+instead of depending on `onLoad` at all after the first load, poll for
+`window.turnstile` directly (250ms interval) — this is the one signal
+that's actually reliable regardless of which of the three pages
+(login/register/forgot-password) loaded the script first, since
+`window.turnstile` persists across client-side navigation between them
+even when a given page's own `<Script>` never sees its own `onLoad`
+fire. Retry now re-checks the global immediately on click rather than
+remounting anything. Also wrapped the actual `render()` call in a
+try/catch — a throw there (e.g. double-render into the same container)
+would previously have looked identical to "still loading" for the
+entire timeout instead of failing fast. Timeout raised 8s → 10s for
+margin. `tsc`/`build` clean. Frontend-only, not deployed anywhere by
+me — sitting with the rest of today's uncommitted work like everything
+else frontend this session.

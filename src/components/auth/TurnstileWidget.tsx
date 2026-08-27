@@ -15,13 +15,20 @@ import Script from 'next/script'
 const TURNSTILE_SITE_KEY = '0x4AAAAAAEdKEFa7n07s2OQ1'
 
 // How long to wait for the widget to actually render before offering a
-// retry — covers both a genuine script load failure (blocked, offline)
-// and the more common case: `next/script`'s `onLoad` not firing on a
-// client-side navigation to a second page that renders this same
-// `<Script src>` after a previous page already loaded it, which
-// previously left the widget silently blank with no recovery short of a
-// full page refresh.
-const RENDER_TIMEOUT_MS = 8000
+// retry — covers a genuine script load failure (blocked, offline, slow
+// connection).
+const RENDER_TIMEOUT_MS = 10000
+
+// How often to poll for `window.turnstile` while waiting. This site
+// mounts the widget on three different pages (login, register,
+// forgot-password); `next/script`'s `onLoad` fires once per literal
+// `<script>` tag, and does not reliably refire for a second page's
+// `<Script>` instance after a previous page already loaded the same
+// src — the actual cause of the widget silently never appearing on
+// some pages. Polling checks the real global directly instead of
+// depending on that callback, so it works whether this is the first
+// page to load the script or the third.
+const POLL_INTERVAL_MS = 250
 
 declare global {
   interface Window {
@@ -63,25 +70,51 @@ const TurnstileWidget = forwardRef<TurnstileHandle, Props>(function TurnstileWid
   }))
 
   function handleRetry() {
-    setScriptLoaded(false)
     setRendered(false)
     setStalled(false)
     widgetIdRef.current = null
     setRetryKey((k) => k + 1)
+    // The script global may already exist even if this instance never
+    // saw its own `onLoad` fire (see POLL_INTERVAL_MS above) — check
+    // immediately rather than waiting for the next poll tick.
+    if (window.turnstile) setScriptLoaded(true)
   }
 
+  // Poll for the real global instead of depending solely on <Script>'s
+  // onLoad, which doesn't reliably refire across pages (see above).
   useEffect(() => {
-    if (!scriptLoaded || !containerRef.current || !window.turnstile) return
+    if (window.turnstile) {
+      setScriptLoaded(true)
+      return
+    }
+    const interval = setInterval(() => {
+      if (window.turnstile) {
+        setScriptLoaded(true)
+        clearInterval(interval)
+      }
+    }, POLL_INTERVAL_MS)
+    return () => clearInterval(interval)
+  }, [retryKey])
 
-    widgetIdRef.current = window.turnstile.render(containerRef.current, {
-      sitekey: TURNSTILE_SITE_KEY,
-      action,
-      size: 'flexible',
-      callback: (token: string) => onToken(token),
-      'expired-callback': () => onToken(null),
-      'error-callback': () => onToken(null),
-    })
-    setRendered(true)
+  useEffect(() => {
+    if (!scriptLoaded || !containerRef.current || !window.turnstile || rendered) return
+
+    try {
+      widgetIdRef.current = window.turnstile.render(containerRef.current, {
+        sitekey: TURNSTILE_SITE_KEY,
+        action,
+        size: 'flexible',
+        callback: (token: string) => onToken(token),
+        'expired-callback': () => onToken(null),
+        'error-callback': () => onToken(null),
+      })
+      setRendered(true)
+    } catch {
+      // render() throws if e.g. the container already holds a widget —
+      // surface it as a stall rather than leaving an uncaught rejection
+      // and a silently-blank container for the full timeout.
+      setStalled(true)
+    }
 
     return () => {
       if (widgetIdRef.current && window.turnstile) {
@@ -104,7 +137,6 @@ const TurnstileWidget = forwardRef<TurnstileHandle, Props>(function TurnstileWid
   return (
     <>
       <Script
-        key={retryKey}
         src="https://challenges.cloudflare.com/turnstile/v0/api.js"
         strategy="afterInteractive"
         onLoad={() => setScriptLoaded(true)}
