@@ -249,13 +249,13 @@ function ResourceRequestPanel() {
       <h2 className="mt-12 text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">Your submissions</h2>
       <div className="mt-4 border-l border-t border-white/10">
         {loadingRequests && (
-          <p className="border-b border-r border-white/10 p-4 text-sm text-[#A1A1AA]">Loading…</p>
+          <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA]">Loading…</p>
         )}
         {!loadingRequests && requests.length === 0 && (
-          <p className="border-b border-r border-white/10 p-4 text-sm text-[#A1A1AA]">Nothing submitted yet.</p>
+          <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA]">Nothing submitted yet.</p>
         )}
         {requests.map((r) => (
-          <div key={r.id} className="border-b border-r border-white/10 p-4">
+          <div key={r.id} className="border-b border-r border-white/10 bg-[#0D0D0D] p-4">
             <div className="flex items-center justify-between gap-3">
               <span className="text-sm font-medium text-white">{r.title}</span>
               <span className={`text-xs uppercase tracking-[0.1em] ${r.status === 'approved' ? 'text-[#3FB950]' : r.status === 'rejected' ? 'text-[#F85149]' : 'text-[#A1A1AA]'}`}>

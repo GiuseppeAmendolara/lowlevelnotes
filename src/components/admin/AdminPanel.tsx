@@ -145,9 +145,9 @@ function UsersSection() {
       {error && <p className="mt-4 text-sm text-[#F85149]">{error}</p>}
 
       <div className="mt-6 border-l border-t border-white/10">
-        {users === null && <p className="border-b border-r border-white/10 p-4 text-sm text-[#A1A1AA]">Loading…</p>}
+        {users === null && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA]">Loading…</p>}
         {users?.map((u) => (
-          <div key={u.id} className="border-b border-r border-white/10 p-4">
+          <div key={u.id} className="border-b border-r border-white/10 bg-[#0D0D0D] p-4">
             <div className="flex flex-wrap items-center gap-3">
               <span className="text-sm font-medium text-white">{u.displayName}</span>
               <span className="text-xs text-[#A1A1AA]">{u.email}</span>
@@ -221,10 +221,10 @@ function RoleRequestsSection() {
       <StatusFilter status={status} onChange={setStatus} />
 
       <div className="mt-4 border-l border-t border-white/10">
-        {requests === null && <p className="border-b border-r border-white/10 p-4 text-sm text-[#A1A1AA]">Loading…</p>}
-        {requests?.length === 0 && <p className="border-b border-r border-white/10 p-4 text-sm text-[#A1A1AA]">Nothing here.</p>}
+        {requests === null && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA]">Loading…</p>}
+        {requests?.length === 0 && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA]">Nothing here.</p>}
         {requests?.map((r) => (
-          <div key={r.id} className="border-b border-r border-white/10 p-4">
+          <div key={r.id} className="border-b border-r border-white/10 bg-[#0D0D0D] p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <span className="text-sm font-medium text-white">{r.requesterDisplayName}</span>
@@ -282,10 +282,10 @@ function ResourceRequestsSection() {
       <StatusFilter status={status} onChange={setStatus} />
 
       <div className="mt-4 border-l border-t border-white/10">
-        {requests === null && <p className="border-b border-r border-white/10 p-4 text-sm text-[#A1A1AA]">Loading…</p>}
-        {requests?.length === 0 && <p className="border-b border-r border-white/10 p-4 text-sm text-[#A1A1AA]">Nothing here.</p>}
+        {requests === null && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA]">Loading…</p>}
+        {requests?.length === 0 && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA]">Nothing here.</p>}
         {requests?.map((r) => (
-          <div key={r.id} className="border-b border-r border-white/10 p-4">
+          <div key={r.id} className="border-b border-r border-white/10 bg-[#0D0D0D] p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <span className="text-sm font-medium text-white">{r.title}</span>
@@ -379,10 +379,10 @@ function BlockedIpsSection() {
       {error && <p className="mt-4 text-sm text-[#F85149]">{error}</p>}
 
       <div className="mt-6 border-l border-t border-white/10">
-        {ips === null && !error && <p className="border-b border-r border-white/10 p-4 text-sm text-[#A1A1AA]">Loading…</p>}
-        {ips?.length === 0 && <p className="border-b border-r border-white/10 p-4 text-sm text-[#A1A1AA]">Nothing blocked.</p>}
+        {ips === null && !error && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA]">Loading…</p>}
+        {ips?.length === 0 && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA]">Nothing blocked.</p>}
         {ips?.map((r) => (
-          <div key={r.id} className="flex flex-wrap items-center justify-between gap-3 border-b border-r border-white/10 p-4">
+          <div key={r.id} className="flex flex-wrap items-center justify-between gap-3 border-b border-r border-white/10 bg-[#0D0D0D] p-4">
             <div>
               <span className="font-mono text-sm text-white">{r.ip}</span>
               {r.note && <span className="ml-3 text-xs text-[#A1A1AA]">{r.note}</span>}

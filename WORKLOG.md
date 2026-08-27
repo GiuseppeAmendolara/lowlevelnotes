@@ -2323,3 +2323,17 @@ uppercase tracking-[0.18em] text-[#FF8A3D]`). Left "License:"/
 "Repository:" and the copyright line alone — conventionally quiet
 footnote text, and the design contract calls for using orange sparingly
 as a signal, not applying it to everything that happens to be muted.
+
+Extended the same background-contrast pass to three more surfaces, same
+fix each time — an explicit `bg-[#0D0D0D]` on rows/tiles that had none
+and were blending into their `bg-[#171717]` page:
+`src/app/account/courses/page.tsx` (the stat tiles and enrollment
+cards), `src/app/contribute/page.tsx` ("Your submissions" rows, plus
+their loading/empty placeholder states), and
+`src/components/admin/AdminPanel.tsx` (all four sections' list rows —
+Users, Role requests, Resource requests, Blocked IPs — 11 elements
+total, all sharing the identical class string across sections, so
+fixed with three `replace_all` edits rather than one-by-one). No
+hover-cascade issue this time — none of these rows had a `hover:bg-*`
+class to conflict with the new background, unlike the homepage/
+changelog fixes earlier today.

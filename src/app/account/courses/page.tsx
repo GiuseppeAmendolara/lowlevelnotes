@@ -100,7 +100,7 @@ export default function AccountCoursesPage() {
 
 function StatTile({ label, value }: { label: string; value: number | string }) {
   return (
-    <div className="bg-[#171717] p-4">
+    <div className="bg-[#0D0D0D] p-4">
       <p className="text-2xl font-bold tracking-[-0.03em] text-white">{value}</p>
       <p className="mt-1 text-xs text-[#A1A1AA]">{label}</p>
     </div>
@@ -136,7 +136,7 @@ function EnrollmentCard({
   }
 
   return (
-    <div className="border border-white/10 p-5">
+    <div className="border border-white/10 bg-[#0D0D0D] p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <span className={enrollment.status === 'completed' ? 'text-sm text-[#3FB950]' : 'text-sm text-[#FF8A3D]'}>
