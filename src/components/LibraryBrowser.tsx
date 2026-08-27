@@ -215,7 +215,7 @@ export default function LibraryBrowser({ resources, people }: Props) {
         ))}
 
         {filtered.length === 0 && (
-          <div className="border-b border-r border-white/10 p-6 text-sm text-[#A1A1AA]">
+          <div className="border-b border-r border-white/10 bg-[#0D0D0D] p-6 text-sm text-[#A1A1AA]">
             No entries match those filters.
           </div>
         )}
@@ -236,7 +236,7 @@ function LibraryItemRow({ item, author, index }: { item: Item; author: Person | 
     <article
       ref={ref}
       style={{ transitionDelay: `${Math.min(index, 6) * 40}ms` }}
-      className={`border-b border-r border-white/10 p-6 hover:bg-white/[0.035] ${revealClass} ${revealState(visible)}`}
+      className={`border-b border-r border-white/10 bg-[#0D0D0D] p-6 hover:bg-[#151515] ${revealClass} ${revealState(visible)}`}
     >
       <div className="flex flex-wrap items-center gap-3 text-xs">
         <span className="text-[#FF8A3D]">{item.category}</span>

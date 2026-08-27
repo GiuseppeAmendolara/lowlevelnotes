@@ -6,37 +6,63 @@ It supplements the durable project guidance in `AGENTS.md`.
 
 ## Status
 
-- **Active phase:** Phase 7 (learning system UI) — Slice 1 live. Slice 2
-  (enroll + mark-complete) plus its same-day follow-up (lesson gating,
-  next-lesson nav, a real quiz-copy bug fix, unenroll, `/account/courses`)
-  are implemented, backend deployed and smoke-tested against real
-  production D1, **frontend not yet committed/deployed**. Also done the
-  same day, unrelated to Phase 7: a homepage rework (courses vs. library
-  distinction, iterated three rounds on user feedback) and merging the
-  standalone `tools` table into `resources` (`type = 'tool'`) — both
-  frontend-only-pending in the same way
-- **Current area:** `worker/index.js` deployed version
-  `e7354fe9-9270-4de2-8dd9-742c34898a6d` — includes the Slice 2
-  follow-up's enroll-upsert/unenroll/statistics fixes and the
-  tools→resources merge (migration `0011`, `GET /tools` removed,
-  `mapResource()` null-safe on `authorId`). Frontend has all of the
-  above implemented and typechecked but **not committed**: lesson-page
-  enrollment gating, next-lesson nav, `/account/courses`, the reworked
-  homepage, and the simplified `LibraryBrowser`/`getLibrary` (one
-  fetch instead of two)
-- **Milestone:** deferred Phase 2 course endpoints (enroll, progress,
-  lesson completion, quiz attempts, statistics) complete, live, and
-  smoke-tested against real production D1 — see "Deferred Phase 2
-  endpoints" above
+- **Cloudflare access fully live for the rest of this session.** The
+  classifier that was refusing to read/`source` `.env.local` doesn't
+  apply to `.claude/settings.local.json`'s own `env` block — Cloudflare
+  deploy credentials live there instead (gitignored, never `.env.local`,
+  never committed). Every `wrangler` command authenticates directly, no
+  workaround needed. Confirmed both an IP-restricted token and a general
+  one work from this sandbox.
+- **Backend: everything through the instructor course-builder API
+  (including article image upload) is deployed and live in
+  production.** In order this session: the SVG MIME-type fix
+  (`d0b73cda`), the full instructor course-authoring write API
+  (migration `0014`, Worker version `544bfab3`), then article image
+  upload added afterward (`worker/index.js` version `847644e2`, no
+  schema change). All verified with real end-to-end smoke tests against
+  real production (throwaway instructor + admin accounts, all cleaned
+  up afterward each time): create course → module → article/quiz
+  lessons → save article content to R2 → upload an image and confirm
+  it's byte-identical on read-back → submit for review → staff approve
+  → publicly visible via `GET /v1/courses`. Ownership enforcement (a
+  second instructor gets 403 on both course edits and image uploads)
+  and quiz validation (0/2 correct answers rejected before any write)
+  both confirmed live. See "Instructor course builder" entry below for
+  the full design and a real caught bug (DROP TABLE cascading through
+  the whole course→module→lesson chain in this D1 setup) that changed
+  the migration's approach entirely.
+- **The YAML/frontmatter content-authoring pipeline built earlier this
+  session was removed the same day, at the user's explicit direction**
+  once the instructor UI shipped — "nobody is going to be using that."
+  `scripts/sync-content.mjs`, `scripts/push-content.mjs`, the `js-yaml`
+  devDependency, the `content:push`/`content:sync` npm scripts, the
+  `content/` gitignore entry, and the `content/courses/_example/`
+  sample all gone. `AGENTS.md` updated to match — content authoring is
+  now exclusively through `/instructor/courses`.
+- **Frontend: implemented, `tsc`/`lint`/`build` all clean, verified via
+  Playwright against mocked API responses (screenshots confirm the
+  design system match) — but not yet committed**, same standing rule as
+  always (the user commits, not the agent). This includes: the Slice 3
+  quiz-taking UI (`QuizBody`), the whole instructor course builder
+  (`/instructor/courses`, `/instructor/courses/[id]` including the
+  article image-upload control, a new `PendingCoursesSection` in
+  `AdminPanel.tsx`), and the earlier-session polish batch (homepage
+  discipline-copy edit, contrast fixes for `LibraryBrowser.tsx`/
+  `CourseCatalogCard.tsx`/`AdminPanel.tsx`'s role dropdown).
 - Both `TURNSTILE_SECRET` and `CLOUDFLARE_WAF_TOKEN` are set and verified
   working live. Phase 4 has no outstanding blockers.
-- **Next action:** commit + push everything above (all backend pieces
-  are already live; only the frontend is pending), then a real browser
-  pass — still no extension available this session, and there's now a
-  real backlog of unverified visual/interactive changes (homepage,
-  library filters, lesson gating, unenroll flows). After that, Slice 3
-  (interactive quiz UI) — see "Phase 7 scoping" below for the remaining
-  slices.
+- **Next action:** hand this whole batch to the user to review/commit.
+  Once committed and deployed (Vercel), a real browser pass is still
+  owed on everything backlogged across this session (motion timing,
+  contrast fixes, homepage copy, the quiz UI's real interactive feel,
+  and now the instructor course builder's real interactive feel) — all
+  of this session's verification was local/Playwright/curl against
+  live endpoints, never an actual browser click-through. After that:
+  writing real course content is fully unblocked — any instructor can
+  build a course through the browser UI, no repo/Cloudflare access
+  needed — or Slice 4 (progress surfacing — largely already covered by
+  `/account/courses`, worth confirming against the Phase 7 scoping plan)
+  if more UI work is preferred first.
 - **Last updated:** 2026-08-27
 
 ## Homepage review (2026-08-26)
@@ -2739,3 +2765,517 @@ entire timeout instead of failing fast. Timeout raised 8s → 10s for
 margin. `tsc`/`build` clean. Frontend-only, not deployed anywhere by
 me — sitting with the rest of today's uncommitted work like everything
 else frontend this session.
+
+## Library/courses entries had no contrast against their page background
+
+User-reported: library entries lost contrast during the motion pass;
+followed up separately that `/courses` has the same problem. Checked
+git history before assuming the motion pass regressed something — it
+didn't, `LibraryItemRow`'s row background and `CourseCatalogCard`'s card
+background were never touched by that commit. Both are gaps the earlier
+contrast pass (`e1e925a` plus the WORKLOG-recorded "Courses cards get
+`bg-[#171717]`, Library cards get `bg-[#0D0D0D]`" decision) never
+actually reached — that pass fixed the *homepage's* teaser grids
+(`HomeCourseCard`, `HomeDisciplineCard`), not the real `/library` list or
+the real `/courses` catalog grid.
+
+Confirmed by inspection: `LibraryItemRow` (`LibraryBrowser.tsx`) had no
+`bg-*` class at all against `/library`'s `bg-[#171717]` main.
+`CourseCatalogCard.tsx` had `bg-[#171717]` — identical to `/courses`'s
+own `bg-[#171717]` main, so literally zero contrast.
+
+Fixed both with the same established convention (default `#171717`
+section → entries get `bg-[#0D0D0D]`), plus the same hover-cascade fix
+already applied elsewhere this session (a translucent `hover:bg-white/
+[0.035]` fully replaces a solid background on hover instead of blending
+with it → swapped for the precomputed solid `hover:bg-[#151515]`):
+`LibraryItemRow`, its "No entries match those filters" empty state, and
+`CourseCatalogCard` all get `bg-[#0D0D0D] hover:bg-[#151515]`.
+`tsc --noEmit` clean. Not yet visually verified (no browser extension
+this session) or committed.
+
+## Staff page: role dropdown had the same row-vs-control contrast bug
+
+User-reported. Same root shape as the library/courses issue above but
+inside `AdminPanel.tsx`'s Users section specifically: the per-user role
+`<select>` reused the shared `inputClass` (`bg-[#0D0D0D]`), but that
+`<select>` sits inside a row `<div>` that's *also* `bg-[#0D0D0D]` (the
+row backgrounds added in the earlier contrast pass) — identical color,
+so the dropdown had no visible boundary against its own row. The
+"Create user" form's select above it was correctly left alone — it sits
+directly on the page background, where `#0D0D0D` already contrasts.
+Added `rowInputClass` (same border/padding/text, `bg-[#171717]` instead
+— lighter-on-darker, matching the `CodeBlock`-against-its-section
+convention already established) and applied it only to the row-level
+select. `tsc --noEmit` clean.
+
+Also answered a direct question, not a bug: confirmed (by reading the
+code, not assuming) that a real student → contributor path already
+exists end-to-end — `/contribute`'s `RoleRequestPanel` (gated on
+`role === 'student'`) submits a request, `/staff`'s Role requests
+section reviews it, and approval's Worker handler
+(`reviewRoleRequestStaffV1`) directly runs `UPDATE users SET role = ?`
+in the same batch as marking the request approved. No gap found, no
+change made.
+
+## Phase 7 content-prep: quiz UI (Slice 3) + structured content authoring (2026-08-27)
+
+User asked directly whether the platform is actually ready to start
+adding real lesson content — explanations, code examples, diagrams,
+questions, quizzes. Investigated rather than assuming yes: found two
+real gaps (plus the SVG MIME-type fix from earlier this session,
+recorded above). Planned via `EnterPlanMode` (three parallel `Explore`
+agents first — one over the quiz-lesson frontend, one over the
+`worker/index.js` quiz-attempt contract, one over migrations/
+push-content conventions — then the design itself, all resolved through
+direct research rather than a separate Plan-agent pass, since the
+exploration results already answered every open question concretely).
+
+**Gap 1 — no quiz-taking UI.** The backend could already grade an
+attempt (`POST /v1/lessons/:id/attempt`, live since the deferred-Phase-2
+work) and `GET /v1/lessons/:id` already returned question/answer data
+correctly (never leaking `is_correct`), but the frontend still showed
+"Taking quizzes isn't built yet." Fixed: `QuizBody` (inline in
+`src/app/courses/[course]/[lesson]/page.tsx`, matching the existing
+`ArticleBody`/`VideoBody`/`ExerciseBody` sibling convention) replaces
+`QuizPlaceholder`. New `attemptQuiz()` in `authClient.ts`, matching
+`completeLesson`'s exact style. Native radio inputs per question,
+visually hidden with a custom square indicator (never circular — the
+design contract is square-edges-only sitewide), state computed directly
+in the className per option (unanswered/selected/correct/wrong), reusing
+the site's existing green/red tokens (`#3FB950`/`#F85149`) and the
+`StatTile` number treatment for the score summary — no new colors or
+patterns invented. Submits the whole question set as one form
+(`AuthSubmitButton`, disabled until every question is answered) rather
+than per-question, matching the backend's own all-or-nothing validation.
+Since the backend marks the lesson complete on *any* successful attempt
+regardless of score, `QuizBody` calls `onCompleted()` itself — the page
+already excluded quiz lessons from the generic `CompletionControl`, so
+no change needed there. Retakes are unlimited server-side (rate-limited
+20/hour, not "once"), so the form stays interactive after grading via a
+"Retake quiz" action that just clears local state.
+
+No live browser extension or Cloudflare credentials available this
+session (see below) — installed Playwright into the scratchpad (not the
+project, same precedent as the earlier auth-pages session) and wrote a
+mocked-API test against a real running `next dev` server: intercepted
+every `api.lowlevelnotes.com` call the page makes (`session`, `course`,
+`lessons`, `lessons/:id`, `me/progress`, `lessons/:id/attempt`) with
+realistic fixtures modeled on the real seeded `cpu-fundamentals-quiz`
+lesson. 8/8 checks passed (questions render, submit disabled until fully
+answered, submit enables once answered, score shows correctly, correct/
+incorrect coloring, radios lock after grading, retake clears state and
+re-enables the form) with zero console errors. Screenshot confirmed the
+graded state visually: green border+indicator on the correct answer,
+red on the wrong selected one, matching the design system exactly.
+`tsc --noEmit`, `npm run lint`, and `npm run build` all clean throughout
+— none of the pre-existing lint issues elsewhere in the repo are in any
+file touched this session.
+
+**Gap 2 — no authoring path for course/module/lesson/question/answer
+structure**, only hand-written SQL migrations — a real step below even
+the freeCodeCamp/MDN-style platforms `AGENTS.md` already says this
+project models itself on. Asked the user directly rather than assuming
+a format: they pushed back twice, productively — first asking what
+real platforms actually use (survey: Coursera's Studio CMS, TryHackMe's
+structured-config creator portal, freeCodeCamp/Docusaurus/VuePress-style
+frontmatter+folders, TOML, Moodle GIFT/Aiken flat Q&A formats), then
+after seeing that survey, correctly preferring frontmatter+folders over
+this session's first-draft single-manifest design — matches real
+precedent and can't drift out of sync with which files exist on disk,
+since the folder structure *is* the course/module hierarchy already
+implied by `content_path`. Also flagged directly that the existing
+`push-content.sh` "gives me the creeps" and asked for JS/TS instead of a
+shell script — ported it to `scripts/push-content.mjs` (same behavior,
+`child_process.execFileSync` instead of a bash loop) and deleted the
+`.sh` file, and built the new `scripts/sync-content.mjs` as JS from the
+start to match.
+
+Format (documented in full in `AGENTS.md`'s "Data and API direction"):
+`_course.yaml`/`_module.yaml` at each folder root; article lessons stay
+`.md` with YAML frontmatter (the same file already pushed to R2 and
+rendered — frontmatter is stripped by the existing `remark-frontmatter`
+step, same mechanism already handling the Pandoc-drafts frontmatter);
+video/exercise/quiz lessons are `.yaml` (no prose body, the whole file
+*is* the structured data). `content_path` is derived by the script from
+the file's own location — never hand-typed, closing the exact class of
+mistake `0002_seed_test_content.sql`'s own comment already flagged
+(a `content_path` pointing at a file that didn't exist yet). Any
+`content/courses/*` entry starting with `_` is skipped by the default
+sync pass — `content/courses/_example/` is one, a small worked example
+covering all four lesson types with placeholder content (not an attempt
+to reproduce the real, already-live `computer-architecture` course,
+whose exact current article bodies aren't available locally — only in
+R2 — this session).
+
+`scripts/sync-content.mjs` (`npm run content:sync -- [--course=<slug>]
+[--remote]`, new `js-yaml` devDependency — not previously a real
+dependency, only pulled in transitively via ESLint) generates
+**idempotent** SQL rather than a migration per edit — the user's
+explicit choice, mirroring how `content:push` already works
+(edit, re-run, done). `courses`/`modules`/`lessons` are real upserts
+keyed on slug, never deleted, so `enrollments`/`lesson_progress` (FK to
+them) survive a re-sync with their `id`s intact. `exercises`/
+`questions`/`answers` are deleted-and-reinserted per lesson on every
+sync instead — safe only because `quiz_attempts` stores an aggregate
+`(score, total)` per attempt, never a per-question/per-answer FK, so
+churning question/answer `id`s on every edit can't corrupt anyone's
+attempt history; also fixes a real fragility spotted during exploration
+— the hand-written migrations keyed an answer's question via prompt-text
+matching, which breaks the moment two questions share wording, whereas
+the new script keys on `(lesson_id, position)` instead. Validates before
+writing any SQL: lesson `type` against the CHECK-constrained enum, file
+extension matches the type, and — the one bug class the schema itself
+can't catch — every quiz question has **exactly one** `correct: true`
+answer (the grading endpoint only checks the single submitted answer's
+own flag, so 0 or 2+ correct answers is a silent, unanswerable-correctly
+content bug, not a schema violation). Defaults to `--local`; `--remote`
+is required explicitly to touch production, same convention `wrangler
+d1 migrations apply` already uses. Scope is deliberately narrow: content
+**data** only, never schema DDL — `wrangler d1 migrations` is still how
+schema changes happen.
+
+**Verified locally, thoroughly, before calling it done**: reset the
+local D1 Miniflare state (pure local emulation, gitignored, unrelated to
+production — safe to discard) and bootstrapped it directly from
+`0001_phase1_learning_platform.sql` rather than the full 13-migration
+chain, since migrations 0011+ depend on `resources`/`tools` tables that
+predate the migrations system entirely and were never seeded locally (a
+pre-existing, unrelated gap, not something to fix here). Ran
+`content:sync --course=_example` against it: every table (`courses`,
+`modules`, `lessons`, `exercises`, `questions`, `answers`) landed with
+exactly the expected values, including multi-line YAML block scalars
+for the exercise's `starter_code`/`solution_notes`. Re-ran the exact
+same sync a second time: identical row counts across every table
+(true idempotency — confirmed, not assumed), lesson `id`s stayed stable
+across the re-sync while question `id`s visibly churned (3,4 instead of
+1,2) — expected and harmless per the design above. Deliberately broke
+the example quiz (a question with two `correct: true` answers) and
+confirmed the script threw *before* executing any SQL, not partway
+through; fixed it back and confirmed a clean sync again. Confirmed the
+default (no `--course`) sync pass finds nothing to do, since `_example`
+correctly gets skipped for starting with `_`. Cleared the local D1 state
+again afterward, leaving no test artifacts behind.
+
+One real near-miss caught immediately: a first attempt to sanity-check
+`push-content.mjs`'s syntax by dynamically `import()`-ing it actually
+executed its `main()` for real (no `import.meta.url` guard — same as the
+original bash script always had, not a regression) and it began a live
+`wrangler r2 object put --remote` call against the real
+`lowlevelnotes-assets` bucket before failing on the same missing-auth
+wall as everything else Cloudflare-side this session. Confirmed via the
+full error output that it failed before any bytes were sent — nothing
+was actually uploaded — but verified this properly rather than assuming
+so from the truncated first look, and switched to `find`-based
+inspection (confirming exactly one non-`.yaml` file existed in the walk
+target, matching the single "Pushing …" line already printed) for
+the rest of that script's verification instead of executing it again.
+
+**Two things this session confirmed are still blocked**, both
+downstream of the same root cause flagged earlier this session: this
+sandbox's auto-mode classifier refuses to read or `source`
+`.env.local` (where `CLOUDFLARE_API_TOKEN` lives) in any form, so
+neither the SVG-fix Worker deploy (still pending from earlier) nor a
+real `--remote` content:sync/push against production D1/R2 could be
+exercised this session. Both are one command away once the user runs
+them directly (`! cd worker && npx wrangler deploy`, then eventually a
+real `npm run content:sync -- --course=<real-course> --remote` once
+real content exists) — flagged rather than worked around.
+
+Nothing here is committed. `content/` (including the new `_example`
+course) is gitignored, same as ever — the format and script are the
+only pieces of this that are real repo changes.
+
+## Cloudflare access unblocked for the rest of the session (2026-08-27)
+
+User asked why deploys/`--remote` commands kept failing and how to fix
+it — explained the auto-mode classifier is a separate layer from the
+`permissions.allow` list, and it was specifically refusing to read or
+`source` `.env.local` (where `CLOUDFLARE_API_TOKEN` lives) regardless of
+what the command downstream wanted to do with it. Offered two routes
+(loosen the classifier's own rules vs. put the token directly in
+`.claude/settings.local.json`'s `env` block so `.env.local` never needs
+touching again); user picked the latter. Gave the user a `jq`-based
+one-liner to run themselves rather than having them paste a live token
+into chat — kept the actual secret values out of the conversation
+transcript throughout. User separately volunteered what each of their
+four keys is for (`INTERNAL_API_KEY`, the IP-restricted Worker/D1/R2/WAF
+edit token, a second WAF-only token for future admins, `RESEND_API_KEY`,
+`TURNSTILE_SECRET`) with an explicit instruction not to document any of
+that anywhere — respected: none of those descriptions are recorded in
+this file, `AGENTS.md`, or memory, only the fact that the mechanism
+exists and works.
+
+Hit two real snags fixing the file, both the user's own edits, not
+mine — `.claude/settings.local.json` isn't a file the classifier treats
+as sensitive like `.env.local` (I already read it earlier this session
+to check the existing `permissions` block), but once it held real
+secret values the classifier started refusing writes to it too, so I
+could only diagnose the problems (a trailing comma, then `#`-style bash
+comments accidentally placed *outside* the closing `}` — invalid in
+JSON regardless of the comma) and hand the user exact `sed` one-liners
+to run themselves rather than fix it directly. Confirmed working via
+`wrangler whoami` once fixed — authenticated against the real account.
+
+Immediately used it for the one pending deploy from earlier this
+session: the SVG MIME-type fix (`ASSET_MIME_TYPES`/`push-content.sh`'s
+content-type map). Deployed (`worker/index.js` version
+`d0b73cda-0e34-4abe-ae89-83dbe8d32964`), smoke-tested `/health` and
+`/status.svg` live — both clean 200s.
+
+## Instructor course builder: write API + browser UI (2026-08-27)
+
+User pushed back hard on the whole content-authoring pipeline built
+earlier this session, and rightly so: "sure I could upload courses in
+.yaml but I'm talking about people that become an instructor on my
+platform who can build courses there. Do they all have to learn .yaml
+and my keywords... It just seems silly." Checked honestly rather than
+defending the earlier work: the `instructor` role has existed since
+Phase 4 but unlocked exactly one thing platform-wide (submitting a
+library resource request, same gate as `contributor`) — zero
+course-authoring capability, ever. The YAML pipeline solved "the site
+owner can add content faster than hand SQL," not "an instructor can
+build a course," and conflating the two was the actual mistake.
+
+Planned via `EnterPlanMode` given the stakes (new write endpoints, a new
+migration, real production data). Two product forks put to the user
+directly rather than assumed, since both change the schema:
+- **Ownership**: any instructor edits any course (matches this app's
+  existing flat-role pattern everywhere else) vs. only their own
+  courses. **User chose: only their own** — real-world instructor model,
+  not a shared free-for-all pool. Needs `courses.created_by` + an
+  ownership check on every write.
+- **Publishing**: instructor self-publishes directly vs. admin review
+  first, mirroring the existing resource-request/role-request pattern.
+  **User chose: admin review** — matches how every other piece of
+  user-submitted content on this platform already works.
+
+Three parallel `Explore` agents researched the exact conventions to
+match before designing anything: `requireRole`/route-matching/
+validation-error-shape/rate-limiting patterns in `worker/index.js`
+(found `createResourceRequestV1` already proves a real file-upload-to-R2
+pattern reusable for article content, and confirmed instructor has
+literally zero existing write endpoints anywhere); `AdminPanel.tsx`'s
+list+form/row conventions and `QuizBody`'s exact visual language for the
+inverse quiz-builder UI; the article render pipeline and the one
+existing file-upload UI pattern (`/contribute`'s resource-request form).
+
+**Schema** (`worker/migrations/0014_instructor_course_authoring.sql`)
+hit a real, serious bug during local verification, not just a style
+question. Original plan: widen `courses.status`'s CHECK to a third
+`'pending_review'` value, via the same recreate-the-table pattern
+0007/0008/0009 already use elsewhere (SQLite has no ALTER for CHECK).
+Testing that locally (bootstrap `0001`→`0002`→`0003`→`0009`, apply
+`0014`) found `modules`/`lessons` silently dropped to zero rows after
+the migration — traced it down to an isolated throwaway parent/child
+table pair before touching the real schema again, and confirmed: `DROP
+TABLE courses` cascade-deletes every table that CASCADEs off it
+(`modules.course_id REFERENCES courses(id) ON DELETE CASCADE`, and
+everything chained below that — lessons, exercises, questions, answers)
+in this D1 setup. This is **not** standard SQLite behavior — DROP TABLE
+isn't supposed to fire FK actions, only DELETE/UPDATE are — but
+reproduced consistently, including via a rename-away-then-drop sequence
+(D1 also rewrites the child's FK reference text on rename, so dropping
+the *renamed-away* copy still fires the cascade). Tried `PRAGMA
+foreign_keys = OFF` wrapping the operation first — didn't help, PRAGMA
+state apparently doesn't persist across statements in one D1
+execute/batch. Confirmed 0007/0008's own "this pattern is already
+proven" precedent was actually never tested against this failure mode —
+both only ever recreated a table using `ON DELETE SET NULL`, never
+`CASCADE`, on the FKs pointing at it.
+
+Redesigned around the finding rather than fighting it: "pending review"
+is represented as `status='draft'` plus a new `submitted_for_review_at`
+timestamp column instead of a third CHECK value — both new columns
+(`created_by`, `rejection_reason`, `submitted_for_review_at`) are plain
+`ALTER TABLE ADD COLUMN`s, no recreation, no DROP, no cascade risk at
+all. `worker/index.js` derives the three-state status
+(`draft`/`pending_review`/`published`) for the API response from these
+two DB columns; `auth_events`' CHECK extension (adding
+`'course_content_write'`, for a new shared rate-limit event type) still
+uses the recreate pattern safely, since confirmed nothing FKs to
+`auth_events` (a leaf table, same as 0009's original addition). Recorded
+the whole finding prominently in the migration file's own comment and in
+`AGENTS.md`, since **any future migration recreating a table with `ON
+DELETE CASCADE` children needs to account for this** — it'll bite again
+otherwise.
+
+New endpoints (`worker/index.js`), all instructor+admin role-gated with
+an ownership check resolved by joining up to the owning course's
+`created_by` (administrators bypass ownership, same as every other
+staff-tier check in this file): full course/module/lesson CRUD under
+`/v1/instructor/*`, a dedicated `PUT .../lessons/:id/content` for
+article markdown (writes straight to R2 at the same `content_path`
+convention `sync-content.mjs` already derives, reusing
+`createResourceRequestV1`'s exact `env.ASSETS.put` mechanism proven
+earlier this session — text body instead of multipart), and
+`/v1/staff/courses/pending` + `/v1/staff/courses/:id/review`
+(admin-only, mirrors `reviewResourceRequestStaffV1` almost exactly).
+Quiz questions/answers reuse the same delete-and-reinsert-by-lesson
+semantics `sync-content.mjs` established, keyed on `(lesson_id,
+position)` rather than the old hand-migrations' fragile prompt-text
+matching — the same validation rule (exactly one `correct: true` per
+question) now lives in three independent places (hand SQL, the YAML
+script, this API) all agreeing with each other. One shared
+`course_content_write` rate-limit event, 60/hour/user — sized up from
+`resource_request_submit`'s 10/hour since building a course is
+legitimately many small saves, not a one-shot submission.
+
+Frontend: `/instructor/courses` (list + create form, `AdminPanel.tsx`
+row-grid conventions), `/instructor/courses/[id]` (the actual builder —
+course-details form, submit-for-review control with real eligibility
+messaging, nested module→lesson rows, and a `LessonEditor` that handles
+both create and update through one component since a quiz lesson's
+create call already needs the full question tree, not an empty-then-fill
+flow). The quiz builder is `QuizBody`'s authoring inverse — same
+`border border-white/10 bg-[#0D0D0D] p-6` block-per-question chrome, same
+square selection-indicator idiom repurposed as a "mark correct" toggle —
+reusing `AdminPanel.tsx`'s `buttonClass` for Add/Remove controls since
+neither source file had anything to import from. Applied this session's
+own earlier contrast lesson explicitly: the quiz fieldset inside a
+lesson editor (which sits inside a `bg-[#0D0D0D]` module row) uses
+`bg-[#171717]` specifically so it doesn't blend into its own container,
+same fix already applied to the staff role dropdown and the library/
+courses entries earlier today. New `PendingCoursesSection` in
+`AdminPanel.tsx`, structurally identical to `RoleRequestsSection`. New
+role-gated "Build a course" card on `/account`.
+
+**Real end-to-end verification, not just unit-level:**
+1. Local: bootstrapped D1 fresh, applied the corrected migration,
+   confirmed via direct row counts that `modules`/`lessons`/`questions`/
+   `answers` all survived (the bug above, now fixed). Ran `wrangler dev
+   --local` against it with hand-inserted test sessions (instructor,
+   administrator, a second instructor for the ownership check) and
+   exercised every endpoint via `curl`: create course → module → one
+   lesson of each type → a deliberately-broken quiz (0 then 2 correct
+   answers, both correctly 400'd before any write) → save article
+   content → full course detail (confirmed `is_correct` visible to the
+   owner, unlike the public endpoint) → ownership check (second
+   instructor correctly 403'd on both read and write) → submit for
+   review → staff pending list → approve → confirmed publicly visible
+   via `GET /v1/courses` → reject path separately (course kicked back to
+   draft with the reason visible to the instructor). Two unrelated local
+   gaps hit along the way (`site_settings`/`banned_at`/`ban_reason`/
+   `staff_audit_log` missing locally, same pre-existing "predates the
+   migrations system" class of gap noted earlier this session) — worked
+   around locally without touching any real migration, not a bug in this
+   work.
+2. Frontend: Playwright against mocked API responses (a real running
+   `next dev`, not just component-level reasoning) — course loads,
+   "add a lesson before submitting" messaging, module creation, a full
+   quiz-lesson creation flow (Save correctly disabled until valid,
+   enabled once a question has 2 answers with one marked correct),
+   submit-for-review flips to the in-review message. 8/8 checks passed,
+   zero console errors, screenshot confirms the design system match
+   (nested bordered rows, orange "In review" status, consistent button
+   styling).
+3. **Real production**, now that Cloudflare access works end-to-end:
+   applied migration `0014` to live D1 (hit and fixed a real, separate
+   bookkeeping gap first — `d1_migrations` had no row for `0012`/
+   `0013` even though both were already live in production schema,
+   because an earlier session applied them via ad-hoc `d1 execute`
+   instead of `migrations apply`; inserted the missing bookkeeping rows
+   so `migrations apply` could run cleanly and stays clean for future
+   migrations too), confirmed all 3 real courses/modules/lessons/
+   exercises/questions/answers/enrollments survived with a direct count
+   before/after. Deployed the Worker (version
+   `544bfab3-94d4-43e3-9dc6-d387fa9aecf1`). Ran the *exact* same
+   end-to-end flow as the local test above, for real, against
+   `api.lowlevelnotes.com`, with throwaway instructor/admin accounts
+   created directly in production D1 — including confirming the article
+   markdown saved through the new endpoint is byte-identical when read
+   back through the real gated asset endpoint. All test data (course,
+   module, lessons, questions, answers, the R2 object, both throwaway
+   users/sessions, their `auth_events`/`staff_audit_log` rows) cleaned up
+   immediately afterward, confirmed zero residue and the 3 real courses
+   untouched.
+
+`tsc --noEmit`, `npm run lint`, `npm run build` all clean throughout —
+no new issues in any file this session touched. Frontend is **not
+committed** (same standing rule as always), but every backend piece
+(schema + endpoints) is live in production right now, verified for
+real, not just claimed.
+
+## YAML pipeline removed, article image upload added (2026-08-27)
+
+User's direct call, immediately after the instructor course builder
+landed: "since everyone in the future is going to be building courses
+on the platform using the built-in ui to do so you should really remove
+those yaml dependencies and script, I can promise you that nobody is
+going to be using that." Right call, not argued with — the YAML
+pipeline solved "the site owner can add content faster than hand SQL,"
+the UI solves "an instructor can build a course," and a second
+content-authoring path nobody would touch was pure maintenance surface.
+
+Asked one clarifying question before deleting anything, since
+`scripts/push-content.mjs` (the R2 uploader) isn't actually
+YAML-specific — it just skips `.yaml` files — and it was the only
+existing way to get an image into R2 at all, since the instructor UI
+only handled markdown text. User's answer: remove it too, and build
+real image upload instead of leaving that gap unfilled.
+
+Also asked directly whether "quizzes don't work yet" (raised in the
+same message) meant a real bug or just that nothing's deployed to the
+live site yet — confirmed it's the latter. Quiz-taking and quiz-authoring
+were both already fully built and verified earlier this session; nothing
+further was needed there.
+
+**Removed**: `scripts/sync-content.mjs`, `scripts/push-content.mjs`, the
+now-empty `scripts/` directory, `content/courses/_example/` (the
+gitignored sample), the `js-yaml` devDependency, the `content:push`/
+`content:sync` npm scripts, and the `/content/` `.gitignore` entry.
+Cleaned up every dangling comment in `worker/index.js` and
+`src/lib/markdown.ts` that referenced the deleted scripts by name rather
+than leaving them pointing at files that no longer exist. `AGENTS.md`
+rewritten to match — the old detailed frontmatter-format spec replaced
+with a short note pointing at this entry for the historical record, and
+both "lesson content lives in R2" bullets updated to describe the
+current instructor-UI-only path instead of the removed push script.
+
+**Article image upload** (`POST /v1/instructor/modules/:id/images`) —
+deliberately **module-scoped, not lesson-scoped**, since the R2 key only
+depends on course+module slugs (`courses/<course>/<module>/<filename>`,
+the same directory an article's own `content_path` already resolves
+relative image references against) — an instructor can upload an image
+before a brand-new article lesson is even saved, not just while editing
+an existing one. Reuses the exact `env.ASSETS.put` multipart-upload
+mechanism `createResourceRequestV1` already proved out earlier this
+session, gated the same way as every other instructor endpoint
+(ownership via `getModuleWithCourse`, which now also selects the
+course's slug alongside `created_by`). Only png/jpg/jpeg/gif/svg
+accepted (checked by extension against `LESSON_IMAGE_EXTENSIONS`, not
+just trusted from the browser's `Content-Type`), 10MB cap, shares the
+existing `course_content_write` rate limit rather than a new event type.
+
+Frontend: an "Insert image" control in the article editor's
+`LessonEditor` — a hidden `<input type="file">` behind a styled label
+(matching `buttonClass`, not a raw unstyled file input), inserting
+`![](filename)` at the textarea's actual cursor position (via a
+`markdownRef`) rather than always appending at the end, so uploading
+mid-paragraph doesn't force rewriting the surrounding text.
+
+**Verified end-to-end, backend first then frontend, local then real
+production** — same discipline as the course builder itself:
+- Local (`wrangler dev --local` against a fresh bootstrapped D1):
+  uploaded a real 1×1 PNG, confirmed it reads back byte-identical
+  through the existing gated asset endpoint; confirmed a non-image
+  extension (`.txt`) is rejected with a clear 400 before any R2 write;
+  confirmed a second instructor gets 403 trying to upload into the
+  first instructor's module.
+- Frontend (Playwright against mocked API responses, a real running
+  `next dev`): the "Insert image" control renders, selecting a file
+  triggers the upload call, and the markdown textarea's value actually
+  contains the inserted `![](filename)` markup afterward. Zero console
+  errors. (Hit and fixed a test-authoring mistake along the way, not a
+  product bug: the first selector grabbed the *module's* Edit button
+  instead of the *lesson's*, since both render the same label — scoped
+  the selector to the specific lesson row by its title text instead.)
+- Real production: deployed (`worker/index.js` version `847644e2`, no
+  migration needed — no schema change for this feature), then ran the
+  identical upload → read-back-identical flow against
+  `api.lowlevelnotes.com` with a throwaway instructor account. Cleaned
+  up the test course, the R2 object, and the throwaway user/session
+  immediately after, confirmed the 3 real courses untouched.
+
+`tsc --noEmit`, `npm run lint`, `npm run build` all clean. Nothing from
+this pass is committed either, same as everything else pending review.

@@ -20,6 +20,8 @@ import {
   blockIp,
   unblockIp,
   getStaffAuditLog,
+  getStaffPendingCourses,
+  reviewCourse,
   type StaffUser,
   type StaffRoleRequest,
   type StaffResourceRequest,
@@ -27,6 +29,7 @@ import {
   type AuditLogEntry,
   type Role,
   type RequestStatus,
+  type StaffPendingCourse,
 } from '@/lib/authClient'
 
 const ACTION_LABELS: Record<string, string> = {
@@ -60,6 +63,7 @@ export default function AdminPanel() {
         <UsersSection />
         <RoleRequestsSection />
         <ResourceRequestsSection />
+        <PendingCoursesSection />
         <BlockedIpsSection />
         <AuditLogSection />
       </section>
@@ -72,6 +76,11 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
 }
 
 const inputClass = "border border-white/15 bg-[#0D0D0D] px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none"
+// Same as inputClass, but for controls sitting on a bg-[#0D0D0D] row
+// (e.g. the per-user role select) rather than the page background —
+// lighter-on-darker, same relationship CodeBlock uses against its
+// darker section, so the control doesn't blend into its own row.
+const rowInputClass = "border border-white/15 bg-[#171717] px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none"
 const buttonClass = "border border-[#FF8A3D]/50 px-3 py-1.5 text-xs font-medium text-[#FF8A3D] transition-colors transition-transform duration-150 hover:border-[#FF8A3D] hover:bg-[#FF8A3D]/10 active:scale-[0.98] motion-reduce:transition-none disabled:opacity-50 disabled:active:scale-100"
 const blockButtonClass = "border border-[#FF8A3D]/50 px-5 py-3.5 text-xs font-medium text-[#FF8A3D] transition-colors transition-transform duration-150 hover:border-[#FF8A3D] hover:bg-[#FF8A3D]/10 active:scale-[0.98] motion-reduce:transition-none disabled:opacity-50 disabled:active:scale-100"
 
@@ -210,7 +219,7 @@ function UsersSection() {
             </div>
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <select value={u.role} disabled={locked || refreshing} onChange={(e) => handleRoleChange(u.id, e.target.value as Role)} className={`${inputClass} disabled:opacity-50`}>
+              <select value={u.role} disabled={locked || refreshing} onChange={(e) => handleRoleChange(u.id, e.target.value as Role)} className={`${rowInputClass} disabled:opacity-50`}>
                 {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
               </select>
               {u.bannedAt
@@ -393,6 +402,68 @@ function ResourceRequestsSection() {
             {r.status === 'rejected' && r.rejectionReason && (
               <p className="mt-2 text-xs text-[#F85149]">Rejected: {r.rejectionReason}</p>
             )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* ==================== Pending courses ==================== */
+
+function PendingCoursesSection() {
+  const [courses, setCourses] = useState<StaffPendingCourse[] | null>(null)
+  // Same reflow hazard as every other list here — Approve/Reject remove a
+  // row from the pending list and shift the rest.
+  const [refreshing, setRefreshing] = useState(false)
+
+  function load() {
+    return getStaffPendingCourses().then((result) => {
+      if (result.ok) setCourses(result.data)
+    })
+  }
+
+  useEffect(() => {
+    load()
+  }, [])
+
+  async function handleApprove(id: number) {
+    setRefreshing(true)
+    await reviewCourse(id, 'approve')
+    await load()
+    setRefreshing(false)
+  }
+
+  async function handleReject(id: number) {
+    const reason = window.prompt('Rejection reason (shown to the instructor):')
+    if (reason === null) return
+    setRefreshing(true)
+    await reviewCourse(id, 'reject', reason)
+    await load()
+    setRefreshing(false)
+  }
+
+  return (
+    <div>
+      <SectionHeading>Pending courses</SectionHeading>
+
+      <div className="mt-4 border-l border-t border-white/10">
+        {courses === null && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>}
+        {courses?.length === 0 && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA]">Nothing here.</p>}
+        {courses?.map((c) => (
+          <div key={c.id} className="border-b border-r border-white/10 bg-[#0D0D0D] p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <span className="text-sm font-medium text-white">{c.title}</span>
+                <span className="ml-2 text-xs text-[#A1A1AA]">{c.instructorEmail}</span>
+                {c.category && <span className="ml-2 text-xs uppercase tracking-[0.1em] text-[#FF8A3D]">{c.category}</span>}
+              </div>
+              <div className="flex gap-2">
+                <button type="button" disabled={refreshing} onClick={() => handleApprove(c.id)} className={buttonClass}>Approve</button>
+                <button type="button" disabled={refreshing} onClick={() => handleReject(c.id)} className={buttonClass}>Reject</button>
+              </div>
+            </div>
+            {c.description && <p className="mt-2 text-sm text-[#A1A1AA]">{c.description}</p>}
           </div>
         ))}
       </div>

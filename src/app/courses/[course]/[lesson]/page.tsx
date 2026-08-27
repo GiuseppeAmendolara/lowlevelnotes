@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { useSession } from '@/components/SessionProvider'
 import SolutionReveal from '@/components/SolutionReveal'
 import ActionButton from '@/components/ActionButton'
+import AuthMessage from '@/components/auth/AuthMessage'
+import AuthSubmitButton from '@/components/auth/AuthSubmitButton'
 import {
   getCourse,
   getCourseLessons,
@@ -14,9 +16,12 @@ import {
   getMyProgress,
   completeLesson,
   enrollCourse,
+  attemptQuiz,
   type Course,
   type Lesson,
   type LessonDetail,
+  type Quiz,
+  type QuizAttemptResult,
 } from '@/lib/authClient'
 
 const TYPE_LABEL: Record<Lesson['type'], string> = {
@@ -201,7 +206,14 @@ export default function LessonPage({ params }: { params: Promise<{ course: strin
             {lesson.type === 'article' && <ArticleBody contentPath={lesson.contentPath} />}
             {lesson.type === 'video' && <VideoBody videoUrl={lesson.videoUrl} />}
             {lesson.type === 'exercise' && lesson.exercise && <ExerciseBody exercise={lesson.exercise} />}
-            {lesson.type === 'quiz' && lesson.quiz && <QuizPlaceholder questionCount={lesson.quiz.questions.length} />}
+            {lesson.type === 'quiz' && lesson.quiz && (
+              <QuizBody
+                lessonId={lesson.id}
+                quiz={lesson.quiz}
+                isCompleted={isCompleted}
+                onCompleted={() => setIsCompleted(true)}
+              />
+            )}
 
             {lesson.type !== 'quiz' && (
               <CompletionControl
@@ -438,13 +450,145 @@ function LessonNav({ courseSlug, nextLesson }: { courseSlug: string; nextLesson:
   )
 }
 
-function QuizPlaceholder({ questionCount }: { questionCount: number }) {
+// Any successful attempt (any score) marks the lesson completed
+// server-side, so this owns calling onCompleted itself rather than
+// relying on the generic CompletionControl, which the page excludes for
+// quiz lessons entirely. Retakes are always allowed server-side (no
+// "already attempted" gate), so the form stays interactive after
+// grading too — "Retake quiz" just clears local state to answer again.
+function QuizBody({
+  lessonId,
+  quiz,
+  isCompleted,
+  onCompleted,
+}: {
+  lessonId: number
+  quiz: Quiz
+  isCompleted: boolean
+  onCompleted: () => void
+}) {
+  const [answers, setAnswers] = useState<Record<number, number>>({})
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [result, setResult] = useState<QuizAttemptResult | null>(null)
+
+  const resultByQuestion = new Map(result?.results.map((r) => [r.questionId, r]))
+  const allAnswered = quiz.questions.every((q) => answers[q.id] !== undefined)
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setSubmitting(true)
+    setError(null)
+
+    const payload = quiz.questions.map((q) => ({ questionId: q.id, answerId: answers[q.id] }))
+    const attemptResult = await attemptQuiz(lessonId, payload)
+    setSubmitting(false)
+
+    if (!attemptResult.ok) {
+      setError(attemptResult.error)
+      return
+    }
+
+    setResult(attemptResult.data)
+    onCompleted()
+  }
+
+  function handleRetake() {
+    setResult(null)
+    setAnswers({})
+    setError(null)
+  }
+
   return (
-    <div className="border border-white/10 bg-[#0D0D0D] p-6">
-      <p className="text-sm text-[#A1A1AA]">
-        This quiz has {questionCount} question{questionCount === 1 ? '' : 's'}. Taking quizzes isn&apos;t built yet
-        — coming soon.
-      </p>
+    <div>
+      {isCompleted && !result && (
+        <p className="mb-6 text-sm text-[#3FB950]">✓ Completed — you can retake this quiz anytime.</p>
+      )}
+
+      {result && (
+        <div className="mb-6 border border-white/10 bg-[#0D0D0D] p-6">
+          <p className="text-2xl font-bold tracking-[-0.03em] text-white">
+            {result.score}/{result.total}
+          </p>
+          <p className="mt-1 text-sm text-[#A1A1AA]">
+            {result.score === result.total ? 'Perfect score.' : 'Review the highlighted answers below.'}
+          </p>
+          <div className="mt-4">
+            <ActionButton onClick={handleRetake} loading={false}>
+              Retake quiz
+            </ActionButton>
+          </div>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        {quiz.questions.map((question, qi) => {
+          const questionResult = resultByQuestion.get(question.id)
+
+          return (
+            <fieldset key={question.id} className="border border-white/10 bg-[#0D0D0D] p-6">
+              <legend className="mb-4 text-sm leading-6 text-white">
+                {qi + 1}. {question.prompt}
+              </legend>
+              <div className="flex flex-col gap-2">
+                {question.answers.map((answer) => {
+                  const selected = answers[question.id] === answer.id
+                  const isCorrectAnswer = questionResult?.correctAnswerId === answer.id
+                  const isSelectedWrong = Boolean(questionResult) && selected && !questionResult?.correct
+
+                  let optionClass = 'border-white/15 hover:border-white/40'
+                  let indicatorClass = selected ? 'border-[#FF8A3D] bg-[#FF8A3D]' : 'border-white/30'
+                  if (questionResult) {
+                    if (isCorrectAnswer) {
+                      optionClass = 'border-[#3FB950] bg-[#3FB950]/10'
+                      indicatorClass = 'border-[#3FB950] bg-[#3FB950]'
+                    } else if (isSelectedWrong) {
+                      optionClass = 'border-[#F85149] bg-[#F85149]/10'
+                      indicatorClass = 'border-[#F85149] bg-[#F85149]'
+                    } else {
+                      optionClass = 'border-white/10 text-white/40'
+                      indicatorClass = 'border-white/20'
+                    }
+                  } else if (selected) {
+                    optionClass = 'border-[#FF8A3D] bg-[#FF8A3D]/10'
+                  }
+
+                  return (
+                    <label
+                      key={answer.id}
+                      className={`flex items-center gap-3 border px-4 py-3 text-sm text-white transition-colors ${optionClass} ${questionResult ? 'cursor-default' : 'cursor-pointer'}`}
+                    >
+                      <input
+                        type="radio"
+                        name={`question-${question.id}`}
+                        value={answer.id}
+                        checked={selected}
+                        disabled={Boolean(questionResult) || submitting}
+                        onChange={() => setAnswers((prev) => ({ ...prev, [question.id]: answer.id }))}
+                        className="sr-only"
+                      />
+                      <span
+                        aria-hidden="true"
+                        className={`h-3 w-3 shrink-0 border ${indicatorClass}`}
+                      />
+                      {answer.body}
+                    </label>
+                  )
+                })}
+              </div>
+            </fieldset>
+          )
+        })}
+
+        {!result && (
+          <div>
+            <AuthSubmitButton loading={submitting} disabled={!allAnswered}>
+              Submit quiz
+            </AuthSubmitButton>
+            {error && <AuthMessage message={error} />}
+          </div>
+        )}
+      </form>
     </div>
   )
 }

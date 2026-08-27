@@ -14,11 +14,6 @@
 next-env.d.ts
 *.tsbuildinfo
 
-# Course lesson content — lives in R2 (lowlevelnotes-assets), pushed via
-# `npm run content:push`. Never committed: this is the local editing
-# workspace only, not a source of truth.
-/content/
-
 # dependencies
 /.pnp
 .pnp.*

@@ -33,31 +33,31 @@ const courses = [
 const disciplines = [
   {
     id: '01',
-    title: 'Foundations',
-    description: 'C, C++, C#, HTTP and the DOM and SQL.',
+    title: 'Programming',
+    description: 'Learn the fundamentals every language builds upon.',
     written: true,
     stat: '20+ resources',
   },
   {
     id: '02',
     title: 'Networks',
-    description: 'The OSI model, TCP-IP networking, subnetting, topology diagrams, and more.',
+    description: 'Find out how your data actually finds its way across the internet.',
     written: true,
-    stat: '4,700+ lines written',
+    stat: 'Compiled from curated resources',
   },
   {
     id: '03',
-    title: 'Systems',
-    description: 'Operating systems, internals, and how software meets hardware.',
+    title: 'Security',
+    description: 'How attackers think: reverse engineering, exploitation, and breaking software on purpose.',
     written: true,
     stat: '10+ resources',
   },
   {
     id: '04',
     title: 'Architecture',
-    description: 'Processors, memory, instruction sets, and performance.',
-    written: false,
-    stat: 'Multiple unreleased drafts',
+    description: 'Turning that magic box into an understandable machine.',
+    written: true,
+    stat: 'Professional-level content available',
   },
 ]
 

@@ -275,6 +275,19 @@ export function completeLesson(id: number) {
   return authFetch<{ message: string }>(`/v1/lessons/${id}/complete`, { method: 'POST' })
 }
 
+export type QuizAttemptResult = {
+  score: number
+  total: number
+  results: { questionId: number; correct: boolean; correctAnswerId: number | null }[]
+}
+
+export function attemptQuiz(lessonId: number, answers: { questionId: number; answerId: number }[]) {
+  return authFetch<QuizAttemptResult>(`/v1/lessons/${lessonId}/attempt`, {
+    method: 'POST',
+    body: JSON.stringify({ answers }),
+  })
+}
+
 export type MyEnrollment = {
   id: number
   courseId: number
@@ -510,4 +523,164 @@ export type AuditLogEntry = {
 
 export function getStaffAuditLog() {
   return authFetch<AuditLogEntry[]>('/v1/staff/audit-log')
+}
+
+// -------- Instructor: course authoring --------
+// Write endpoints for the instructor course builder — distinct from the
+// read-only Course/Lesson types above (getCourses/getLesson etc.), which
+// are the public catalog shape. These carry status/rejectionReason and,
+// for quiz answers, the actual `correct` flag — never exposed to the
+// public read endpoints.
+
+export type InstructorCourseStatus = 'draft' | 'pending_review' | 'published'
+
+export type InstructorCourse = {
+  id: number
+  slug: string
+  title: string
+  description: string | null
+  category: string | null
+  status: InstructorCourseStatus
+  rejectionReason: string | null
+  position: number
+}
+
+export type InstructorQuizAnswer = { id: number; body: string; correct: boolean; position: number }
+export type InstructorQuizQuestion = { id: number; prompt: string; position: number; answers: InstructorQuizAnswer[] }
+
+export type InstructorLesson = {
+  id: number
+  moduleId: number
+  slug: string
+  title: string
+  type: LessonType
+  contentPath: string | null
+  videoUrl: string | null
+  position: number
+  exercise?: Exercise
+  quiz?: { questions: InstructorQuizQuestion[] }
+}
+
+export type InstructorModule = {
+  id: number
+  courseId: number
+  slug: string
+  title: string
+  description: string | null
+  position: number
+  lessons: InstructorLesson[]
+}
+
+export type InstructorCourseDetail = InstructorCourse & { modules: InstructorModule[] }
+
+export function createCourse(fields: { title: string; description?: string; category?: string }) {
+  return authFetch<{ message: string; id: number; slug: string }>('/v1/instructor/courses', {
+    method: 'POST',
+    body: JSON.stringify(fields),
+  })
+}
+
+export function getMyCourses() {
+  return authFetch<InstructorCourse[]>('/v1/instructor/courses')
+}
+
+export function getMyCourse(id: number) {
+  return authFetch<InstructorCourseDetail>(`/v1/instructor/courses/${id}`)
+}
+
+export function updateCourse(id: number, fields: { title: string; description?: string; category?: string }) {
+  return authFetch<{ message: string }>(`/v1/instructor/courses/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(fields),
+  })
+}
+
+export function submitCourseForReview(id: number) {
+  return authFetch<{ message: string }>(`/v1/instructor/courses/${id}/submit-for-review`, { method: 'POST' })
+}
+
+export function createModule(courseId: number, fields: { title: string; description?: string }) {
+  return authFetch<{ message: string; id: number }>(`/v1/instructor/courses/${courseId}/modules`, {
+    method: 'POST',
+    body: JSON.stringify(fields),
+  })
+}
+
+export function updateModule(id: number, fields: { title: string; description?: string }) {
+  return authFetch<{ message: string }>(`/v1/instructor/modules/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(fields),
+  })
+}
+
+export function deleteModule(id: number) {
+  return authFetch<{ message: string }>(`/v1/instructor/modules/${id}`, { method: 'DELETE' })
+}
+
+// Combined create/update body shape — type-specific fields alongside
+// title, matching the Worker's own combined-body convention. type is only
+// read on create; updateLesson always operates on the lesson's existing
+// type (fixed at creation, same principle as slug).
+export type LessonFields = {
+  title: string
+  type: LessonType
+  videoUrl?: string
+  prompt?: string
+  language?: string
+  starterCode?: string
+  solutionNotes?: string
+  questions?: { prompt: string; answers: { body: string; correct: boolean }[] }[]
+}
+
+export function createLesson(moduleId: number, fields: LessonFields) {
+  return authFetch<{ message: string; id: number; slug: string }>(`/v1/instructor/modules/${moduleId}/lessons`, {
+    method: 'POST',
+    body: JSON.stringify(fields),
+  })
+}
+
+export function updateLesson(id: number, fields: LessonFields) {
+  return authFetch<{ message: string }>(`/v1/instructor/lessons/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(fields),
+  })
+}
+
+export function deleteLesson(id: number) {
+  return authFetch<{ message: string }>(`/v1/instructor/lessons/${id}`, { method: 'DELETE' })
+}
+
+// Article body only — writes straight to R2, separate from createLesson/
+// updateLesson since content is markdown text, not a DB column.
+export function saveLessonContent(lessonId: number, markdown: string) {
+  return authFetch<{ message: string }>(`/v1/instructor/lessons/${lessonId}/content`, {
+    method: 'PUT',
+    body: JSON.stringify({ markdown }),
+  })
+}
+
+// Module-scoped, not lesson-scoped — the R2 path only depends on
+// course+module slugs, so an image can be uploaded before a new article
+// lesson is even saved. Returns the filename to reference from markdown
+// (e.g. `![alt](filename.png)`), same directory the article's own
+// content_path resolves relative images against.
+export function uploadLessonImage(moduleId: number, file: File) {
+  const form = new FormData()
+  form.set('file', file)
+  return authFetchForm<{ message: string; filename: string }>(`/v1/instructor/modules/${moduleId}/images`, form)
+}
+
+// -------- Staff: courses --------
+
+export type StaffPendingCourse = InstructorCourse & { instructorEmail: string }
+
+export function getStaffPendingCourses() {
+  return authFetch<StaffPendingCourse[]>('/v1/staff/courses/pending')
+}
+
+export function reviewCourse(id: number, action: 'approve' | 'reject', reason?: string) {
+  return authFetch<{ message: string }>(`/v1/staff/courses/${id}/review`, {
+    method: 'PUT',
+    body: JSON.stringify({ action, reason }),
+  })
 }

@@ -97,6 +97,13 @@ export default function AccountPage() {
             description="Submit a resource for review."
           />
         )}
+        {(user.role === 'instructor' || user.role === 'administrator') && (
+          <AccountLinkCard
+            href="/instructor/courses"
+            title="Build a course"
+            description="Create and edit your own courses, submit them for review."
+          />
+        )}
         {user.role === 'administrator' && (
           <AccountLinkCard
             href="/staff"

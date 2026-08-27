@@ -73,10 +73,23 @@ phase.
 6. **Phase 7 (in progress):** Learning system: explanations, code examples,
    diagrams, interactive “try it yourself” exercises (informational only
    this phase — see "Data and API direction" below), questions, quizzes,
-   and lesson completion. Slice 1 (session-gated catalog + R2-backed
-   content pipeline) complete and live; Slice 2 (enroll + mark-complete
-   actions) implemented, pending deploy — see WORKLOG's "Phase 7
-   scoping" entry for the remaining staged slices.
+   and lesson completion. All Worker-side endpoints for Slices 1–3
+   (session-gated catalog + R2-backed content pipeline; enroll +
+   mark-complete; quiz grading) plus the new instructor course-authoring
+   write API are deployed and **live in production**. The matching
+   frontend (quiz-taking UI, the instructor course builder at
+   `/instructor/courses`) is implemented and verified but **not yet
+   committed** — same standing rule as everywhere else in this project,
+   the user commits, not the agent. A structured content-authoring layer
+   (frontmatter + folder convention, `npm run content:sync`) exists
+   alongside the content-bytes pipeline for fast scriptable import — see
+   "Data and API direction" below. On top of that, a full instructor
+   course-authoring surface (write API + a browser course builder, with
+   admin review before publishing) means an instructor no longer needs
+   repo/Cloudflare access to build a course at all once the frontend
+   lands; the YAML pipeline remains a separate, faster path for bulk
+   import. See WORKLOG's "Phase 7 scoping" and "Instructor course
+   builder" entries for the remaining staged slices and the full design.
 7. **Phase 8:** Exercises, including standard-library-free programming tasks and
    x86-64 assembly tasks.
 8. **Phase 9:** Progress: course/lesson progress, quiz scores, exercise results,
@@ -124,11 +137,14 @@ These are planning notes, not authorization to begin future phases early.
   `lessons.content_path`), not as DB blobs — but **not in git either**.
   This reverses Phase 7 Slice 1's original call (see the Phase 7 block
   below for why): content lives in R2 (`lowlevelnotes-assets`,
-  `content_path` doubling as the R2 key), edited locally under a
-  gitignored `content/` folder and pushed with
-  `npm run content:push` (`scripts/push-content.sh`). Never committed,
-  never publicly downloadable — same non-CMS reasoning as before
-  (no admin UI, no database blobs), just not git either.
+  `content_path` doubling as the R2 key). Authored exclusively through
+  the instructor UI (`/instructor/courses`) now — `PUT /v1/instructor/
+  lessons/:id/content` writes the markdown straight to R2 server-side,
+  no local editing folder or push script involved (an earlier
+  scriptable/YAML-based authoring pipeline existed briefly and was
+  removed once the UI shipped — see "Instructor course builder" below).
+  Never committed, never publicly downloadable — same non-CMS reasoning
+  as before (no database blobs), just not git either.
 - A quiz is a `lessons` row with `type = 'quiz'` (owning `questions` →
   `answers`), not a separate `quizzes` table.
 - `users.role` does not include `guest` — a guest is an unauthenticated
@@ -218,15 +234,14 @@ These are planning notes, not authorization to begin future phases early.
     original "matches the site's git/PR contribution model" call — the
     user was explicit that content must not end up on GitHub. Content
     lives in R2 (`lowlevelnotes-assets`), `content_path` doubling as the
-    R2 key. Local editing workspace is a gitignored `content/` folder;
-    `npm run content:push` (`scripts/push-content.sh`) uploads it via
-    `wrangler r2 object put --remote`, one file per key. Reading a
-    lesson's content bytes reuses the existing gated
-    `GET /v1/library/assets/:key` endpoint (`getLibraryAssetV1`) as-is —
-    no new Worker endpoint for content, since `content_path` values are
-    already valid keys into that same bucket. Accepted tradeoff: shares
-    that endpoint's 60/download-per-hour rate limit with real library
-    downloads.
+    R2 key. Written server-side via `PUT /v1/instructor/lessons/:id/
+    content` (part of the instructor course builder — see below), never
+    a local editing folder or push script. Reading a lesson's content
+    bytes reuses the existing gated `GET /v1/library/assets/:key`
+    endpoint (`getLibraryAssetV1`) as-is — no separate read endpoint for
+    content, since `content_path` values are already valid keys into
+    that same bucket. Accepted tradeoff: shares that endpoint's
+    60/download-per-hour rate limit with real library downloads.
   - Because content now requires an authenticated browser fetch (not a
     server-side file read), rendering moved to two new same-origin
     Route Handlers — `POST /api/render/markdown` and
@@ -342,6 +357,112 @@ These are planning notes, not authorization to begin future phases early.
       with its progress count, a continue link, and the same Unenroll
       action as the course page (duplicated, not extracted into a
       shared hook — matches this app's existing low-abstraction style).
+  - **Slice 3 (quiz-taking UI)**: `QuizBody` (inline in
+    `src/app/courses/[course]/[lesson]/page.tsx`, alongside
+    `ArticleBody`/`VideoBody`/`ExerciseBody`) replaces the old
+    `QuizPlaceholder`. Wired against the already-live
+    `POST /v1/lessons/:id/attempt` (new `attemptQuiz()` in
+    `authClient.ts`) — every question answered exactly once via native
+    radio inputs (custom-styled, square indicators, never circular —
+    matches the no-rounding design contract), submitted as one
+    `{ answers: [{questionId, answerId}] }` payload. The response's
+    `correctAnswerId` (always revealed per question, win or lose) drives
+    the post-submit coloring — green/red reusing the site's existing
+    success/error tokens (`#3FB950`/`#F85149`), no new colors invented.
+    Any successful attempt (any score) marks the lesson complete
+    server-side, so `QuizBody` calls `onCompleted()` itself rather than
+    using the generic `CompletionControl` (still excluded for quiz
+    lessons, unchanged). Retakes are unlimited server-side (rate-limited
+    20/hour, not "once ever"), so the form stays fully interactive after
+    grading via a "Retake quiz" action that just clears local state.
+  - **Content authoring is exclusively through the instructor UI now**
+    (`/instructor/courses`, see "Instructor course builder" just below).
+    A YAML/frontmatter-based scriptable pipeline (`scripts/
+    sync-content.mjs` + `scripts/push-content.mjs`, a `content/` local
+    editing folder) was built and fully verified earlier the same day the
+    instructor UI shipped, then deliberately removed once it did — the
+    user's direct call: real instructors were never going to hand-author
+    YAML, so a second content-authoring path with no users wasn't worth
+    the maintenance surface. Removed: both scripts, the `js-yaml`
+    devDependency, the `content:push`/`content:sync` npm scripts, the
+    `content/` gitignore entry. See WORKLOG's "Phase 7 content-prep"
+    entry if the format/script design is ever needed for reference.
+  - **Instructor course builder** — a real write API plus a browser UI
+    (`/instructor/courses`, `/instructor/courses/[id]`) so an instructor
+    can build a course without repo/Cloudflare access at all, distinct
+    from the YAML pipeline above (that stays as a separate, faster
+    bulk-import path for the site owner specifically). See WORKLOG's
+    "Instructor course builder" entry for the full design/verification;
+    key decisions:
+    - **Ownership**: `courses.created_by` — an instructor can only edit
+      courses they created; administrators bypass ownership the same way
+      they bypass every other staff-tier restriction. User's explicit
+      choice over a flat role gate (the pattern used everywhere else in
+      this app, e.g. any contributor can submit any resource).
+    - **Publishing**: mirrors the existing resource-request/role-request
+      review pattern — an instructor submits a finished course for
+      review; an admin approves (goes live) or rejects (kicked back to
+      draft with a reason). User's explicit choice over self-publish.
+    - **`courses.status` is still only ever `'draft'`/`'published'` at
+      the DB level** — "pending review" is `status='draft'` plus a new
+      `submitted_for_review_at` timestamp column, not a third CHECK
+      value. This was a real, load-bearing finding, not a style choice:
+      widening the CHECK would need the usual recreate-the-table pattern
+      (0007/0008/0009's precedent), but testing that locally found DROP
+      TABLE on `courses` cascade-deletes `modules`/`lessons`/`exercises`/
+      `questions`/`answers` in this D1 setup (`modules.course_id
+      REFERENCES courses(id) ON DELETE CASCADE`) — **not** standard
+      SQLite behavior (DROP TABLE isn't supposed to fire FK actions at
+      all), but reproducible here even via rename-away-then-drop, since
+      D1 also rewrites the child's FK reference on rename. Confirmed in
+      isolation with a throwaway parent/child pair before touching the
+      real schema. 0007/0008's own "recreate the table" precedent never
+      actually tested this failure mode — both only ever used `ON DELETE
+      SET NULL`, never `CASCADE`. **Any future migration that recreates a
+      table with `ON DELETE CASCADE` children must account for this** —
+      either avoid the recreate (prefer `ADD COLUMN`/a marker column, as
+      done here) or explicitly test locally first the way this was.
+    - New endpoints, all under `/v1/instructor/*` (instructor+admin,
+      ownership-checked) and `/v1/staff/courses/*` (admin-only, review):
+      create/read/update courses and modules, create/update/delete
+      lessons (combined body — type-specific fields alongside title in
+      one call), a dedicated `PUT .../lessons/:id/content` for article
+      markdown (writes straight to R2 at a derived `content_path`,
+      reusing `createResourceRequestV1`'s proven `env.ASSETS.put`
+      mechanism, text body instead of multipart), a matching
+      `POST .../lessons/:id/images` for article images (multipart, same
+      `env.ASSETS.put` mechanism, returns the relative filename to
+      reference from markdown), `POST .../submit-for-review`,
+      `GET /v1/staff/courses/pending`, `PUT /v1/staff/courses/:id/review`.
+      Quiz questions/answers use a delete-and-reinsert-by-lesson approach
+      keyed on `(lesson_id, position)` — simpler than diffing individual
+      rows, and safe because `quiz_attempts` only stores an aggregate
+      score/total per attempt, never a per-question/per-answer FK. Shares
+      one rate-limit event type (`course_content_write`, 60/hour/user) across
+      every mutating endpoint, added to `auth_events`' CHECK enum in the
+      same migration — sized up from `resource_request_submit`'s 10/hour
+      since building a course is legitimately many small saves.
+    - Frontend: `/instructor/courses` (list + create), `/instructor/
+      courses/[id]` (the builder — course details, modules, per-lesson
+      inline editors including a quiz question/answer builder that's the
+      authoring inverse of `QuizBody`), a new `PendingCoursesSection` in
+      `AdminPanel.tsx` (mirrors `RoleRequestsSection`/
+      `ResourceRequestsSection` exactly), and a role-gated "Build a
+      course" card on `/account`. The article editor also has an "Insert
+      image" control (a hidden `<input type="file">` behind a styled
+      label, only png/jpg/jpeg/gif/svg, 10MB cap) that inserts
+      `![](filename)` at the cursor — module-scoped upload
+      (`POST /v1/instructor/modules/:id/images`, not lesson-scoped),
+      since the R2 path only depends on course+module slugs, so an image
+      can be uploaded before a brand-new article lesson is even saved.
+    - **Known gap, not fixed in this pass**: `GET /v1/library/assets/:key`
+      (reused for the article-content preview/edit loop) is session-gated
+      but not ownership-gated — any authenticated user who somehow knew a
+      draft course's exact `content_path` could read that draft's article
+      text before it's published. Pre-existing behavior for the endpoint
+      generally, just newly relevant now that draft (not just published)
+      content flows through it. Worth a real fix if this becomes a
+      concern with real outside instructors.
 - **Phase 3 (authentication), concrete decisions** — see WORKLOG's "Phase
   3" entry for the full security reasoning:
   - Password hashing: PBKDF2-HMAC-SHA256, 100,000 iterations, via

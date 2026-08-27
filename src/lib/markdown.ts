@@ -38,9 +38,9 @@ function rehypeRewriteImages(basePath: string) {
 // remark-rehype does not sanitize link hrefs — a markdown link like
 // `[x](javascript:alert(1))` renders straight through into
 // `<a href="javascript:alert(1)">`, which then reaches the browser via
-// `dangerouslySetInnerHTML` on the lesson page. Only content authors can
-// write lesson markdown today (pushed to R2 via `scripts/push-content.sh`,
-// not user-submitted), but this pipeline is one plausible base for a
+// `dangerouslySetInnerHTML` on the lesson page. Only instructors can
+// write lesson markdown today (via the instructor course builder, not
+// open user submission), but this pipeline is one plausible base for a
 // future contributor-submitted content path, and sanitizing link schemes
 // is cheap and standard practice for any renderer that ends up in
 // dangerouslySetInnerHTML — allowlist rather than blocklist, since new

@@ -6,8 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "content:push": "bash scripts/push-content.sh"
+    "lint": "eslint"
   },
   "dependencies": {
     "next": "16.3.2",

@@ -17,7 +17,7 @@ export default function CourseCatalogCard({ course, index }: { course: Course; i
       ref={ref}
       href={`/courses/${course.slug}`}
       style={{ transitionDelay: `${Math.min(index, 6) * 40}ms` }}
-      className={`group flex flex-col justify-between gap-4 bg-[#171717] p-6 hover:bg-white/[0.035] hover:-translate-y-0.5 motion-reduce:hover:translate-y-0 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#FF8A3D] ${revealClass} ${revealState(visible)}`}
+      className={`group flex flex-col justify-between gap-4 bg-[#0D0D0D] p-6 hover:bg-[#151515] hover:-translate-y-0.5 motion-reduce:hover:translate-y-0 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#FF8A3D] ${revealClass} ${revealState(visible)}`}
     >
       <div>
         {course.category && (
