@@ -38,7 +38,10 @@ export default function Header() {
                   }`}
                 >
                   {link.label}
-                  <span className={`absolute inset-x-3 bottom-0 h-px transition-colors ${active ? 'bg-[#FF8A3D]' : 'bg-transparent'}`} aria-hidden="true" />
+                  <span
+                    className={`absolute inset-x-3 bottom-0 h-px origin-center scale-x-0 bg-[#FF8A3D] transition-transform duration-150 motion-reduce:transition-none ${active ? 'scale-x-100' : ''}`}
+                    aria-hidden="true"
+                  />
                 </Link>
               )
             })}

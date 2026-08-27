@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { useSession } from '@/components/SessionProvider'
 import { getCourses, type Course } from '@/lib/authClient'
+import CourseCatalogCard from '@/components/CourseCatalogCard'
 
 // Client-gated and client-fetched, matching /library — the Worker now
 // requires a session for the course catalog too, and the Next.js server
@@ -40,7 +40,7 @@ export default function CoursesPage() {
     return (
       <main className="min-h-screen bg-[#171717]">
         <section className="mx-auto max-w-5xl px-6 pb-10 pt-20 sm:pt-28">
-          <p className="text-sm text-[#A1A1AA]">Loading…</p>
+          <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>
         </section>
       </main>
     )
@@ -57,31 +57,14 @@ export default function CoursesPage() {
       </section>
 
       <section className="mx-auto max-w-5xl px-6 pb-24">
-        {error && <p className="text-sm text-[#F85149]">{error}</p>}
+        {error && <p className="text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
         {courses && courses.length === 0 && (
           <p className="text-sm text-[#A1A1AA]">No courses published yet.</p>
         )}
         {courses && courses.length > 0 && (
           <div className="grid grid-cols-1 gap-px border border-white/10 bg-white/10 sm:grid-cols-2">
-            {courses.map((course) => (
-              <Link
-                key={course.id}
-                href={`/courses/${course.slug}`}
-                className="group flex flex-col justify-between gap-4 bg-[#171717] p-6 transition-colors hover:bg-white/[0.035] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#FF8A3D]"
-              >
-                <div>
-                  {course.category && (
-                    <p className="text-xs font-medium uppercase tracking-[0.14em] text-[#FF8A3D]">{course.category}</p>
-                  )}
-                  <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">{course.title}</h2>
-                  {course.description && (
-                    <p className="mt-2 text-sm leading-6 text-[#A1A1AA]">{course.description}</p>
-                  )}
-                </div>
-                <span className="text-xs uppercase tracking-[0.12em] text-white/40 transition-colors group-hover:text-white">
-                  View course →
-                </span>
-              </Link>
+            {courses.map((course, i) => (
+              <CourseCatalogCard key={course.id} course={course} index={i} />
             ))}
           </div>
         )}

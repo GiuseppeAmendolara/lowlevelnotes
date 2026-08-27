@@ -14,6 +14,15 @@ import Script from 'next/script'
 // client code. The private secret key lives only in the Worker, never here.
 const TURNSTILE_SITE_KEY = '0x4AAAAAAEdKEFa7n07s2OQ1'
 
+// How long to wait for the widget to actually render before offering a
+// retry — covers both a genuine script load failure (blocked, offline)
+// and the more common case: `next/script`'s `onLoad` not firing on a
+// client-side navigation to a second page that renders this same
+// `<Script src>` after a previous page already loaded it, which
+// previously left the widget silently blank with no recovery short of a
+// full page refresh.
+const RENDER_TIMEOUT_MS = 8000
+
 declare global {
   interface Window {
     turnstile?: {
@@ -41,6 +50,9 @@ const TurnstileWidget = forwardRef<TurnstileHandle, Props>(function TurnstileWid
   const containerRef = useRef<HTMLDivElement>(null)
   const widgetIdRef = useRef<string | null>(null)
   const [scriptLoaded, setScriptLoaded] = useState(false)
+  const [rendered, setRendered] = useState(false)
+  const [stalled, setStalled] = useState(false)
+  const [retryKey, setRetryKey] = useState(0)
 
   useImperativeHandle(ref, () => ({
     reset: () => {
@@ -49,6 +61,14 @@ const TurnstileWidget = forwardRef<TurnstileHandle, Props>(function TurnstileWid
       }
     },
   }))
+
+  function handleRetry() {
+    setScriptLoaded(false)
+    setRendered(false)
+    setStalled(false)
+    widgetIdRef.current = null
+    setRetryKey((k) => k + 1)
+  }
 
   useEffect(() => {
     if (!scriptLoaded || !containerRef.current || !window.turnstile) return
@@ -61,6 +81,7 @@ const TurnstileWidget = forwardRef<TurnstileHandle, Props>(function TurnstileWid
       'expired-callback': () => onToken(null),
       'error-callback': () => onToken(null),
     })
+    setRendered(true)
 
     return () => {
       if (widgetIdRef.current && window.turnstile) {
@@ -68,16 +89,40 @@ const TurnstileWidget = forwardRef<TurnstileHandle, Props>(function TurnstileWid
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scriptLoaded])
+  }, [scriptLoaded, retryKey])
+
+  // No recovery previously existed if the script never finished loading
+  // or never rendered — the widget just stayed blank forever and the
+  // only fix was a full page refresh (sometimes more than one). This
+  // gives an in-page retry instead.
+  useEffect(() => {
+    if (rendered) return
+    const timeout = setTimeout(() => setStalled(true), RENDER_TIMEOUT_MS)
+    return () => clearTimeout(timeout)
+  }, [rendered, retryKey])
 
   return (
     <>
       <Script
+        key={retryKey}
         src="https://challenges.cloudflare.com/turnstile/v0/api.js"
         strategy="afterInteractive"
         onLoad={() => setScriptLoaded(true)}
+        onError={() => setStalled(true)}
       />
-      <div ref={containerRef} className={className}/>
+      <div ref={containerRef} className={className} />
+      {stalled && !rendered && (
+        <p className="mt-2 text-xs text-[#F85149]">
+          Verification didn&apos;t load.{' '}
+          <button
+            type="button"
+            onClick={handleRetry}
+            className="underline underline-offset-2 transition-colors hover:text-white"
+          >
+            Retry
+          </button>
+        </p>
+      )}
     </>
   )
 })

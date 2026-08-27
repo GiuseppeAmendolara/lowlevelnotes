@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import type { Resource, Person } from '@/lib/api'
+import { useReveal, revealClass, revealState } from '@/lib/useReveal'
 
 const typeLabels: Record<Resource['type'], string> = {
   pdf: 'PDF',
@@ -204,53 +205,14 @@ export default function LibraryBrowser({ resources, people }: Props) {
       </p>
 
       <div className="mt-4 border-l border-t border-white/10">
-        {filtered.map((item) => {
-          const author = item.authorId !== null ? peopleById.get(item.authorId) : undefined
-          return (
-            <article key={item.id} className="border-b border-r border-white/10 p-6 transition-colors hover:bg-white/[0.035]">
-              <div className="flex flex-wrap items-center gap-3 text-xs">
-                <span className="text-[#FF8A3D]">{item.category}</span>
-                <span className="text-white/20">·</span>
-                <span className="uppercase tracking-[0.1em] text-[#A1A1AA]">{typeLabels[item.type]}</span>
-              </div>
-
-              <a
-                href={resolveHref(item.path)}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => trackView(item)}
-                className="mt-3 inline-block text-lg font-semibold text-white transition-colors hover:text-[#FF8A3D]"
-              >
-                {item.title.trim()}
-              </a>
-
-              {item.description && (
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-[#A1A1AA]">{item.description.trim()}</p>
-              )}
-
-              {(author || item.views !== null) && (
-                <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-white/40">
-                  {author && (
-                    author.profile ? (
-                      <a
-                        href={author.profile}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="hover:text-white"
-                      >
-                        {author.name.trim()}
-                      </a>
-                    ) : (
-                      <span>{author.name.trim()}</span>
-                    )
-                  )}
-                  {author && item.views !== null && <span>&middot;</span>}
-                  {item.views !== null && <span>{item.views} views</span>}
-                </div>
-              )}
-            </article>
-          )
-        })}
+        {filtered.map((item, i) => (
+          <LibraryItemRow
+            key={item.id}
+            item={item}
+            author={item.authorId !== null ? peopleById.get(item.authorId) : undefined}
+            index={i}
+          />
+        ))}
 
         {filtered.length === 0 && (
           <div className="border-b border-r border-white/10 p-6 text-sm text-[#A1A1AA]">
@@ -259,5 +221,58 @@ export default function LibraryBrowser({ resources, people }: Props) {
         )}
       </div>
     </div>
+  )
+}
+
+// useReveal is applied directly to the <article> — this list uses the
+// same shared-border grid technique as the homepage cards (border-l/
+// border-t on the parent, border-b/border-r per row), so a wrapper here
+// would double up borders. Dense list, so no hover-lift — stays
+// color-only, matching every other row-style list on the site.
+function LibraryItemRow({ item, author, index }: { item: Item; author: Person | undefined; index: number }) {
+  const { ref, visible } = useReveal<HTMLElement>()
+
+  return (
+    <article
+      ref={ref}
+      style={{ transitionDelay: `${Math.min(index, 6) * 40}ms` }}
+      className={`border-b border-r border-white/10 p-6 hover:bg-white/[0.035] ${revealClass} ${revealState(visible)}`}
+    >
+      <div className="flex flex-wrap items-center gap-3 text-xs">
+        <span className="text-[#FF8A3D]">{item.category}</span>
+        <span className="text-white/20">·</span>
+        <span className="uppercase tracking-[0.1em] text-[#A1A1AA]">{typeLabels[item.type]}</span>
+      </div>
+
+      <a
+        href={resolveHref(item.path)}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={() => trackView(item)}
+        className="mt-3 inline-block text-lg font-semibold text-white transition-colors hover:text-[#FF8A3D]"
+      >
+        {item.title.trim()}
+      </a>
+
+      {item.description && (
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-[#A1A1AA]">{item.description.trim()}</p>
+      )}
+
+      {(author || item.views !== null) && (
+        <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-white/40">
+          {author && (
+            author.profile ? (
+              <a href={author.profile} target="_blank" rel="noopener noreferrer" className="hover:text-white">
+                {author.name.trim()}
+              </a>
+            ) : (
+              <span>{author.name.trim()}</span>
+            )
+          )}
+          {author && item.views !== null && <span>&middot;</span>}
+          {item.views !== null && <span>{item.views} views</span>}
+        </div>
+      )}
+    </article>
   )
 }

@@ -147,7 +147,7 @@ export default function LessonPage({ params }: { params: Promise<{ course: strin
     return (
       <main className="min-h-screen bg-[#171717]">
         <section className="mx-auto max-w-3xl px-6 pb-10 pt-20 sm:pt-28">
-          <p className="text-sm text-[#A1A1AA]">Loading…</p>
+          <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>
         </section>
       </main>
     )
@@ -173,7 +173,7 @@ export default function LessonPage({ params }: { params: Promise<{ course: strin
     return (
       <main className="min-h-screen bg-[#171717]">
         <section className="mx-auto max-w-3xl px-6 pb-10 pt-20 sm:pt-28">
-          <p className="text-sm text-[#A1A1AA]">Loading…</p>
+          <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>
         </section>
       </main>
     )
@@ -197,7 +197,7 @@ export default function LessonPage({ params }: { params: Promise<{ course: strin
         {!isEnrolled ? (
           <LockedLesson type={lesson.type} onEnroll={handleEnroll} enrolling={enrolling} error={enrollError} />
         ) : (
-          <>
+          <div className="animate-fade-in-up motion-reduce:animate-none">
             {lesson.type === 'article' && <ArticleBody contentPath={lesson.contentPath} />}
             {lesson.type === 'video' && <VideoBody videoUrl={lesson.videoUrl} />}
             {lesson.type === 'exercise' && lesson.exercise && <ExerciseBody exercise={lesson.exercise} />}
@@ -212,7 +212,7 @@ export default function LessonPage({ params }: { params: Promise<{ course: strin
             )}
 
             <LessonNav courseSlug={courseSlug} nextLesson={nextLesson} />
-          </>
+          </div>
         )}
       </section>
     </main>
@@ -259,16 +259,16 @@ function ArticleBody({ contentPath }: { contentPath: string | null }) {
   }
 
   if (error) {
-    return <p className="text-sm text-[#F85149]">{error}</p>
+    return <p className="text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>
   }
 
   if (!html) {
-    return <p className="text-sm text-[#A1A1AA]">Loading…</p>
+    return <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>
   }
 
   return (
     <div
-      className="prose-lesson [&_a]:text-[#FF8A3D] [&_a]:underline [&_a]:underline-offset-2 [&_blockquote]:border-l-2 [&_blockquote]:border-white/20 [&_blockquote]:pl-4 [&_blockquote]:text-[#A1A1AA] [&_code]:bg-white/[0.06] [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-[0.85em] [&_h1]:mt-10 [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:tracking-[-0.04em] [&_h1]:text-white [&_h2]:mt-10 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:tracking-[-0.03em] [&_h2]:text-white [&_h3]:mt-8 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-white [&_hr]:border-white/10 [&_img]:max-w-full [&_li]:leading-7 [&_ol]:mt-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:mt-4 [&_p]:leading-7 [&_p]:text-[#A1A1AA] [&_pre]:my-4 [&_table]:mt-4 [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-white/10 [&_td]:px-3 [&_td]:py-2 [&_th]:border [&_th]:border-white/10 [&_th]:bg-white/[0.03] [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:text-white [&_ul]:mt-4 [&_ul]:list-disc [&_ul]:pl-6 text-sm"
+      className="prose-lesson animate-fade-in-up motion-reduce:animate-none [&_a]:text-[#FF8A3D] [&_a]:underline [&_a]:underline-offset-2 [&_blockquote]:border-l-2 [&_blockquote]:border-white/20 [&_blockquote]:pl-4 [&_blockquote]:text-[#A1A1AA] [&_code]:bg-white/[0.06] [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-[0.85em] [&_h1]:mt-10 [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:tracking-[-0.04em] [&_h1]:text-white [&_h2]:mt-10 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:tracking-[-0.03em] [&_h2]:text-white [&_h3]:mt-8 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-white [&_hr]:border-white/10 [&_img]:max-w-full [&_li]:leading-7 [&_ol]:mt-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:mt-4 [&_p]:leading-7 [&_p]:text-[#A1A1AA] [&_pre]:my-4 [&_table]:mt-4 [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-white/10 [&_td]:px-3 [&_td]:py-2 [&_th]:border [&_th]:border-white/10 [&_th]:bg-white/[0.03] [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:text-white [&_ul]:mt-4 [&_ul]:list-disc [&_ul]:pl-6 text-sm"
       dangerouslySetInnerHTML={{ __html: html }}
     />
   )
@@ -313,7 +313,7 @@ function RenderedCode({ code, lang }: { code: string; lang: string }) {
   }, [code, lang])
 
   if (!html) {
-    return <div className="border border-white/10 bg-[#171717] p-5 text-xs text-[#A1A1AA]">Loading…</div>
+    return <div className="border border-white/10 bg-[#171717] p-5 text-xs text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</div>
   }
 
   return (
@@ -377,7 +377,7 @@ function CompletionControl({
       <ActionButton onClick={handleComplete} loading={loading}>
         Mark complete
       </ActionButton>
-      {error && <p className="mt-2 text-sm text-[#F85149]">{error}</p>}
+      {error && <p className="mt-2 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
     </div>
   )
 }
@@ -410,7 +410,7 @@ function LockedLesson({
         <ActionButton onClick={onEnroll} loading={enrolling}>
           Enroll
         </ActionButton>
-        {error && <p className="mt-2 text-sm text-[#F85149]">{error}</p>}
+        {error && <p className="mt-2 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
       </div>
     </div>
   )

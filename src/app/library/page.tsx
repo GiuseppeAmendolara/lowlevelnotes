@@ -41,7 +41,7 @@ export default function LibraryPage() {
     return (
       <main className="min-h-screen bg-[#171717]">
         <section className="mx-auto max-w-5xl px-6 pb-10 pt-20 sm:pt-28">
-          <p className="text-sm text-[#A1A1AA]">Loading…</p>
+          <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>
         </section>
       </main>
     )
@@ -58,7 +58,7 @@ export default function LibraryPage() {
       </section>
 
       <section className="mx-auto max-w-5xl px-6 pb-24">
-        {error && <p className="text-sm text-[#F85149]">{error}</p>}
+        {error && <p className="text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
         {library && <LibraryBrowser resources={library.resources} people={library.people} />}
       </section>
     </main>

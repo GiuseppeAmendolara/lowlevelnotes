@@ -9,9 +9,15 @@ export default function TransparencyPage() {
         <p className="mt-4 max-w-lg leading-7 text-[#A1A1AA]">Everything below comes straight from the same database this site runs on: API health, uptime history, and the real numbers behind the library. No rounding up, no separate marketing copy, the same badges linked from the GitHub profile.</p>
 
         <div className="mt-10 flex max-w-[440px] flex-col gap-3">
-          <SvgBadge src="https://api.lowlevelnotes.com/status.svg" alt="0xLLN API status" unavailableLabel="Status unavailable" />
-          <SvgBadge src="https://api.lowlevelnotes.com/history.svg" alt="0xLLN API uptime history" unavailableLabel="History unavailable" />
-          <SvgBadge src="https://api.lowlevelnotes.com/stats.svg" alt="0xLLN library stats" unavailableLabel="Stats unavailable" />
+          <div className="animate-fade-in-up motion-reduce:animate-none">
+            <SvgBadge src="https://api.lowlevelnotes.com/status.svg" alt="0xLLN API status" unavailableLabel="Status unavailable" />
+          </div>
+          <div style={{ animationDelay: '60ms' }} className="animate-fade-in-up motion-reduce:animate-none">
+            <SvgBadge src="https://api.lowlevelnotes.com/history.svg" alt="0xLLN API uptime history" unavailableLabel="History unavailable" />
+          </div>
+          <div style={{ animationDelay: '120ms' }} className="animate-fade-in-up motion-reduce:animate-none">
+            <SvgBadge src="https://api.lowlevelnotes.com/stats.svg" alt="0xLLN library stats" unavailableLabel="Stats unavailable" />
+          </div>
         </div>
       </section>
     </main>

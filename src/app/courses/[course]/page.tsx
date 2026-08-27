@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useSession } from '@/components/SessionProvider'
 import ActionButton from '@/components/ActionButton'
+import LessonListItem from '@/components/LessonListItem'
 import {
   getCourse,
   getCourseLessons,
@@ -16,13 +17,6 @@ import {
   type MyEnrollment,
   type MyLessonProgress,
 } from '@/lib/authClient'
-
-const TYPE_LABEL: Record<Lesson['type'], string> = {
-  article: 'Article',
-  video: 'Video',
-  exercise: 'Exercise',
-  quiz: 'Quiz',
-}
 
 function groupByModule(lessons: Lesson[]) {
   const modules = new Map<string, { title: string; position: number; lessons: Lesson[] }>()
@@ -139,7 +133,7 @@ export default function CoursePage({ params }: { params: Promise<{ course: strin
     return (
       <main className="min-h-screen bg-[#171717]">
         <section className="mx-auto max-w-4xl px-6 pb-10 pt-20 sm:pt-28">
-          <p className="text-sm text-[#A1A1AA]">Loading…</p>
+          <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>
         </section>
       </main>
     )
@@ -165,7 +159,7 @@ export default function CoursePage({ params }: { params: Promise<{ course: strin
     return (
       <main className="min-h-screen bg-[#171717]">
         <section className="mx-auto max-w-4xl px-6 pb-10 pt-20 sm:pt-28">
-          <p className="text-sm text-[#A1A1AA]">Loading…</p>
+          <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>
         </section>
       </main>
     )
@@ -207,14 +201,14 @@ export default function CoursePage({ params }: { params: Promise<{ course: strin
                   {unenrolling ? 'Unenrolling…' : 'Unenroll'}
                 </button>
               </p>
-              {unenrollError && <p className="mt-2 text-sm text-[#F85149]">{unenrollError}</p>}
+              {unenrollError && <p className="mt-2 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{unenrollError}</p>}
             </>
           ) : (
             <>
               <ActionButton onClick={handleEnroll} loading={enrolling}>
                 Enroll
               </ActionButton>
-              {enrollError && <p className="mt-2 text-sm text-[#F85149]">{enrollError}</p>}
+              {enrollError && <p className="mt-2 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{enrollError}</p>}
             </>
           )}
         </div>
@@ -228,23 +222,14 @@ export default function CoursePage({ params }: { params: Promise<{ course: strin
               <div className="mt-4 border-l border-t border-white/10">
                 {module.lessons
                   .sort((a, b) => a.position - b.position)
-                  .map((lesson) => (
-                    <Link
+                  .map((lesson, i) => (
+                    <LessonListItem
                       key={lesson.id}
-                      href={`/courses/${slug}/${lesson.slug}`}
-                      className="flex items-center justify-between gap-4 border-b border-r border-white/10 px-5 py-4 transition-colors hover:bg-white/[0.035] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#FF8A3D]"
-                    >
-                      <span className="flex items-center gap-3">
-                        <span
-                          className={`h-1.5 w-1.5 shrink-0 ${completedLessonIds.has(lesson.id) ? 'bg-[#3FB950]' : 'bg-[#FF8A3D]'}`}
-                          aria-hidden="true"
-                        />
-                        <span className="text-sm text-white">{lesson.title}</span>
-                      </span>
-                      <span className="shrink-0 text-xs uppercase tracking-[0.1em] text-white/40">
-                        {TYPE_LABEL[lesson.type]}
-                      </span>
-                    </Link>
+                      lesson={lesson}
+                      courseSlug={slug}
+                      completed={completedLessonIds.has(lesson.id)}
+                      index={i}
+                    />
                   ))}
               </div>
             </div>

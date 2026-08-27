@@ -1,6 +1,9 @@
 
 import Link from 'next/link'
 import CodeBlock from '@/components/CodeBlock'
+import HomeCourseCard from '@/components/HomeCourseCard'
+import HomeDisciplineCard from '@/components/HomeDisciplineCard'
+import ScrollReveal from '@/components/ScrollReveal'
 
 // Static, not fetched — /v1/courses requires a session (the library
 // data below is public), and this section renders for logged-out
@@ -92,31 +95,34 @@ export default function Home() {
           </div>
 
           <div>
-            <h1 className="max-w-3xl text-balance text-5xl font-bold leading-[0.96] tracking-[-0.07em] text-white sm:text-7xl lg:text-8xl">
+            <h1 className="max-w-3xl animate-fade-in-up text-balance text-5xl font-bold leading-[0.96] tracking-[-0.07em] text-white motion-reduce:animate-none sm:text-7xl lg:text-8xl">
               LowLevelNotes
             </h1>
-            <p className="mt-8 max-w-lg text-pretty text-base leading-7 text-[#A1A1AA] sm:text-lg">
+            <p
+              style={{ animationDelay: '80ms' }}
+              className="mt-8 max-w-lg animate-fade-in-up text-pretty text-base leading-7 text-[#A1A1AA] motion-reduce:animate-none sm:text-lg"
+            >
               Organized knowledge for mastering software development. Browse the library freely, or enroll in structured courses.
             </p>
 
-            <div className="mt-10 flex flex-col gap-3 sm:flex-row">
+            <div style={{ animationDelay: '160ms' }} className="mt-10 flex animate-fade-in-up flex-col gap-3 motion-reduce:animate-none sm:flex-row">
               <Link
                 href="#courses"
-                className="inline-flex items-center justify-center gap-3 bg-[#FF8A3D] px-5 py-3.5 text-sm font-semibold text-[#0D0D0D] transition-colors hover:bg-[#FFA15C] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF8A3D]"
+                className="inline-flex items-center justify-center gap-3 bg-[#FF8A3D] px-5 py-3.5 text-sm font-semibold text-[#0D0D0D] transition-colors transition-transform duration-150 hover:bg-[#FFA15C] active:scale-[0.98] motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF8A3D]"
               >
                 Explore courses
                 <span aria-hidden="true">↓</span>
               </Link>
               <Link
                 href="#library"
-                className="inline-flex items-center justify-center gap-3 border border-white/15 bg-[#0D0D0D] px-5 py-3.5 text-sm font-medium text-white transition-colors hover:border-white/40 hover:bg-[#171717] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                className="inline-flex items-center justify-center gap-3 border border-white/15 bg-[#0D0D0D] px-5 py-3.5 text-sm font-medium text-white transition-colors transition-transform duration-150 hover:border-white/40 hover:bg-[#171717] active:scale-[0.98] motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
               >
                 Browse the library
                 <span aria-hidden="true">↓</span>
               </Link>
               <Link
                 href="/changelog"
-                className="inline-flex items-center justify-center gap-3 border border-white/15 bg-[#0D0D0D] px-5 py-3.5 text-sm font-medium text-white transition-colors hover:border-white/40 hover:bg-[#171717] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                className="inline-flex items-center justify-center gap-3 border border-white/15 bg-[#0D0D0D] px-5 py-3.5 text-sm font-medium text-white transition-colors transition-transform duration-150 hover:border-white/40 hover:bg-[#171717] active:scale-[0.98] motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
               >
                 Read the changelog
                 <span aria-hidden="true">→</span>
@@ -139,13 +145,8 @@ export default function Home() {
           </div>
 
           <div className="grid border-l border-t border-white/10 sm:grid-cols-3">
-            {courses.map((course) => (
-              <Link href="/courses" key={course.slug} className="block min-h-48 border-b border-r border-white/10 bg-[#171717] p-6 transition-colors hover:bg-[#1f1f1f] sm:p-8">
-                <span className="text-xs font-medium uppercase tracking-[0.14em] text-[#FF8A3D]">{course.category}</span>
-                <h3 className="mt-4 text-xl font-semibold tracking-[-0.03em] text-white">{course.title}</h3>
-                <p className="mt-3 text-sm leading-6 text-[#A1A1AA]">{course.description}</p>
-                <div className="mt-6 text-sm text-white/40">View course →</div>
-              </Link>
+            {courses.map((course, i) => (
+              <HomeCourseCard key={course.slug} course={course} index={i} />
             ))}
           </div>
         </div>
@@ -161,22 +162,14 @@ export default function Home() {
         </div>
 
         <div className="grid border-l border-t border-white/10 sm:grid-cols-2">
-          {disciplines.map((discipline) => (
-            <Link href="/library" key={discipline.id} className="block min-h-56 border-b border-r border-white/10 bg-[#0D0D0D] p-6 transition-colors hover:bg-[#151515] sm:p-8">
-              <span className="text-xs text-[#FF8A3D]">[{discipline.id}]</span>
-              <h3 className="mt-10 text-2xl font-semibold tracking-[-0.04em] text-white">{discipline.title}</h3>
-              <p className="mt-3 max-w-sm text-sm leading-6 text-[#A1A1AA]">{discipline.description}</p>
-              <div className="mt-7 flex items-center gap-2 text-sm">
-                <span className={`h-2 w-2 ${discipline.written ? 'bg-[#3FB950]' : 'bg-white/20'}`} aria-hidden="true" />
-                <span className={discipline.written ? 'text-white/70' : 'text-white/40'}>{discipline.stat}</span>
-              </div>
-            </Link>
+          {disciplines.map((discipline, i) => (
+            <HomeDisciplineCard key={discipline.id} discipline={discipline} index={i} />
           ))}
         </div>
       </section>
 
       <section className="border-y border-white/10 bg-[#0D0D0D]">
-        <div className="mx-auto grid max-w-6xl gap-12 px-6 py-16 sm:py-20 lg:grid-cols-2 lg:items-center">
+        <ScrollReveal className="mx-auto grid max-w-6xl gap-12 px-6 py-16 sm:py-20 lg:grid-cols-2 lg:items-center">
           <div className="order-2 lg:order-1">
             <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">Straight from the notes</p>
             <h2 className="mt-4 max-w-lg text-3xl font-bold tracking-[-0.05em] text-white sm:text-4xl">Code explained, not just pasted.</h2>
@@ -195,7 +188,7 @@ export default function Home() {
           <div className="order-1 min-w-0 lg:order-2">
             <CodeBlock code={csharpSnippet} lang="csharp" filename="CSharp.md" />
           </div>
-        </div>
+        </ScrollReveal>
       </section>
     </main>
   )

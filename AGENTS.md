@@ -689,8 +689,46 @@ throughout the product:
   within panels; align content to the `max-w-6xl` page grid.
 - **Shadows, glows, and depth:** Prefer borders, subtle charcoal contrast, and
   restrained amber radial light. Avoid soft card shadows.
-- **Motion and interaction timing:** Short, quiet color and position transitions;
-  no distracting or continuous animation.
+- **Motion:** Dependency-free — plain CSS transitions/keyframes plus
+  `src/lib/useReveal.ts` (a small `IntersectionObserver` hook) for scroll
+  reveals. No motion library; matches the site's zero-animation-dependency,
+  lean-and-fast baseline. Two tiers, both Tailwind defaults — no custom
+  easing curves: `duration-150 ease-out` for hover/press/color
+  micro-interactions, `duration-300 ease-out` for entrance/reveal
+  transitions. Every transition/animation class must carry a
+  `motion-reduce:` counterpart that removes it (maps to
+  `prefers-reduced-motion: reduce`) — not optional.
+  Four allowed categories, nothing else:
+  1. **Press/hover feedback** — `active:scale-[0.98]` on every
+     button-like control (real buttons, filled/bordered CTA links — not
+     bare inline text links, which stay color-only like the rest of the
+     site's nav/text links); a small `hover:-translate-y-0.5` (2px) lift
+     on genuine card-grid links only.
+  2. **Entrance reveals** — fade + small rise (`opacity-0 translate-y-3`
+     → `opacity-100 translate-y-0`), via `useReveal` applied directly to
+     the existing element (never a wrapper `<div>` — several grids use a
+     shared-border technique, `border-l border-t` on the parent with
+     `border-b border-r` per item, that an extra wrapper would double up
+     or break). Stagger via inline `transitionDelay`, capped at 6 items.
+     For above-the-fold, mount-triggered entrances (hero copy, inline
+     messages) use the `animate-fade-in-up` keyframe utility
+     (`globals.css`) instead — no scroll trigger needed.
+  3. **State-change feedback** — inline success/error messages
+     (`AuthMessage.tsx` and equivalent ad-hoc `<p>`s) fade in
+     (`animate-fade-in-up`) instead of popping; `Loading…` placeholders
+     get `animate-pulse`.
+  4. **Nav active-state** — `Header.tsx`'s per-link underline animates in
+     with `scale-x-0`/`scale-x-100` instead of appearing instantly.
+  Explicitly out of scope: page/route transition animation (no built-in
+  Next.js App Router primitive for this, meaningfully bigger and riskier
+  for modest payoff), parallax/scroll-jacking, spring/bounce easing,
+  continuous or looping decoration, hover-lift on dense data rows
+  (library browser rows, admin panel rows, changelog entries — those
+  stay color-only; a lift across a tightly packed list reads as noise,
+  not polish). `/staff` (`AdminPanel.tsx`) stays the least-animated
+  surface on the site — press feedback and loading-pulse only, no
+  reveals or lift — it's a dense repeat-use utility page, not a
+  showcase.
 - **Form pattern:** `src/components/auth/{AuthPageShell,AuthTextField,AuthSubmitButton,AuthMessage}.tsx`
   are the canonical primitives for any single-form page (label + input,
   filled-orange submit with a loading/disabled state, inline

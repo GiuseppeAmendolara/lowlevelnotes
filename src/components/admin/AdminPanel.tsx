@@ -72,8 +72,8 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
 }
 
 const inputClass = "border border-white/15 bg-[#0D0D0D] px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none"
-const buttonClass = "border border-[#FF8A3D]/50 px-3 py-1.5 text-xs font-medium text-[#FF8A3D] transition-colors hover:border-[#FF8A3D] hover:bg-[#FF8A3D]/10 disabled:opacity-50"
-const blockButtonClass = "border border-[#FF8A3D]/50 px-5 py-3.5 text-xs font-medium text-[#FF8A3D] transition-colors hover:border-[#FF8A3D] hover:bg-[#FF8A3D]/10 disabled:opacity-50"
+const buttonClass = "border border-[#FF8A3D]/50 px-3 py-1.5 text-xs font-medium text-[#FF8A3D] transition-colors transition-transform duration-150 hover:border-[#FF8A3D] hover:bg-[#FF8A3D]/10 active:scale-[0.98] motion-reduce:transition-none disabled:opacity-50 disabled:active:scale-100"
+const blockButtonClass = "border border-[#FF8A3D]/50 px-5 py-3.5 text-xs font-medium text-[#FF8A3D] transition-colors transition-transform duration-150 hover:border-[#FF8A3D] hover:bg-[#FF8A3D]/10 active:scale-[0.98] motion-reduce:transition-none disabled:opacity-50 disabled:active:scale-100"
 
 /* ==================== Users ==================== */
 
@@ -82,6 +82,16 @@ function UsersSection() {
   const [users, setUsers] = useState<StaffUser[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [expandedIps, setExpandedIps] = useState<Record<number, string[]>>({})
+  // True from the moment any row mutation (role change / ban / unban /
+  // delete) fires until the resulting reload has actually landed. Deleting
+  // or banning a user removes their row and every row below it shifts up
+  // to fill the gap — a real, reported incident: a fast second click
+  // right after a delete landed on a *different* user's now-repositioned
+  // Delete button, deleting an unrelated account by accident. Disabling
+  // every row's mutating controls for the whole reflow window (not just
+  // the row that was acted on) closes that window instead of just
+  // narrowing it.
+  const [refreshing, setRefreshing] = useState(false)
 
   const [newEmail, setNewEmail] = useState('')
   const [newName, setNewName] = useState('')
@@ -90,13 +100,15 @@ function UsersSection() {
   const [createResult, setCreateResult] = useState<string | null>(null)
 
   function load() {
-    getStaffUsers().then((result) => {
+    return getStaffUsers().then((result) => {
       if (result.ok) setUsers(result.data)
       else setError(result.error)
     })
   }
 
-  useEffect(load, [])
+  useEffect(() => {
+    load()
+  }, [])
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
@@ -115,32 +127,41 @@ function UsersSection() {
   }
 
   async function handleRoleChange(id: number, role: Role) {
+    setRefreshing(true)
     const result = await updateStaffUserRole(id, role)
     if (!result.ok) {
       setError(result.error)
-      load()
+      await load()
+      setRefreshing(false)
       return
     }
     setError(null)
-    load()
+    await load()
+    setRefreshing(false)
   }
 
   async function handleBan(id: number) {
     const reason = window.prompt('Ban reason (shown to no one but admins):')
     if (reason === null) return
+    setRefreshing(true)
     await banStaffUser(id, reason)
-    load()
+    await load()
+    setRefreshing(false)
   }
 
   async function handleUnban(id: number) {
+    setRefreshing(true)
     await unbanStaffUser(id)
-    load()
+    await load()
+    setRefreshing(false)
   }
 
   async function handleDelete(id: number, email: string) {
     if (!window.confirm(`Permanently delete ${email}? This cannot be undone.`)) return
+    setRefreshing(true)
     await deleteStaffUser(id)
-    load()
+    await load()
+    setRefreshing(false)
   }
 
   async function handleViewIps(id: number) {
@@ -172,10 +193,10 @@ function UsersSection() {
       </form>
       {createResult && <p className="mt-2 break-all text-xs text-[#A1A1AA]">{createResult}</p>}
 
-      {error && <p className="mt-4 text-sm text-[#F85149]">{error}</p>}
+      {error && <p className="mt-4 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
 
       <div className="mt-6 border-l border-t border-white/10">
-        {users === null && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA]">Loading…</p>}
+        {users === null && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>}
         {users?.map((u) => {
           const locked = u.isSuperAdmin && !currentUser?.isSuperAdmin
           return (
@@ -189,13 +210,13 @@ function UsersSection() {
             </div>
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <select value={u.role} disabled={locked} onChange={(e) => handleRoleChange(u.id, e.target.value as Role)} className={`${inputClass} disabled:opacity-50`}>
+              <select value={u.role} disabled={locked || refreshing} onChange={(e) => handleRoleChange(u.id, e.target.value as Role)} className={`${inputClass} disabled:opacity-50`}>
                 {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
               </select>
               {u.bannedAt
-                ? <button type="button" disabled={locked} onClick={() => handleUnban(u.id)} className={buttonClass}>Unban</button>
-                : <button type="button" disabled={locked} onClick={() => handleBan(u.id)} className={buttonClass}>Ban</button>}
-              <button type="button" disabled={locked} onClick={() => handleDelete(u.id, u.email)} className={buttonClass}>Delete</button>
+                ? <button type="button" disabled={locked || refreshing} onClick={() => handleUnban(u.id)} className={buttonClass}>Unban</button>
+                : <button type="button" disabled={locked || refreshing} onClick={() => handleBan(u.id)} className={buttonClass}>Ban</button>}
+              <button type="button" disabled={locked || refreshing} onClick={() => handleDelete(u.id, u.email)} className={buttonClass}>Delete</button>
               <button type="button" onClick={() => handleViewIps(u.id)} className={buttonClass}>
                 {expandedIps[u.id] ? 'Hide IPs' : 'View IPs'}
               </button>
@@ -227,25 +248,34 @@ function UsersSection() {
 function RoleRequestsSection() {
   const [status, setStatus] = useState<RequestStatus>('pending')
   const [requests, setRequests] = useState<StaffRoleRequest[] | null>(null)
+  // See UsersSection's identical `refreshing` guard — same reflow hazard,
+  // Approve/Reject remove a row from the pending list and shift the rest.
+  const [refreshing, setRefreshing] = useState(false)
 
   function load() {
-    getStaffRoleRequests(status).then((result) => {
+    return getStaffRoleRequests(status).then((result) => {
       if (result.ok) setRequests(result.data)
     })
   }
 
-  useEffect(load, [status])
+  useEffect(() => {
+    load()
+  }, [status])
 
   async function handleApprove(id: number) {
+    setRefreshing(true)
     await reviewRoleRequest(id, 'approve')
-    load()
+    await load()
+    setRefreshing(false)
   }
 
   async function handleReject(id: number) {
     const reason = window.prompt('Rejection reason (shown to the requester):')
     if (reason === null) return
+    setRefreshing(true)
     await reviewRoleRequest(id, 'reject', reason)
-    load()
+    await load()
+    setRefreshing(false)
   }
 
   return (
@@ -255,7 +285,7 @@ function RoleRequestsSection() {
       <StatusFilter status={status} onChange={setStatus} />
 
       <div className="mt-4 border-l border-t border-white/10">
-        {requests === null && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA]">Loading…</p>}
+        {requests === null && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>}
         {requests?.length === 0 && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA]">Nothing here.</p>}
         {requests?.map((r) => (
           <div key={r.id} className="border-b border-r border-white/10 bg-[#0D0D0D] p-4">
@@ -267,8 +297,8 @@ function RoleRequestsSection() {
               </div>
               {r.status === 'pending' && (
                 <div className="flex gap-2">
-                  <button type="button" onClick={() => handleApprove(r.id)} className={buttonClass}>Approve</button>
-                  <button type="button" onClick={() => handleReject(r.id)} className={buttonClass}>Reject</button>
+                  <button type="button" disabled={refreshing} onClick={() => handleApprove(r.id)} className={buttonClass}>Approve</button>
+                  <button type="button" disabled={refreshing} onClick={() => handleReject(r.id)} className={buttonClass}>Reject</button>
                 </div>
               )}
             </div>
@@ -288,25 +318,33 @@ function RoleRequestsSection() {
 function ResourceRequestsSection() {
   const [status, setStatus] = useState<RequestStatus>('pending')
   const [requests, setRequests] = useState<StaffResourceRequest[] | null>(null)
+  // See UsersSection's identical `refreshing` guard.
+  const [refreshing, setRefreshing] = useState(false)
 
   function load() {
-    getStaffResourceRequests(status).then((result) => {
+    return getStaffResourceRequests(status).then((result) => {
       if (result.ok) setRequests(result.data)
     })
   }
 
-  useEffect(load, [status])
+  useEffect(() => {
+    load()
+  }, [status])
 
   async function handleApprove(id: number) {
+    setRefreshing(true)
     await reviewResourceRequest(id, 'approve')
-    load()
+    await load()
+    setRefreshing(false)
   }
 
   async function handleReject(id: number) {
     const reason = window.prompt('Rejection reason (shown to the requester):')
     if (reason === null) return
+    setRefreshing(true)
     await reviewResourceRequest(id, 'reject', reason)
-    load()
+    await load()
+    setRefreshing(false)
   }
 
   return (
@@ -316,7 +354,7 @@ function ResourceRequestsSection() {
       <StatusFilter status={status} onChange={setStatus} />
 
       <div className="mt-4 border-l border-t border-white/10">
-        {requests === null && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA]">Loading…</p>}
+        {requests === null && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>}
         {requests?.length === 0 && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA]">Nothing here.</p>}
         {requests?.map((r) => (
           <div key={r.id} className="border-b border-r border-white/10 bg-[#0D0D0D] p-4">
@@ -327,8 +365,8 @@ function ResourceRequestsSection() {
               </div>
               {r.status === 'pending' && (
                 <div className="flex gap-2">
-                  <button type="button" onClick={() => handleApprove(r.id)} className={buttonClass}>Approve</button>
-                  <button type="button" onClick={() => handleReject(r.id)} className={buttonClass}>Reject</button>
+                  <button type="button" disabled={refreshing} onClick={() => handleApprove(r.id)} className={buttonClass}>Approve</button>
+                  <button type="button" disabled={refreshing} onClick={() => handleReject(r.id)} className={buttonClass}>Reject</button>
                 </div>
               )}
             </div>
@@ -370,15 +408,20 @@ function BlockedIpsSection() {
   const [newIp, setNewIp] = useState('')
   const [newNote, setNewNote] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  // See UsersSection's identical `refreshing` guard — Unblock removes a
+  // row and shifts the rest.
+  const [refreshing, setRefreshing] = useState(false)
 
   function load() {
-    getStaffBlockedIps().then((result) => {
+    return getStaffBlockedIps().then((result) => {
       if (result.ok) setIps(result.data)
       else setError(result.error)
     })
   }
 
-  useEffect(load, [])
+  useEffect(() => {
+    load()
+  }, [])
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault()
@@ -396,8 +439,10 @@ function BlockedIpsSection() {
   }
 
   async function handleRemove(id: string) {
+    setRefreshing(true)
     await unblockIp(id)
-    load()
+    await load()
+    setRefreshing(false)
   }
 
   return (
@@ -410,10 +455,10 @@ function BlockedIpsSection() {
         <button type="submit" disabled={submitting} className={blockButtonClass}>{submitting ? '…' : 'Block'}</button>
       </form>
 
-      {error && <p className="mt-4 text-sm text-[#F85149]">{error}</p>}
+      {error && <p className="mt-4 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
 
       <div className="mt-6 border-l border-t border-white/10">
-        {ips === null && !error && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA]">Loading…</p>}
+        {ips === null && !error && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>}
         {ips?.length === 0 && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA]">Nothing blocked.</p>}
         {ips?.map((r) => (
           <div key={r.id} className="flex flex-wrap items-center justify-between gap-3 border-b border-r border-white/10 bg-[#0D0D0D] p-4">
@@ -421,7 +466,7 @@ function BlockedIpsSection() {
               <span className="font-mono text-sm text-white">{r.ip}</span>
               {r.note && <span className="ml-3 text-xs text-[#A1A1AA]">{r.note}</span>}
             </div>
-            <button type="button" onClick={() => handleRemove(r.id)} className={buttonClass}>Unblock</button>
+            <button type="button" disabled={refreshing} onClick={() => handleRemove(r.id)} className={buttonClass}>Unblock</button>
           </div>
         ))}
       </div>
@@ -452,10 +497,10 @@ function AuditLogSection() {
     <div>
       <SectionHeading>Activity log</SectionHeading>
 
-      {error && <p className="mt-4 text-sm text-[#F85149]">{error}</p>}
+      {error && <p className="mt-4 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
 
       <div className="mt-6 border-l border-t border-white/10">
-        {entries === null && !error && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA]">Loading…</p>}
+        {entries === null && !error && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>}
         {entries?.length === 0 && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA]">Nothing logged yet.</p>}
         {entries?.map((e) => (
           <div key={e.id} className="border-b border-r border-white/10 bg-[#0D0D0D] p-4">

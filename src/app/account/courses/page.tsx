@@ -47,7 +47,7 @@ export default function AccountCoursesPage() {
     return (
       <main className="min-h-screen bg-[#171717]">
         <section className="mx-auto max-w-4xl px-6 pb-10 pt-20 sm:pt-28">
-          <p className="text-sm text-[#A1A1AA]">Loading…</p>
+          <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>
         </section>
       </main>
     )
@@ -64,7 +64,7 @@ export default function AccountCoursesPage() {
       </section>
 
       <section className="mx-auto max-w-4xl px-6 pb-24">
-        {error && <p className="text-sm text-[#F85149]">{error}</p>}
+        {error && <p className="text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
 
         {stats && (
           <div className="grid grid-cols-2 gap-px border border-white/10 bg-white/10 sm:grid-cols-5">
@@ -164,7 +164,7 @@ function EnrollmentCard({
           </button>
         </div>
       </div>
-      {error && <p className="mt-2 text-sm text-[#F85149]">{error}</p>}
+      {error && <p className="mt-2 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
     </div>
   )
 }

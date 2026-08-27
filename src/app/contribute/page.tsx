@@ -38,7 +38,7 @@ export default function ContributePage() {
   if (sessionLoading || !user) {
     return (
       <AuthPageShell eyebrow="Contribute" heading="Contribute" backHref="/account">
-        <p className="text-sm text-[#A1A1AA]">Loading…</p>
+        <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>
       </AuthPageShell>
     )
   }
@@ -81,7 +81,7 @@ function RoleRequestPanel() {
   if (requests === null) {
     return (
       <AuthPageShell eyebrow="Contribute" heading="Contribute" backHref="/account">
-        <p className="text-sm text-[#A1A1AA]">Loading…</p>
+        <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>
       </AuthPageShell>
     )
   }
@@ -251,7 +251,7 @@ function ResourceRequestPanel() {
       <h2 className="mt-12 text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">Your submissions</h2>
       <div className="mt-4 border-l border-t border-white/10">
         {loadingRequests && (
-          <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA]">Loading…</p>
+          <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>
         )}
         {!loadingRequests && requests.length === 0 && (
           <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA]">Nothing submitted yet.</p>

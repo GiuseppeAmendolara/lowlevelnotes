@@ -67,7 +67,7 @@ export default function AccountPage() {
   if (sessionLoading || !user) {
     return (
       <AuthPageShell eyebrow="Account" heading="Account">
-        <p className="text-sm text-[#A1A1AA]">Loading…</p>
+        <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>
       </AuthPageShell>
     )
   }
@@ -138,7 +138,7 @@ export default function AccountPage() {
       <button
         type="button"
         onClick={handleLogout}
-        className="mt-10 inline-flex w-full items-center justify-center gap-3 border border-white/15 bg-[#0D0D0D] px-5 py-3.5 text-sm font-medium text-white transition-colors hover:border-white/40 hover:bg-[#171717] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        className="mt-10 inline-flex w-full items-center justify-center gap-3 border border-white/15 bg-[#0D0D0D] px-5 py-3.5 text-sm font-medium text-white transition-colors transition-transform duration-150 hover:border-white/40 hover:bg-[#171717] active:scale-[0.98] motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
       >
         Log out
       </button>
@@ -150,7 +150,7 @@ function AccountLinkCard({ href, title, description }: { href: string; title: st
   return (
     <Link
       href={href}
-      className="flex items-center justify-between gap-3 border border-white/10 bg-[#0D0D0D] px-4 py-3 text-sm text-white transition-colors hover:border-white/40 hover:bg-[#171717] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF8A3D]"
+      className="flex items-center justify-between gap-3 border border-white/10 bg-[#0D0D0D] px-4 py-3 text-sm text-white transition-colors transition-transform duration-150 hover:border-white/40 hover:bg-[#171717] hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:translate-y-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF8A3D]"
     >
       <span>
         <span className="block font-medium">{title}</span>

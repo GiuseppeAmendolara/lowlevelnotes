@@ -2529,7 +2529,192 @@ SQLite's own `datetime()` output. Cleaned up all throwaway rows
 (user, session, both audit-log test entries) afterward; verified zero
 remain.
 
-Still outstanding: the user's real administrator account needs
-`is_super_admin` flipped to 1 by hand — waiting on which email that
-account uses (the email on file for this conversation didn't match
-any production user).
+Resolved: the user set `is_super_admin` on their own account directly
+against production D1 themselves — no action needed on my end.
+
+## Site-wide motion pass
+
+First real motion anywhere on the site — previously the only transition
+of any kind, on any page, was `transition-colors` on hover. Formalized
+as a durable protocol in AGENTS.md's design-system contract (replacing
+the old one-line "short, quiet... no distracting animation" bullet)
+before touching any page, per the user's explicit ask to "declare how
+and where it fits." Ran through Plan Mode given the scope (touches
+nearly every page) and confirmed one real fork with the user first:
+dependency-free CSS over a motion library, matching the zero-animation-
+dependency baseline and the site's lean/fast positioning.
+
+Two new shared primitives:
+- `src/lib/useReveal.ts` — a small `IntersectionObserver` hook for
+  scroll-triggered fade+rise reveals, applied directly to existing
+  elements (never a wrapper `<div>` — several grids rely on a
+  shared-border technique, `border-l`/`border-t` on the parent with
+  `border-b`/`border-r` per item, that an extra wrapper would double up
+  or break). Stagger via inline `transitionDelay`, capped at 6 items.
+- `animate-fade-in-up` keyframe utility (`globals.css`, registered via
+  `@theme inline`) for mount-triggered entrances that don't need scroll
+  triggering — hero copy, inline messages, content that just finished
+  loading.
+
+Both tiers use Tailwind's built-in `duration-150`/`duration-300` +
+`ease-out` — no custom cubic-bezier, deliberately, to avoid exactly the
+kind of flourish this site's restraint already argues against. Every
+new transition/animation class carries a `motion-reduce:` counterpart.
+
+Four categories only, applied consistently: press feedback
+(`active:scale-[0.98]` on every real button — `ActionButton.tsx`,
+`AuthSubmitButton.tsx`, `AdminPanel.tsx`'s shared button classes, the
+account page's Log out button, the homepage hero CTAs — deliberately
+*not* on bare inline text links, which stay color-only like the rest of
+the site's nav/text links, including both course pages' identically-
+styled Unenroll buttons); scroll/mount reveals (new small client
+subcomponents — `HomeCourseCard`, `HomeDisciplineCard`,
+`CourseCatalogCard`, `LessonListItem`, `ChangelogEntryCard` — needed
+because `useReveal` is a hook and most of the pages hosting these grids
+are server components; extracting just the leaf card into a client
+component keeps the rest of each page statically prerendered rather
+than converting the whole page to `'use client'`, confirmed unchanged
+in the build output); state-change feedback (`AuthMessage.tsx` and
+every ad-hoc error `<p>` across the app fade in instead of popping;
+every `Loading…` placeholder — about 20 of them, sharing 2-3 identical
+class strings — gets `animate-pulse`); and the header's active-nav-link
+underline, which now slides in via `scale-x-0`→`scale-x-100` instead of
+an instant color swap.
+
+Deliberately restrained: no hover-lift on dense data rows (library
+browser rows, admin panel rows, changelog entries — stay color-only, a
+lift across a tightly packed list reads as noise); no page/route
+transition (no Next.js App Router primitive for it, meaningfully bigger
+scope for modest payoff, left as a future idea); `/staff` stays the
+least-animated page on the site on purpose — press feedback and
+loading-pulse only, nothing else, since it's the owner's own dense
+repeat-use utility surface, not a showcase.
+
+`npx tsc --noEmit` and `npm run build` clean after every batch; build
+output confirms every previously-static page (`/`, `/courses`,
+`/library`, `/transparency`, `/staff`, `/account`, `/account/courses`,
+`/contribute`) is still prerendered as static — the client-subcomponent
+approach didn't cost anything there. Still no browser extension this
+session, so the actual feel of the motion (timing, whether the stagger
+reads right, `prefers-reduced-motion` behavior) hasn't been visually
+verified — flagged as the same real gap as every frontend change this
+session, more consequential than usual here since motion specifically
+is very hard to fully judge from code alone.
+
+## Discord invite + footer icons
+
+Added a "Join the Discord" button (`https://discord.gg/emC3NKEP4a`) to
+the footer, styled as a real button (bordered, filled-on-hover, same
+press-feedback treatment as every other button from the motion pass
+above) rather than a text link, plus icons next to it, the Repository
+line, and the License line.
+
+New `src/components/icons.tsx` — three small inline SVGs (Discord,
+GitHub, license/scale), no icon library added, matching the
+dependency-free stance the Motion section already commits to. Rather
+than redraw these from memory (real risk of a subtly malformed path
+that silently renders as nothing, with no way to catch it visually this
+session), fetched the exact official, unmodified path data directly:
+Discord and GitHub marks from Simple Icons (CC0) via unpkg, the
+license/scale glyph from GitHub's own Primer Octicons ("law", MIT) —
+literally *the* GitHub license icon, which is what was asked for
+specifically. Sanity-checked afterward that all three `d` attributes
+came through intact (right count, no truncation) since copy-pasting
+~1000+ character path strings has real transcription risk.
+
+Followed the precedent already set this session for where site-external
+links live: GitHub was deliberately moved out of the header nav into
+the footer earlier (`27fd9d0`), so Discord — another external community
+link — went there too rather than reopening that decision.
+
+Follow-up: user found the Discord line visually too loud next to the
+plain License/Repository lines — it had been styled as a bordered
+button per the original ask, but "a button" was about function
+(clickable, invite people), not visual weight. Restyled to match
+License/Repository exactly: same icon+label row, same underlined-link
+treatment, dropped the border/background/padding entirely.
+
+## Admin panel: delete/ban/reject list-reflow hazard
+
+Real incident, reported and confirmed against production data: the user
+created a test account, tried to delete it, got a confirm() popup with
+an unexpected email, clicked through fast anyway, and ended up deleting
+a second, unrelated real account (`h.martin124.ps@gmail.com`) — gone,
+no soft-delete in this schema, unrecoverable. Checked the actual
+`staff_audit_log` rows directly against production before assuming
+anything: both deletions share the identical `actor_id`/`actor_email`
+(the user's own real account) — so this was **not** a session/identity
+bug, the audit log was accurate both times. What actually happened:
+deleting a user removes their row from the list and every row below it
+shifts up to fill the gap; a second click landing in that same screen
+position right after the reflow hits whatever now-different user's
+Delete button occupies it. `window.confirm()`'s email correctly named
+the *new* target — the "different mail" the user described — but
+seeing it after already committing to click read as a bug, since
+nothing else visually signaled the list had just changed under them.
+
+Fixed by closing the window rather than narrowing it: `UsersSection`,
+`RoleRequestsSection`, `ResourceRequestsSection`, and `BlockedIpsSection`
+in `AdminPanel.tsx` each gained a section-level `refreshing` boolean,
+set the moment any row mutation (role change/ban/unban/delete,
+approve/reject, block/unblock) fires and cleared only once the
+resulting reload has actually landed — disabling *every* row's mutating
+controls for that whole window, not just the row that was acted on,
+since it's a *different* row that's actually at risk. Required making
+each section's `load()` return its fetch promise (previously
+fire-and-forget) so callers can `await` the reload before clearing
+`refreshing`. "View IPs" stays enabled throughout — read-only, no
+reflow risk.
+
+## Rate limiting was logging users out
+
+Two more reports, root-caused together: Turnstile "sometimes won't pop
+up, needs multiple refreshes," and — the more serious one — getting a
+vague connection error when navigating between course/lesson pages
+quickly, then having to log back in after refreshing.
+
+Root cause, confirmed by reading the actual code paths rather than
+guessing: `worker/index.js`'s top-of-file rate limiter (`isRateLimited`,
+runs before route matching, on *every* request) was `30` requests per
+IP per 60 seconds — but a single lesson-page navigation alone fires
+~4 Worker requests (course, lessons, progress, lesson detail). A user
+browsing through several lessons in a minute could easily cross 30
+purely from normal use. When that happened to land on `/v1/auth/session`
+specifically — the one endpoint `SessionProvider` polls to know "am I
+logged in" — the 429 response's plain-text body failed `authFetch`'s
+`res.json()`, and `SessionProvider.refresh()` treated *any* non-ok
+result identically to a real logout (`setUser(null)`), with no
+distinction between "confirmed unauthenticated" and "transient failure
+unrelated to auth." That's the "have to log in again" — the user's
+actual session in `sessions`/D1 was never touched; the UI just decided
+it didn't exist anymore.
+
+Three-part fix:
+- `worker/index.js`: `RATE_LIMIT` raised `30` → `120` (still caps
+  sustained abuse at ~2 req/s average, but gives real headroom for fast
+  legitimate browsing), and `/v1/auth/session` is now exempt from this
+  limiter entirely — cheap to exempt (one D1 lookup, already gated by
+  needing a real token) and it's the one endpoint whose false-429 is
+  user-visible as "you got logged out." The limiter's 429 now also goes
+  through the app's `json()` helper instead of a raw plain-text
+  `Response`, so it parses cleanly instead of tripping the "Unexpected
+  response from the server" catch-all.
+- `SessionProvider.tsx`: `refresh()` now only clears `user` on a
+  confirmed `401`. Any other failure (429, 5xx, network hiccup,
+  malformed body) retries up to twice with a 700ms delay before giving
+  up — and even then, doesn't force `user` to `null`, since a non-401
+  failure says nothing about whether the session is actually invalid.
+- `TurnstileWidget.tsx`: separately, the widget had no recovery path at
+  all if the Cloudflare script never finished loading or never
+  rendered — including the likely actual cause of "sometimes won't pop
+  up on some pages": `next/script`'s `onLoad` not firing on a
+  client-side navigation to a second page rendering the same `<Script
+  src>` a previous page already loaded. Added an 8s stall timeout that
+  surfaces a "Verification didn't load — Retry" link, which remounts
+  the `<Script>` (forcing Next to re-evaluate the already-loaded state
+  and re-fire `onLoad`) rather than requiring a full page refresh.
+
+Deployed (Worker version `00ab782e-c5cb-4a80-bfe4-f9dcaf5eddd7`).
+Smoke-tested `/v1/auth/session` and `/health` post-deploy — both
+responding normally. The SessionProvider and Turnstile fixes are
+frontend, pushed with everything else once the user commits.

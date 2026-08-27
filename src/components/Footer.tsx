@@ -1,3 +1,5 @@
+import { DiscordIcon, GithubIcon, LicenseIcon } from '@/components/icons'
+
 export default function Footer() {
   return (
     <footer className="mt-auto border-t border-white/10 bg-[#171717]">
@@ -12,9 +14,25 @@ export default function Footer() {
             </p>
           </div>
 
-          <div className="space-y-1 text-sm text-[#A1A1AA]">
-            <p>License: MIT License</p>
-            <p>
+          <div className="flex flex-col items-start gap-1 text-sm text-[#A1A1AA]">
+            <p className="flex items-center gap-1.5">
+              <DiscordIcon className="h-3.5 w-3.5 shrink-0 text-white/40" />
+              Discord:{' '}
+              <a
+                href="https://discord.gg/emC3NKEP4a"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-white/70 underline underline-offset-2 transition-colors hover:text-white"
+              >
+                Join the Discord
+              </a>
+            </p>
+            <p className="flex items-center gap-1.5">
+              <LicenseIcon className="h-3.5 w-3.5 shrink-0 text-white/40" />
+              License: MIT License
+            </p>
+            <p className="flex items-center gap-1.5">
+              <GithubIcon className="h-3.5 w-3.5 shrink-0 text-white/40" />
               Repository:{' '}
               <a
                 href="https://github.com/GiuseppeAmendolara/lowlevelnotes"
