@@ -27,8 +27,8 @@ actions, the interactive quiz UI, and progress surfacing via
 `/account/courses` — plus a full instructor course-authoring pipeline
 (browser-based course builder, admin review before publishing) that
 superseded the original test-seed content. Course review, publish, and
-removal now live at `/approval/course-requests`, split out of `/staff`
-along with role- and resource-request review — see "Data and API
+removal now live at `/account/approvals/course-requests`, split out of
+`/account/staff` along with role- and resource-request review — see "Data and API
 direction" below for the concrete design, and its "Phase 7 (learning
 system UI), concrete decisions so far" entry for how the two
 `postgresql`/`networks` proof-of-pipeline seed courses were later
@@ -68,8 +68,10 @@ replaced with real, fully authored curriculum.
    having been silently smuggled into "auth."
 5. **Phase 4 (complete):** Authorization roles: guest, student, contributor,
    instructor, administrator. Shipped as `/v1/staff/*`, `/v1/role-requests*`,
-   and `/v1/resource-requests*` in `worker/index.js`, plus `/staff` and
-   `/contribute` in the frontend — see "Data and API direction" below and
+   and `/v1/resource-requests*` in `worker/index.js`, plus `/account/staff`
+   (originally `/staff`, renamed later to nest under `/account` — see the
+   WAF Rule 2 note below for why that's safe) and `/contribute` in the
+   frontend — see "Data and API direction" below and
    the API endpoint reference for the concrete design.
 6. **Phase 7 (complete):** Learning system: explanations, code examples,
    diagrams, interactive “try it yourself” exercises (informational only
@@ -79,7 +81,7 @@ replaced with real, fully authored curriculum.
    mark-complete; quiz grading) plus the instructor course-authoring
    write API are deployed and **live in production**; the matching
    frontend (quiz-taking UI, the instructor course builder at
-   `/instructor/courses`) has been **live on `main` since commit
+   `/courses/builder`) has been **live on `main` since commit
    `585e81f`** (the "not yet committed" note that used to live here was
    stale — corrected during the admin-restructure pass below). Slice 4
    (progress surfacing) is confirmed satisfied by `/account/courses`
@@ -88,12 +90,12 @@ replaced with real, fully authored curriculum.
    for the original breakdown. The YAML/frontmatter scriptable pipeline
    that existed briefly alongside the instructor UI was removed the same
    day it shipped — content authoring is exclusively through
-   `/instructor/courses` now (write API + a browser course builder, with
+   `/courses/builder` now (write API + a browser course builder, with
    admin review before publishing), so an instructor no longer needs
    repo/Cloudflare access to build a course at all. Course review/
-   publish/removal now lives at `/approval/course-requests` (moved out of
-   `/staff`, along with role- and resource-request review, into their own
-   `/approval/*` pages — see "Phase 7 (learning system UI), concrete
+   publish/removal now lives at `/account/approvals/course-requests` (moved
+   out of `/account/staff`, along with role- and resource-request review,
+   into their own `/account/approvals/*` pages — see "Phase 7 (learning system UI), concrete
    decisions so far" below for the full design and why). See WORKLOG's
    "Phase 7 scoping" and "Instructor course builder" entries for the
    original staged-slice plan.
@@ -213,7 +215,7 @@ These are planning notes, not authorization to begin future phases early.
   This reverses Phase 7 Slice 1's original call (see the Phase 7 block
   below for why): content lives in R2 (`lowlevelnotes-assets`,
   `content_path` doubling as the R2 key). Authored exclusively through
-  the instructor UI (`/instructor/courses`) now — `PUT /v1/instructor/
+  the instructor UI (`/courses/builder`) now — `PUT /v1/instructor/
   lessons/:id/content` writes the markdown straight to R2 server-side,
   no local editing folder or push script involved (an earlier
   scriptable/YAML-based authoring pipeline existed briefly and was
@@ -374,7 +376,7 @@ These are planning notes, not authorization to begin future phases early.
     complete courses — **Programming Foundations**, **C-Style C++**, and
     a C# course — authored from the site owner's own archived notes and a
     779-page book, written directly via D1 SQL + R2 object puts rather
-    than through `/instructor/courses`, but reusing that same schema
+    than through `/courses/builder`, but reusing that same schema
     shape and `content_path` convention. All three have since been
     submitted, reviewed, and published.
   - Added `courses` to `Header.tsx`'s nav (`src/components/Header.tsx`).
@@ -468,7 +470,7 @@ These are planning notes, not authorization to begin future phases early.
     20/hour, not "once ever"), so the form stays fully interactive after
     grading via a "Retake quiz" action that just clears local state.
   - **Content authoring is exclusively through the instructor UI now**
-    (`/instructor/courses`, see "Instructor course builder" just below).
+    (`/courses/builder`, see "Instructor course builder" just below).
     A YAML/frontmatter-based scriptable pipeline (`scripts/
     sync-content.mjs` + `scripts/push-content.mjs`, a `content/` local
     editing folder) was built and fully verified earlier the same day the
@@ -480,12 +482,20 @@ These are planning notes, not authorization to begin future phases early.
     `content/` gitignore entry. See WORKLOG's "Phase 7 content-prep"
     entry if the format/script design is ever needed for reference.
   - **Instructor course builder** — a real write API plus a browser UI
-    (`/instructor/courses`, `/instructor/courses/[id]`) so an instructor
+    (`/courses/builder`, `/courses/builder/[id]`) so an instructor
     can build a course without repo/Cloudflare access at all, distinct
     from the YAML pipeline above (that stays as a separate, faster
-    bulk-import path for the site owner specifically). See WORKLOG's
-    "Instructor course builder" entry for the full design/verification;
-    key decisions:
+    bulk-import path for the site owner specifically). `/courses/builder`
+    was originally `/instructor/courses`, renamed to sit next to the
+    public `/courses` catalog it authors content for — it's a static
+    sibling of the dynamic `/courses/[course]` route, and Next.js
+    resolves the literal `builder` segment before falling through to
+    `[course]`, so there's no routing conflict; the one thing to avoid is
+    ever slugging a real course exactly `builder` (it would become
+    unreachable, shadowed by this route) — low risk, since slugs come
+    from `slugify()` on instructor-authored titles, not open user input.
+    See WORKLOG's "Instructor course builder" entry for the full
+    design/verification; key decisions:
     - **Ownership**: `courses.created_by` — an instructor can only edit
       courses they created; administrators bypass ownership the same way
       they bypass every other staff-tier restriction. User's explicit
@@ -535,8 +545,8 @@ These are planning notes, not authorization to begin future phases early.
       every mutating endpoint, added to `auth_events`' CHECK enum in the
       same migration — sized up from `resource_request_submit`'s 10/hour
       since building a course is legitimately many small saves.
-    - Frontend: `/instructor/courses` (list + create), `/instructor/
-      courses/[id]` (the builder — course details, modules, per-lesson
+    - Frontend: `/courses/builder` (list + create), `/courses/builder/
+      [id]` (the builder — course details, modules, per-lesson
       inline editors including a quiz question/answer builder that's the
       authoring inverse of `QuizBody`), a new `PendingCoursesSection` in
       `AdminPanel.tsx` (mirrors `RoleRequestsSection`/
@@ -562,8 +572,9 @@ These are planning notes, not authorization to begin future phases early.
       owning instructor and an admin both get the draft article, a third
       logged-in user gets 403 on the identical key, and the same key
       becomes readable by anyone once the course is approved.
-  - **Review/approval moved to `/approval/*`, admin-only, plus course
-    deletion** — direct user feedback: `/staff`'s old `PendingCoursesSection`
+  - **Review/approval moved to `/account/approvals/*`, admin-only, plus
+    course deletion** — direct user feedback: `/account/staff`'s old
+    `PendingCoursesSection`
     let an admin approve or reject a course without ever seeing a single
     lesson ("you just sort of have to trust the person"), and there was no
     way to remove a course in any state. Fixed by:
@@ -595,15 +606,17 @@ These are planning notes, not authorization to begin future phases early.
       `PendingCoursesSection` moved out of `AdminPanel.tsx` verbatim into
       their own components (`src/components/admin/{RoleRequestsPanel,
       ResourceRequestsPanel,CourseRequestsPanel}.tsx`) behind new
-      admin-gated pages at `/approval/role-requests`,
-      `/approval/resource-requests`, `/approval/course-requests` (plus an
-      `/approval` landing page), same guard pattern as `/staff/page.tsx`.
-      `/staff` (`AdminPanel.tsx`) now holds only Users, Blocked IPs, and
-      the Activity log. `/approval/course-requests` lists courses by
+      admin-gated pages at `/account/approvals/role-requests`,
+      `/account/approvals/resource-requests`, `/account/approvals/
+      course-requests` (plus an `/account/approvals` landing page), same
+      guard pattern as `src/app/account/staff/page.tsx`.
+      `/account/staff` (`AdminPanel.tsx`) now holds only Users, Blocked
+      IPs, and the Activity log. `/account/approvals/course-requests`
+      lists courses by
       status (tabs, same `StatusFilter` component generalized with a
       type parameter since courses don't share the
       pending/approved/rejected union) with each row linking to
-      `/approval/course-requests/[id]` instead of one-click approve/
+      `/account/approvals/course-requests/[id]` instead of one-click approve/
       reject — that detail page (`CourseReviewPanel.tsx`) is what
       actually renders the content: `ArticleBody`/`VideoBody`/
       `ExerciseBody` (moved out of the lesson page into
@@ -843,7 +856,7 @@ These are planning notes, not authorization to begin future phases early.
     (`"Blocked via admin panel — associated with user #42 (email)"`)
     rather than a separate table, so it's visible in the Cloudflare
     dashboard too, not just this admin panel.
-  - `/v1/staff/*`, not `/v1/admin/*`, **and** the frontend page is at
+  - `/v1/staff/*`, not `/v1/admin/*`, **and** the frontend page was put at
     `/staff`, not `/admin` — WAF Rule 2 blocks any path
     `contains "/admin"`. The API prefix was caught while planning this;
     the frontend page collision wasn't — it was only found after the
@@ -852,6 +865,12 @@ These are planning notes, not authorization to begin future phases early.
     URL path alone and blocks before a request ever reaches Vercel,
     regardless of whether that route is even deployed yet. Both are
     avoided by renaming rather than carving an exemption into that rule.
+    The frontend page later moved again, to `/account/staff` (nested
+    under `/account` along with `/account/approvals/*`, and
+    `/instructor/courses` became `/courses/builder` in the same pass) —
+    checked against this exact rule before shipping: none of
+    `/account/staff`, `/account/approvals*`, or `/courses/builder*`
+    contain the `/admin` substring, so all three are clear.
   - `getUserIpsStaffV1` reads distinct IPs from **both** `sessions.ip`
     and `auth_events.ip` (`identifier = ` the user's numeric id as a
     string) — no new IP-tracking table, since Phase 3 already logs both
@@ -878,7 +897,7 @@ main domain is scoped against — see below.
 | Method | Path | Auth | Notes |
 |---|---|---|---|
 | GET | `/health` | none | also handles its own `OPTIONS` |
-| GET | `/status.svg`, `/history.svg`, `/stats.svg` | none | SVG badges, embeddable |
+| GET | `/status.svg`, `/history.svg`, `/stats.svg`, `/courses.svg` | none | SVG badges, embeddable |
 | GET | `/resources`, `/people` | session | 401 without a valid session; `/resources` includes former `tools` rows as `type = 'tool'` |
 | GET | `/changelog` | none | WAF still requires a browser or `x-internal-key` (see below) |
 | GET | `/v1/courses`, `/v1/courses/:slug`, `/v1/courses/:slug/lessons` | none | |
@@ -1045,7 +1064,7 @@ throughout the product:
   continuous or looping decoration, hover-lift on dense data rows
   (library browser rows, admin panel rows, changelog entries — those
   stay color-only; a lift across a tightly packed list reads as noise,
-  not polish). `/staff` (`AdminPanel.tsx`) stays the least-animated
+  not polish). `/account/staff` (`AdminPanel.tsx`) stays the least-animated
   surface on the site — press feedback and loading-pulse only, no
   reveals or lift — it's a dense repeat-use utility page, not a
   showcase.

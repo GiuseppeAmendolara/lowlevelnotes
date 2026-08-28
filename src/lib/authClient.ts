@@ -327,7 +327,7 @@ export function getMyStatistics() {
   return authFetch<MyStatistics>('/v1/me/statistics')
 }
 
-export type MyAchievement = {
+export type UserAchievement = {
   slug: string
   title: string
   description: string
@@ -335,8 +335,39 @@ export type MyAchievement = {
   unlockedAt: string | null
 }
 
-export function getMyAchievements() {
-  return authFetch<MyAchievement[]>('/v1/me/achievements')
+export type UserProfile = {
+  id: number
+  displayName: string
+  avatarUrl: string | null
+  role: 'student' | 'contributor' | 'instructor' | 'administrator'
+  bio: string | null
+  joinedAt: string
+  achievements: UserAchievement[]
+}
+
+export function getUserProfile(id: number) {
+  return authFetch<UserProfile>(`/v1/users/${id}/profile`)
+}
+
+export function updateMyProfile(bio: string) {
+  return authFetch<{ message: string }>('/v1/me/profile', {
+    method: 'PUT',
+    body: JSON.stringify({ bio }),
+  })
+}
+
+export function uploadMyAvatar(file: File) {
+  const form = new FormData()
+  form.append('file', file)
+  return authFetchForm<{ avatarUrl: string }>('/v1/me/avatar', form)
+}
+
+// avatarUrl from a UserProfile is a bare R2 key (e.g. "avatars/42.png"),
+// same convention as content_path — this builds the actual <img src>,
+// same gated-assets base every other cross-subdomain image on this site
+// already uses (see getResourceRequestFileUrl above).
+export function getAvatarSrc(avatarUrl: string) {
+  return `${AUTH_API_BASE}/v1/library/assets/${avatarUrl}`
 }
 
 /* ==================== Phase 4: authorization roles ==================== */
@@ -680,6 +711,18 @@ export function uploadLessonImage(moduleId: number, file: File) {
   const form = new FormData()
   form.set('file', file)
   return authFetchForm<{ message: string; filename: string }>(`/v1/instructor/modules/${moduleId}/images`, form)
+}
+
+// -------- Staff: pending counts --------
+
+export type StaffPendingCounts = {
+  roleRequests: number
+  resourceRequests: number
+  courseRequests: number
+}
+
+export function getStaffPendingCounts() {
+  return authFetch<StaffPendingCounts>('/v1/staff/pending-counts')
 }
 
 // -------- Staff: courses --------

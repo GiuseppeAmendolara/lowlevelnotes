@@ -34,7 +34,7 @@ export default function CourseReviewPanel({ id }: { id: number }) {
       setError(result.error)
       return
     }
-    router.push('/approval/course-requests')
+    router.push('/account/approvals/course-requests')
   }
 
   async function handleReject() {
@@ -47,7 +47,7 @@ export default function CourseReviewPanel({ id }: { id: number }) {
       setError(result.error)
       return
     }
-    router.push('/approval/course-requests')
+    router.push('/account/approvals/course-requests')
   }
 
   async function handleDelete() {
@@ -60,7 +60,7 @@ export default function CourseReviewPanel({ id }: { id: number }) {
       setError(result.error)
       return
     }
-    router.push('/approval/course-requests')
+    router.push('/account/approvals/course-requests')
   }
 
   if (error && !course) {
@@ -73,7 +73,7 @@ export default function CourseReviewPanel({ id }: { id: number }) {
 
   return (
     <div>
-      <Link href="/approval/course-requests" className="text-xs uppercase tracking-[0.12em] text-white/40 transition-colors hover:text-white">
+      <Link href="/account/approvals/course-requests" className="text-xs uppercase tracking-[0.12em] text-white/40 transition-colors hover:text-white">
         ← Course requests
       </Link>
 

@@ -114,7 +114,7 @@ export default function InstructorCoursesPage() {
           {courses?.map((c) => (
             <Link
               key={c.id}
-              href={`/instructor/courses/${c.id}`}
+              href={`/courses/builder/${c.id}`}
               className="block border-b border-r border-white/10 bg-[#0D0D0D] p-4 transition-colors hover:bg-[#171717]"
             >
               <div className="flex flex-wrap items-center justify-between gap-3">

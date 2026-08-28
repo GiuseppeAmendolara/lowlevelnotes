@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import AuthPageShell from '@/components/auth/AuthPageShell'
 import { useSession } from '@/components/SessionProvider'
-import CourseRequestsPanel from '@/components/admin/CourseRequestsPanel'
+import ResourceRequestsPanel from '@/components/admin/ResourceRequestsPanel'
 
-export default function CourseRequestsPage() {
+export default function ResourceRequestsPage() {
   const router = useRouter()
   const { user, loading: sessionLoading } = useSession()
 
@@ -24,7 +24,7 @@ export default function CourseRequestsPage() {
 
   if (sessionLoading || !user || user.role !== 'administrator') {
     return (
-      <AuthPageShell eyebrow="Admin" heading="Course requests" backHref="/approval" backLabel="Approvals">
+      <AuthPageShell eyebrow="Staff" heading="Resource requests" backHref="/account/approvals" backLabel="Approvals">
         <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>
       </AuthPageShell>
     )
@@ -33,15 +33,15 @@ export default function CourseRequestsPage() {
   return (
     <main className="min-h-screen bg-[#171717]">
       <section className="mx-auto max-w-5xl px-6 pb-10 pt-20 sm:pt-28">
-        <Link href="/approval" className="text-xs uppercase tracking-[0.12em] text-white/40 transition-colors hover:text-white">
+        <Link href="/account/approvals" className="text-xs uppercase tracking-[0.12em] text-white/40 transition-colors hover:text-white">
           ← Approvals
         </Link>
         <p className="mt-4 text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">Administration</p>
-        <h1 className="mt-2 text-4xl font-bold tracking-[-0.05em] text-white sm:text-5xl">Course requests</h1>
+        <h1 className="mt-2 text-4xl font-bold tracking-[-0.05em] text-white sm:text-5xl">Resource requests</h1>
       </section>
 
       <section className="mx-auto max-w-5xl px-6 pb-24">
-        <CourseRequestsPanel />
+        <ResourceRequestsPanel />
       </section>
     </main>
   )

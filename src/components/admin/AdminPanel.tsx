@@ -50,7 +50,7 @@ export default function AdminPanel() {
         </Link>
         <p className="mt-4 text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">Administration</p>
         <h1 className="mt-4 text-4xl font-bold tracking-[-0.05em] text-white sm:text-5xl">Staff</h1>
-        <Link href="/approval" className="mt-4 inline-block text-sm text-white/70 underline underline-offset-2 transition-colors hover:text-white">
+        <Link href="/account/approvals" className="mt-4 inline-block text-sm text-white/70 underline underline-offset-2 transition-colors hover:text-white">
           Review role, resource, and course requests →
         </Link>
       </section>

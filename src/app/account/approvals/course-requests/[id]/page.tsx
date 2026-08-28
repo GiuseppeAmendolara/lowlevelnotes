@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect } from 'react'
+import { use, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import AuthPageShell from '@/components/auth/AuthPageShell'
 import { useSession } from '@/components/SessionProvider'
-import AdminPanel from '@/components/admin/AdminPanel'
+import CourseReviewPanel from '@/components/admin/CourseReviewPanel'
 
-export default function AdminPage() {
+export default function CourseReviewPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
   const router = useRouter()
   const { user, loading: sessionLoading } = useSession()
 
@@ -23,11 +24,17 @@ export default function AdminPage() {
 
   if (sessionLoading || !user || user.role !== 'administrator') {
     return (
-      <AuthPageShell eyebrow="Admin" heading="Admin" backHref="/account">
+      <AuthPageShell eyebrow="Staff" heading="Course request" backHref="/account/approvals/course-requests" backLabel="Course requests">
         <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>
       </AuthPageShell>
     )
   }
 
-  return <AdminPanel />
+  return (
+    <main className="min-h-screen bg-[#171717]">
+      <section className="mx-auto max-w-5xl px-6 py-20 sm:py-28">
+        <CourseReviewPanel id={Number(id)} />
+      </section>
+    </main>
+  )
 }

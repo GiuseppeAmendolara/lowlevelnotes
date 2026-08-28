@@ -8,7 +8,7 @@ import AuthTextField from '@/components/auth/AuthTextField'
 import AuthSubmitButton from '@/components/auth/AuthSubmitButton'
 import AuthMessage from '@/components/auth/AuthMessage'
 import { useSession } from '@/components/SessionProvider'
-import { changePassword, logout, resendVerification } from '@/lib/authClient'
+import { changePassword, logout, resendVerification, getStaffPendingCounts, type StaffPendingCounts } from '@/lib/authClient'
 
 export default function AccountPage() {
   const router = useRouter()
@@ -20,6 +20,7 @@ export default function AccountPage() {
   const [success, setSuccess] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent'>('idle')
+  const [pendingCounts, setPendingCounts] = useState<StaffPendingCounts | null>(null)
   // Suppresses the redirect-to-/login guard below during a deliberate
   // logout — otherwise refresh()'s setUser(null) and this effect's own
   // router.replace('/login') race the logout handler's router.push('/'),
@@ -64,6 +65,14 @@ export default function AccountPage() {
     setResendState(result.ok ? 'sent' : 'idle')
   }
 
+  useEffect(() => {
+    if (user?.role !== 'administrator') return
+
+    getStaffPendingCounts().then((result) => {
+      if (result.ok) setPendingCounts(result.data)
+    })
+  }, [user])
+
   if (sessionLoading || !user) {
     return (
       <AuthPageShell eyebrow="Account" heading="Account">
@@ -83,6 +92,11 @@ export default function AccountPage() {
           title="Enrolled courses"
           description="Manage your enrollments and view your progress."
         />
+        <AccountLinkCard
+          href="/account/profile"
+          title="Your profile"
+          description="Set a picture and bio, and see how others view your profile."
+        />
         {user.role === 'student' && (
           <AccountLinkCard
             href="/contribute"
@@ -99,7 +113,7 @@ export default function AccountPage() {
         )}
         {(user.role === 'instructor' || user.role === 'administrator') && (
           <AccountLinkCard
-            href="/instructor/courses"
+            href="/courses/builder"
             title="Build a course"
             description="Create and edit your own courses, submit them for review."
           />
@@ -107,13 +121,17 @@ export default function AccountPage() {
         {user.role === 'administrator' && (
           <>
             <AccountLinkCard
-              href="/staff"
-              title="Admin"
+              href="/account/staff"
+              title="Staff"
               description="Manage users, blocked IPs, and the activity log."
             />
             <AccountLinkCard
-              href="/approval"
-              title="Approvals"
+              href="/account/approvals"
+              title={
+                pendingCounts && pendingCounts.roleRequests + pendingCounts.resourceRequests + pendingCounts.courseRequests > 0
+                  ? `Approvals · ${pendingCounts.roleRequests + pendingCounts.resourceRequests + pendingCounts.courseRequests} pending`
+                  : 'Approvals'
+              }
               description="Review role, resource, and course requests."
             />
           </>

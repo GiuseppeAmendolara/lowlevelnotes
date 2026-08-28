@@ -87,7 +87,7 @@ export default function InstructorCourseBuilderPage({ params }: { params: Promis
 
   if (sessionLoading || !user || (user.role !== 'instructor' && user.role !== 'administrator')) {
     return (
-      <AuthPageShell eyebrow="Instructor" heading="Course" backHref="/instructor/courses" backLabel="Your courses">
+      <AuthPageShell eyebrow="Instructor" heading="Course" backHref="/courses/builder" backLabel="Your courses">
         <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>
       </AuthPageShell>
     )
@@ -95,7 +95,7 @@ export default function InstructorCourseBuilderPage({ params }: { params: Promis
 
   if (error) {
     return (
-      <AuthPageShell eyebrow="Instructor" heading="Course" backHref="/instructor/courses" backLabel="Your courses">
+      <AuthPageShell eyebrow="Instructor" heading="Course" backHref="/courses/builder" backLabel="Your courses">
         <p className="text-sm text-[#F85149]">{error}</p>
       </AuthPageShell>
     )
@@ -103,7 +103,7 @@ export default function InstructorCourseBuilderPage({ params }: { params: Promis
 
   if (!course) {
     return (
-      <AuthPageShell eyebrow="Instructor" heading="Course" backHref="/instructor/courses" backLabel="Your courses">
+      <AuthPageShell eyebrow="Instructor" heading="Course" backHref="/courses/builder" backLabel="Your courses">
         <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>
       </AuthPageShell>
     )
@@ -114,7 +114,7 @@ export default function InstructorCourseBuilderPage({ params }: { params: Promis
   return (
     <main className="min-h-screen bg-[#171717]">
       <section className="mx-auto max-w-3xl px-6 pb-10 pt-20 sm:pt-28">
-        <Link href="/instructor/courses" className="text-xs uppercase tracking-[0.12em] text-white/40 transition-colors hover:text-white">
+        <Link href="/courses/builder" className="text-xs uppercase tracking-[0.12em] text-white/40 transition-colors hover:text-white">
           ← Your courses
         </Link>
         <p className="mt-4 text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">Instructor</p>
