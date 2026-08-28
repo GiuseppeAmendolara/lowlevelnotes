@@ -327,6 +327,18 @@ export function getMyStatistics() {
   return authFetch<MyStatistics>('/v1/me/statistics')
 }
 
+export type MyAchievement = {
+  slug: string
+  title: string
+  description: string
+  unlocked: boolean
+  unlockedAt: string | null
+}
+
+export function getMyAchievements() {
+  return authFetch<MyAchievement[]>('/v1/me/achievements')
+}
+
 /* ==================== Phase 4: authorization roles ==================== */
 
 export type Role = 'student' | 'contributor' | 'instructor' | 'administrator'

@@ -20,18 +20,19 @@ resource-submission pipeline) is also complete and live. Those deferred
 course endpoints (enroll, mark-lesson-complete, quiz-attempt,
 `/me/progress`, `/me/statistics`) are now complete and live — see
 "Data and API direction" below for the concrete design. Phase 7 (the
-learning system UI) is underway: scoped into four staged slices (see
-WORKLOG's "Phase 7 scoping" entry), Slice 1 (session-gated course/lesson
-catalog pages, the new `GET /v1/lessons/:id` endpoint, and the
-R2-backed markdown content pipeline — see "Data and API direction"
-below) is complete and live; enrollment/completion
-actions, the interactive quiz UI, and progress surfacing on `/account`
-remain. Two of the Phase 1 test-seed courses were replaced with real
-draft notes (`postgresql`, `networks` — see "Data and API direction"
-below) specifically to prove the content pipeline against real content,
-not as a curriculum pass — a full, properly structured course-content
-build is still deferred to its own later pass, not tied to a numbered
-phase.
+learning system UI) is complete: all four staged slices (see WORKLOG's
+"Phase 7 scoping" entry) shipped — the session-gated course/lesson
+catalog and R2-backed markdown content pipeline, enrollment/completion
+actions, the interactive quiz UI, and progress surfacing via
+`/account/courses` — plus a full instructor course-authoring pipeline
+(browser-based course builder, admin review before publishing) that
+superseded the original test-seed content. Course review, publish, and
+removal now live at `/approval/course-requests`, split out of `/staff`
+along with role- and resource-request review — see "Data and API
+direction" below for the concrete design, and its "Phase 7 (learning
+system UI), concrete decisions so far" entry for how the two
+`postgresql`/`networks` proof-of-pipeline seed courses were later
+replaced with real, fully authored curriculum.
 
 ## Current stack
 
@@ -70,7 +71,7 @@ phase.
    and `/v1/resource-requests*` in `worker/index.js`, plus `/staff` and
    `/contribute` in the frontend — see "Data and API direction" below and
    the API endpoint reference for the concrete design.
-6. **Phase 7 (in progress):** Learning system: explanations, code examples,
+6. **Phase 7 (complete):** Learning system: explanations, code examples,
    diagrams, interactive “try it yourself” exercises (informational only
    this phase — see "Data and API direction" below), questions, quizzes,
    and lesson completion. All Worker-side endpoints for Slices 1–3
@@ -96,12 +97,80 @@ phase.
    decisions so far" below for the full design and why). See WORKLOG's
    "Phase 7 scoping" and "Instructor course builder" entries for the
    original staged-slice plan.
-7. **Phase 8:** Exercises, including standard-library-free programming tasks and
-   x86-64 assembly tasks.
-8. **Phase 9:** Progress: course/lesson progress, quiz scores, exercise results,
-   and achievements.
-9. **Phase 10:** Gamification: goals, XP, badges, levels, streaks, certificates,
+7. **Phase 8 (mostly complete):** Progress: course/lesson progress and quiz
+   scores shipped as part of Phase 7 (Slices 2-4, `enrollments`/
+   `lesson_progress`/`quiz_attempts`, surfaced on `/account/courses`); a new
+   achievements system (unlockable milestones layered on that same
+   progress data — see "Achievements" below) shipped in this pass.
+   Exercise results stay blocked on End-Phase (below) — not scheduled.
+8. **Phase 9:** Gamification: goals, XP, badges, levels, streaks, certificates,
    and leaderboards.
+
+**End-Phase — Exercises** (standard-library-free programming tasks and
+x86-64 assembly tasks): out of the numbered sequence on purpose. This isn't
+scheduled — it gets picked up only if the platform grows past two real
+users, since it's the one piece of this roadmap with an ongoing hosting
+cost. Cloudflare Workers can't run a compiler/assembler in-process, so real
+grading needs an external sandboxed execution backend; three options were
+weighed (Cloudflare Containers, a self-hosted Piston instance, a
+from-scratch client-side WASM/x86 emulator) and the pick was **self-hosted
+Piston** — the VPS cost, not the tool, is what's actually being deferred.
+Written out fully below so this is pure execution whenever it's picked up,
+not re-research:
+
+- **Why Piston:** open-source, purpose-built code-execution engine already
+  used by several competitive-programming sites; supports C (via `gcc`) and
+  NASM out of the box; does its own sandboxing internally (Linux
+  namespaces, chroot, unprivileged users, cgroups, via its `isolate`
+  dependency) — no need to hand-roll process isolation. Its public instance
+  is explicitly rate-limited and not meant for real reliance, so this
+  requires a private, self-hosted instance, not the public API.
+- **Hosting:** one small VPS (a $5-6/mo tier — DigitalOcean, Hetzner, or
+  Fly.io are all fine) running Piston via its official docker-compose
+  setup, with the `gcc` and `nasm` language packages installed
+  (`cli.js ppman install gcc nasm`). Put behind a reverse proxy that checks
+  a shared-secret bearer token (a new Wrangler secret, e.g.
+  `PISTON_API_KEY`) before forwarding to Piston's actual API — Workers have
+  no static egress IP to firewall by IP alone.
+- **Schema:** extend `exercises` (`worker/migrations/0001_phase1_learning_
+  platform.sql`) with a `test_harness` column — instructor-authored code
+  that wraps the student's submission (includes/calls it, feeds fixed
+  inputs, and exits 0 on pass / nonzero on fail), matching the shape of
+  this doc's own example exercises ("reverse a string without the standard
+  library"; "write an x86-64 function returning the maximum of two
+  integers" — see "Learning and motivation model" below). Add a new
+  `exercise_attempts` table (id, user_id, lesson_id, submitted_code,
+  stdout, exit_code, passed, attempted_at), mirroring `quiz_attempts`'s
+  shape.
+- **Grading flow:** a new endpoint, `POST /v1/lessons/:id/submit-exercise`
+  (parallel to the existing `.../attempt` for quizzes) — session- and
+  enrollment-gated the same way `completeLessonV1`/`attemptQuizV1` already
+  are, rate-limited via the existing `countAuthEvents` pattern with a new
+  `exercise_submit` event type (needs an `auth_events` CHECK-constraint
+  migration, same as `course_content_write` did). The Worker concatenates
+  the submission with the exercise's stored `test_harness`, POSTs it to
+  Piston's `/api/v2/execute` with the right `language` and a
+  `compile_timeout`/`run_timeout`/memory limit (all native Piston request
+  params), reads back stdout/stderr/exit code, writes an
+  `exercise_attempts` row, and calls `evaluateAchievementsV1` — making
+  "exercise results" achievements (the original Phase 9 goal left out this
+  pass) a one-line `criteria_type` addition once this lands.
+- **Frontend:** `ExerciseBody` (`src/components/lesson/
+  LessonContentViews.tsx`) already renders the prompt and starter code; it
+  would need a real code editor (a new dependency — CodeMirror is a
+  reasonable pick, nothing like it exists in this stack today) in place of
+  the current read-only `RenderedCode`, a "Run" action hitting the new
+  endpoint, and a pass/fail + stdout/stderr result panel.
+- **Security boundary:** correctness of isolation is Piston's job, not this
+  app's — the Worker only needs to be a disciplined caller (real timeouts,
+  rate limits, never trusting output beyond the harness's own pass/fail
+  exit code).
+- **Verification, once built:** same pattern as every feature in this repo
+  — a throwaway QA account (never a real user's session), submit both a
+  passing and a failing solution to a real exercise, confirm the
+  `exercise_attempts` row and achievement unlock are correct, and confirm
+  a deliberately hanging submission (infinite loop) is killed by Piston's
+  own timeout rather than hanging the Worker's request.
 
 ## Future implementation reference
 
@@ -223,8 +292,8 @@ These are planning notes, not authorization to begin future phases early.
     prompt, starter code, a solution-notes reveal, no submission or
     grading (confirmed with the user during scoping). There's no
     `exercise_attempts` table and no code-execution sandbox anywhere in
-    this stack; real grading is Phase 8's ("Exercises") job, not this
-    one's.
+    this stack; real grading is the deferred End-Phase's ("Exercises")
+    job, not this one's — see the Roadmap above for the full plan.
   - **`/courses/*` requires a session, same tier as `/resources`,
     `/people`** — `getCoursesV1`/`getCourseV1`/
     `getCourseLessonsV1`/`getLessonV1` all gate on `getSessionUser()`
@@ -247,7 +316,11 @@ These are planning notes, not authorization to begin future phases early.
     endpoint (`getLibraryAssetV1`) as-is — no separate read endpoint for
     content, since `content_path` values are already valid keys into
     that same bucket. Accepted tradeoff: shares that endpoint's
-    60/download-per-hour rate limit with real library downloads.
+    download-per-hour rate limit with real library downloads — originally
+    60/hour, raised to 300/hour once real multi-lesson courses existed
+    and both normal study sessions and the admin review UI (which loads
+    every lesson's content on page load) were tripping it on ordinary
+    use, not abuse.
   - Because content now requires an authenticated browser fetch (not a
     server-side file read), rendering moved to two new same-origin
     Route Handlers — `POST /api/render/markdown` and
@@ -284,13 +357,26 @@ These are planning notes, not authorization to begin future phases early.
     plumbing: `api.lowlevelnotes.com` and `lowlevelnotes.com` share a
     registrable domain, so the `SameSite=Strict` session cookie still
     attaches to this same-site (cross-subdomain) `<img>` request.
-  - Two courses seeded from real existing content instead of more
-    hand-written placeholders: `postgresql` (→
+  - Two courses were originally seeded from real existing content instead
+    of more hand-written placeholders: `postgresql` (→
     `drafts/Data/postgresql.md`, text-only) and `networks` (→
     `drafts/Networks/networks.md`, ~50 embedded images) — both objects
     already sat in R2 under `drafts/` from before this pipeline existed.
-    Proves the pipeline against real content without taking on a full
-    curriculum build, which stays its own deferred pass.
+    This proved the pipeline against real content without taking on a
+    full curriculum build. Both were later deleted, alongside the
+    original placeholder `computer-architecture` seed course, once judged
+    incorrect/not real curriculum — deletion goes through
+    `deleteCourseStaffV1` (see "Instructor course builder" below), which
+    doesn't remove the underlying R2 objects, so `drafts/Data/
+    postgresql.md` and `drafts/Networks/networks.md` still exist in the
+    bucket, just unreferenced by any course row now. The full curriculum
+    build did eventually happen, outside the instructor UI: three
+    complete courses — **Programming Foundations**, **C-Style C++**, and
+    a C# course — authored from the site owner's own archived notes and a
+    779-page book, written directly via D1 SQL + R2 object puts rather
+    than through `/instructor/courses`, but reusing that same schema
+    shape and `content_path` convention. All three have since been
+    submitted, reviewed, and published.
   - Added `courses` to `Header.tsx`'s nav (`src/components/Header.tsx`).
     Cuts against the recent deliberate nav simplification (commit
     `27fd9d0`, "four topic links plus a single account slot") — judged
@@ -527,6 +613,52 @@ These are planning notes, not authorization to begin future phases early.
       `QuizReview` for quiz lessons showing every answer with `correct`
       already flagged. Approve/Reject only show for `pending_review`;
       Delete shows for any status.
+- **Phase 9 (achievements), concrete decisions:**
+  - New migration `0015_achievements.sql`: `achievements` (slug, title,
+    description, `criteria_type` CHECK-enum, nullable `criteria_value`,
+    position) and `user_achievements` (`user_id`/`achievement_id`,
+    `UNIQUE(user_id, achievement_id)`, `unlocked_at`). Seeded 7 starter
+    achievements matching AGENTS.md's own "Learning and motivation model"
+    examples (first lesson, first quiz, a seven-day streak) plus a few
+    obvious additions — a perfect quiz score, 10/50 lessons completed, and
+    a generic "finish your first course" (not tied to one specific course
+    slug/title, since courses are now dynamically authored and can be
+    deleted).
+  - No new progress tracking — criteria are checked purely against
+    `enrollments`/`lesson_progress`/`quiz_attempts`, which Phase 7 already
+    populates. `evaluateAchievementsV1(env, userId)` computes the same
+    aggregate stats `getMyStatisticsV1` already computes (lessons
+    completed, quiz attempts, courses completed) plus one new check: the
+    longest-ever run of consecutive calendar days with a completed
+    lesson/quiz attempt, walked in JS over `date()`-distinct timestamps
+    rather than a SQLite gaps-and-islands window-function query — this
+    app's real data volume (two users) doesn't warrant that complexity.
+    It's a lifetime-longest streak, not a "must still be active today"
+    one, since an achievement only ever needs to unlock once.
+  - Evaluated fire-and-forget right after the two places that can move
+    those numbers — `completeLessonV1` and `attemptQuizV1`, both right
+    after their existing `maybeCompleteEnrollmentV1` call — same pattern
+    as `logAuthEvent` elsewhere in this file. No dedicated
+    re-evaluation/backfill endpoint; a user's next qualifying action
+    re-runs the check for everything still locked.
+  - `GET /v1/me/achievements` (session-gated, same tier as `/v1/me/
+    progress`/`/v1/me/statistics`) returns every achievement definition
+    joined against the caller's `user_achievements` in one call, so the
+    frontend can render locked/unlocked state without a second request.
+  - Frontend: `getMyAchievements()` in `authClient.ts`; a new
+    "Achievements" grid on `/account/courses` (not a new route — that
+    page is already Phase 7's progress-surfacing home), each tile
+    locked/unlocked with its unlock date on hover.
+  - Verified end-to-end against production with a throwaway QA account
+    (created directly in D1, never a fabricated session for a real user
+    identity): completed lessons and quiz attempts through the real
+    `/v1/lessons/:id/complete` and `/attempt` endpoints, confirmed each
+    achievement unlocked at the right threshold (including the streak,
+    tested by backdating `lesson_progress.completed_at` across 7
+    consecutive dates and re-triggering evaluation via an unrelated
+    lesson — completing an *already-backdated* lesson resets its own
+    `completed_at` to now, a real gotcha hit during this verification),
+    then deleted the QA account (cascades).
 - **Phase 3 (authentication), concrete decisions** — see WORKLOG's "Phase
   3" entry for the full security reasoning:
   - Password hashing: PBKDF2-HMAC-SHA256, 100,000 iterations, via
@@ -757,7 +889,7 @@ main domain is scoped against — see below.
 | GET | `/v1/auth/session` | session | 401 without one |
 | GET | `/v1/auth/verify-email` | none | authenticates via the query-string token |
 | PUT | `/v1/auth/change-password` | session | |
-| GET | `/v1/library/assets/*` | session | streams from R2, own 60/hour/user rate limit |
+| GET | `/v1/library/assets/*` | session | streams from R2, own 300/hour/user rate limit |
 | GET | `/resource/:id` | none | current view count |
 | POST | `/resource/:id` | none | directly callable — WAF Rule 2 explicitly exempts `POST /resource/*` from its suspicious-UA check, unlike most other paths |
 | POST | `/v1/role-requests` | session | request `contributor`/`instructor`; 409 if a pending request already exists |

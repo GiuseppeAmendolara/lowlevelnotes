@@ -7,9 +7,11 @@ import { useSession } from '@/components/SessionProvider'
 import {
   getMyProgress,
   getMyStatistics,
+  getMyAchievements,
   unenrollCourse,
   type MyEnrollment,
   type MyStatistics,
+  type MyAchievement,
 } from '@/lib/authClient'
 
 export default function AccountCoursesPage() {
@@ -18,6 +20,7 @@ export default function AccountCoursesPage() {
 
   const [enrollments, setEnrollments] = useState<MyEnrollment[] | null>(null)
   const [stats, setStats] = useState<MyStatistics | null>(null)
+  const [achievements, setAchievements] = useState<MyAchievement[] | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -29,13 +32,14 @@ export default function AccountCoursesPage() {
   useEffect(() => {
     if (!user) return
 
-    Promise.all([getMyProgress(), getMyStatistics()]).then(([progressResult, statsResult]) => {
+    Promise.all([getMyProgress(), getMyStatistics(), getMyAchievements()]).then(([progressResult, statsResult, achievementsResult]) => {
       if (!progressResult.ok) {
         setError(progressResult.error)
         return
       }
       setEnrollments(progressResult.data.enrollments)
       if (statsResult.ok) setStats(statsResult.data)
+      if (achievementsResult.ok) setAchievements(achievementsResult.data)
     })
   }, [user])
 
@@ -79,6 +83,17 @@ export default function AccountCoursesPage() {
           </div>
         )}
 
+        {achievements && (
+          <div className="mt-10">
+            <h2 className="text-xs font-medium uppercase tracking-[0.18em] text-white/40">Achievements</h2>
+            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+              {achievements.map((achievement) => (
+                <AchievementTile key={achievement.slug} achievement={achievement} />
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="mt-10 flex flex-col gap-3">
           {enrollments && enrollments.length === 0 && (
             <p className="text-sm text-[#A1A1AA]">
@@ -95,6 +110,18 @@ export default function AccountCoursesPage() {
         </div>
       </section>
     </main>
+  )
+}
+
+function AchievementTile({ achievement }: { achievement: MyAchievement }) {
+  return (
+    <div
+      className={`border p-4 ${achievement.unlocked ? 'border-[#FF8A3D]/40 bg-[#0D0D0D]' : 'border-white/10 bg-[#0D0D0D] opacity-40'}`}
+      title={achievement.unlockedAt ? `Unlocked ${new Date(achievement.unlockedAt).toLocaleDateString()}` : undefined}
+    >
+      <p className={`text-sm font-semibold ${achievement.unlocked ? 'text-white' : 'text-[#A1A1AA]'}`}>{achievement.title}</p>
+      <p className="mt-1 text-xs text-[#A1A1AA]">{achievement.description}</p>
+    </div>
   )
 }
 
