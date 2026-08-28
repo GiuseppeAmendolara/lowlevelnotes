@@ -7,7 +7,7 @@ import AuthPageShell from '@/components/auth/AuthPageShell'
 import AuthSubmitButton from '@/components/auth/AuthSubmitButton'
 import AuthMessage from '@/components/auth/AuthMessage'
 import { useSession } from '@/components/SessionProvider'
-import { getUserProfile, updateMyProfile, uploadMyAvatar, getAvatarSrc, type UserProfile } from '@/lib/authClient'
+import { getUserProfile, updateMyProfile, uploadMyAvatar, getAssetSrc, type UserProfile } from '@/lib/authClient'
 
 const textareaClass = "border border-white/15 bg-[#0D0D0D] px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none"
 
@@ -88,7 +88,7 @@ export default function AccountProfilePage() {
         {profile?.avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- cross-subdomain, session-cookie-gated asset; next/image can't proxy this
           <img
-            src={getAvatarSrc(profile.avatarUrl)}
+            src={getAssetSrc(profile.avatarUrl)}
             alt=""
             className="h-20 w-20 shrink-0 rounded-full border border-white/10 object-cover"
           />

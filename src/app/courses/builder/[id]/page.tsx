@@ -19,11 +19,20 @@ import {
   saveLessonContent,
   getLessonContent,
   uploadLessonImage,
+  uploadCourseIcon,
+  addCourseAuthor,
+  removeCourseAuthor,
+  setCourseGroups,
+  getMyGroups,
+  getAssetSrc,
   type InstructorCourseDetail,
   type InstructorModule,
   type InstructorLesson,
   type LessonType,
   type LessonFields,
+  type CourseDifficulty,
+  type CourseVisibility,
+  type StudentGroup,
 } from '@/lib/authClient'
 
 // Same style constants as AdminPanel.tsx / the instructor courses list —
@@ -122,7 +131,16 @@ export default function InstructorCourseBuilderPage({ params }: { params: Promis
       </section>
 
       <section className="mx-auto max-w-3xl px-6 pb-24">
+        <div className="grid grid-cols-3 gap-px border border-white/10 bg-white/10">
+          <StatTile label="Views" value={course.viewCount} />
+          <StatTile label="Enrolled" value={course.enrolledCount} />
+          <StatTile label="Completed" value={course.completedCount} />
+        </div>
+
+        <CourseIconUpload course={course} onUploaded={load} />
         <CourseDetailsForm course={course} onSaved={load} />
+        <CourseAuthorsSection course={course} onChanged={load} />
+        <CourseVisibilitySection course={course} onChanged={load} />
 
         {course.status === 'draft' && course.rejectionReason && (
           <p className="mt-4 text-sm text-[#F85149]">Rejected: {course.rejectionReason}</p>
@@ -143,10 +161,71 @@ export default function InstructorCourseBuilderPage({ params }: { params: Promis
   )
 }
 
+function StatTile({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="bg-[#0D0D0D] p-4">
+      <p className="text-2xl font-bold tracking-[-0.03em] text-white">{value}</p>
+      <p className="mt-1 text-xs text-[#A1A1AA]">{label}</p>
+    </div>
+  )
+}
+
+function CourseIconUpload({ course, onUploaded }: { course: InstructorCourseDetail; onUploaded: () => void }) {
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploading(true)
+    setError(null)
+    const result = await uploadCourseIcon(course.id, file)
+    setUploading(false)
+
+    if (!result.ok) {
+      setError(result.error)
+      return
+    }
+    onUploaded()
+  }
+
+  return (
+    <div className="mt-6 flex items-center gap-4">
+      {course.iconUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element -- cross-subdomain, session-cookie-gated asset; next/image can't proxy this
+        <img src={getAssetSrc(course.iconUrl)} alt="" className="h-16 w-16 shrink-0 border border-white/10 object-cover" />
+      ) : (
+        <div className="flex h-16 w-16 shrink-0 items-center justify-center border border-white/10 bg-[#0D0D0D] text-xs text-white/40">No icon</div>
+      )}
+      <div>
+        <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/gif,image/svg+xml" className="hidden" onChange={handleChange} />
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+          className={buttonClass}
+        >
+          {uploading ? 'Uploading…' : 'Change icon'}
+        </button>
+        {error && <p className="mt-2 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
+      </div>
+    </div>
+  )
+}
+
+const DIFFICULTY_OPTIONS: { value: CourseDifficulty; label: string }[] = [
+  { value: 'beginner', label: 'Beginner' },
+  { value: 'intermediate', label: 'Intermediate' },
+  { value: 'advanced', label: 'Advanced' },
+]
+
 function CourseDetailsForm({ course, onSaved }: { course: InstructorCourseDetail; onSaved: () => void }) {
   const [title, setTitle] = useState(course.title)
   const [description, setDescription] = useState(course.description ?? '')
   const [category, setCategory] = useState(course.category ?? '')
+  const [difficulty, setDifficulty] = useState<CourseDifficulty | ''>(course.difficulty ?? '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -154,7 +233,13 @@ function CourseDetailsForm({ course, onSaved }: { course: InstructorCourseDetail
     e.preventDefault()
     setSaving(true)
     setError(null)
-    const result = await updateCourse(course.id, { title, description: description || undefined, category: category || undefined })
+    const result = await updateCourse(course.id, {
+      title,
+      description: description || undefined,
+      category: category || undefined,
+      difficulty: difficulty || undefined,
+      visibility: course.visibility,
+    })
     setSaving(false)
     if (!result.ok) {
       setError(result.error)
@@ -164,13 +249,181 @@ function CourseDetailsForm({ course, onSaved }: { course: InstructorCourseDetail
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+    <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-3">
       <input value={title} onChange={(e) => setTitle(e.target.value)} required placeholder="Title" className={inputClass} />
       <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description" className={inputClass} />
       <input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Category" className={inputClass} />
+      <select value={difficulty} onChange={(e) => setDifficulty(e.target.value as CourseDifficulty | '')} className={inputClass}>
+        <option value="">No difficulty set</option>
+        {DIFFICULTY_OPTIONS.map((d) => (
+          <option key={d.value} value={d.value}>{d.label}</option>
+        ))}
+      </select>
       <button type="submit" disabled={saving} className={`self-start ${buttonClass}`}>{saving ? '…' : 'Save course details'}</button>
       {error && <p className="text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
     </form>
+  )
+}
+
+function CourseAuthorsSection({ course, onChanged }: { course: InstructorCourseDetail; onChanged: () => void }) {
+  const [email, setEmail] = useState('')
+  const [adding, setAdding] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleAdd(e: React.FormEvent) {
+    e.preventDefault()
+    setAdding(true)
+    setError(null)
+    const result = await addCourseAuthor(course.id, email)
+    setAdding(false)
+    if (!result.ok) {
+      setError(result.error)
+      return
+    }
+    setEmail('')
+    onChanged()
+  }
+
+  async function handleRemove(userId: number) {
+    const result = await removeCourseAuthor(course.id, userId)
+    if (result.ok) onChanged()
+  }
+
+  return (
+    <div className="mt-8">
+      <h2 className="text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">Authors</h2>
+      <div className="mt-3 flex flex-col gap-2">
+        {course.authors.map((author) => (
+          <div key={author.id} className="flex items-center justify-between gap-3 border border-white/10 bg-[#0D0D0D] px-4 py-2 text-sm text-white">
+            <span>{author.displayName}{author.id === course.createdBy && ' (owner)'}</span>
+            {author.id !== course.createdBy && (
+              <button type="button" onClick={() => handleRemove(author.id)} className="text-xs text-white/50 underline underline-offset-2 hover:text-white">
+                Remove
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+      <form onSubmit={handleAdd} className="mt-3 flex flex-wrap items-center gap-2">
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          placeholder="Add a co-author by email"
+          className={inputClass}
+        />
+        <button type="submit" disabled={adding} className={buttonClass}>{adding ? '…' : 'Add'}</button>
+      </form>
+      <p className="mt-1 text-xs text-white/40">Must already be an instructor or staff member on the site.</p>
+      {error && <p className="mt-2 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
+    </div>
+  )
+}
+
+function CourseVisibilitySection({ course, onChanged }: { course: InstructorCourseDetail; onChanged: () => void }) {
+  const [groups, setGroups] = useState<StudentGroup[] | null>(null)
+  const [selectedGroupIds, setSelectedGroupIds] = useState<Set<number>>(new Set(course.groupIds))
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    getMyGroups().then((result) => {
+      if (result.ok) setGroups(result.data)
+    })
+  }, [])
+
+  async function handleVisibilityChange(visibility: CourseVisibility) {
+    setSaving(true)
+    setError(null)
+    const result = await updateCourse(course.id, {
+      title: course.title,
+      description: course.description || undefined,
+      category: course.category || undefined,
+      difficulty: course.difficulty || undefined,
+      visibility,
+    })
+    setSaving(false)
+    if (!result.ok) {
+      setError(result.error)
+      return
+    }
+    onChanged()
+  }
+
+  async function handleSaveGroups() {
+    setSaving(true)
+    setError(null)
+    const result = await setCourseGroups(course.id, [...selectedGroupIds])
+    setSaving(false)
+    if (!result.ok) {
+      setError(result.error)
+      return
+    }
+    onChanged()
+  }
+
+  function toggleGroup(id: number) {
+    setSelectedGroupIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  return (
+    <div className="mt-8">
+      <h2 className="text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">Visibility</h2>
+      <div className="mt-3 flex gap-2">
+        <button
+          type="button"
+          onClick={() => handleVisibilityChange('public')}
+          disabled={saving}
+          className={course.visibility === 'public' ? buttonClass : inputClass}
+        >
+          Open to everyone
+        </button>
+        <button
+          type="button"
+          onClick={() => handleVisibilityChange('restricted')}
+          disabled={saving}
+          className={course.visibility === 'restricted' ? buttonClass : inputClass}
+        >
+          Restricted to groups
+        </button>
+      </div>
+
+      {course.visibility === 'restricted' && (
+        <div className="mt-4">
+          <p className="text-xs text-white/40">Only students in the checked groups can see or enroll in this course.</p>
+          <div className="mt-2 flex flex-col gap-2">
+            {groups === null && <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading groups…</p>}
+            {groups?.length === 0 && (
+              <p className="text-sm text-[#A1A1AA]">
+                No groups yet — <Link href="/courses/builder/groups" className="text-[#FF8A3D] underline underline-offset-2">create one</Link>.
+              </p>
+            )}
+            {groups?.map((group) => (
+              <label key={group.id} className="flex items-center gap-2 text-sm text-white">
+                <input
+                  type="checkbox"
+                  checked={selectedGroupIds.has(group.id)}
+                  onChange={() => toggleGroup(group.id)}
+                />
+                {group.name} ({group.memberCount} students)
+              </label>
+            ))}
+          </div>
+          {groups && groups.length > 0 && (
+            <button type="button" onClick={handleSaveGroups} disabled={saving} className={`mt-3 ${buttonClass}`}>
+              {saving ? '…' : 'Save group access'}
+            </button>
+          )}
+        </div>
+      )}
+      {error && <p className="mt-2 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
+    </div>
   )
 }
 
@@ -202,7 +455,7 @@ function SubmitForReviewControl({
     return <p className="mt-6 text-sm text-[#3FB950]">✓ Published — live on the site.</p>
   }
   if (course.status === 'pending_review') {
-    return <p className="mt-6 text-sm text-[#FF8A3D]">In review — an admin will approve or reject it soon.</p>
+    return <p className="mt-6 text-sm text-[#FF8A3D]">In review — a staff member will approve or reject it soon.</p>
   }
   if (lessonCount === 0) {
     return <p className="mt-6 text-sm text-[#A1A1AA]">Add at least one lesson before you can submit this course for review.</p>

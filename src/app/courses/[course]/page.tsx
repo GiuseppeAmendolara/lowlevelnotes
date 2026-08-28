@@ -12,11 +12,26 @@ import {
   getMyProgress,
   enrollCourse,
   unenrollCourse,
+  getAssetSrc,
   type Course,
+  type CourseDifficulty,
   type Lesson,
   type MyEnrollment,
   type MyLessonProgress,
 } from '@/lib/authClient'
+
+const DIFFICULTY_LABEL: Record<CourseDifficulty, string> = {
+  beginner: 'Beginner',
+  intermediate: 'Intermediate',
+  advanced: 'Advanced',
+}
+
+function authorByline(authors: Course['authors']): string | null {
+  if (authors.length === 0) return null
+  if (authors.length === 1) return `by ${authors[0].displayName}`
+  if (authors.length === 2) return `by ${authors[0].displayName} and ${authors[1].displayName}`
+  return `by ${authors[0].displayName} and ${authors.length - 1} others`
+}
 
 function groupByModule(lessons: Lesson[]) {
   const modules = new Map<string, { title: string; position: number; lessons: Lesson[] }>()
@@ -173,12 +188,28 @@ export default function CoursePage({ params }: { params: Promise<{ course: strin
         <Link href="/courses" className="text-xs uppercase tracking-[0.12em] text-white/40 transition-colors hover:text-white">
           ← Courses
         </Link>
-        {course.category && (
-          <p className="mt-4 text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">{course.category}</p>
-        )}
+        <div className="mt-4 flex items-center gap-4">
+          {course.iconUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- cross-subdomain, session-cookie-gated asset; next/image can't proxy this
+            <img src={getAssetSrc(course.iconUrl)} alt="" className="h-12 w-12 shrink-0 border border-white/10 object-cover" />
+          ) : (
+            <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 bg-[#FF8A3D]" />
+          )}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            {course.category && (
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">{course.category}</p>
+            )}
+            {course.difficulty && (
+              <p className="text-xs uppercase tracking-[0.14em] text-white/40">{DIFFICULTY_LABEL[course.difficulty]}</p>
+            )}
+          </div>
+        </div>
         <h1 className="mt-4 text-4xl font-bold tracking-[-0.05em] text-white sm:text-5xl">{course.title}</h1>
         {course.description && (
           <p className="mt-4 max-w-xl leading-7 text-[#A1A1AA]">{course.description}</p>
+        )}
+        {authorByline(course.authors) && (
+          <p className="mt-2 text-sm text-white/40">{authorByline(course.authors)}</p>
         )}
 
         <div className="mt-6">

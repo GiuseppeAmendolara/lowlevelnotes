@@ -5,14 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useSession } from '@/components/SessionProvider'
 import AchievementTile from '@/components/AchievementTile'
-import { getUserProfile, getAvatarSrc, type UserProfile } from '@/lib/authClient'
-
-const ROLE_LABEL: Record<UserProfile['role'], string> = {
-  student: 'Student',
-  contributor: 'Contributor',
-  instructor: 'Instructor',
-  administrator: 'Administrator',
-}
+import { getUserProfile, getAssetSrc, roleLabel, type UserProfile } from '@/lib/authClient'
 
 export default function UserProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -62,7 +55,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
               {profile.avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element -- cross-subdomain, session-cookie-gated asset; next/image can't proxy this
                 <img
-                  src={getAvatarSrc(profile.avatarUrl)}
+                  src={getAssetSrc(profile.avatarUrl)}
                   alt=""
                   className="h-20 w-20 shrink-0 rounded-full border border-white/10 object-cover"
                 />
@@ -72,7 +65,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
                 </div>
               )}
               <div>
-                <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">{ROLE_LABEL[profile.role]}</p>
+                <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">{roleLabel(profile.role)}</p>
                 <h1 className="mt-1 text-3xl font-bold tracking-[-0.04em] text-white sm:text-4xl">{profile.displayName}</h1>
                 <p className="mt-1 text-xs text-white/40">Joined {new Date(profile.joinedAt).toLocaleDateString()}</p>
               </div>

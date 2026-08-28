@@ -8,7 +8,7 @@ import AuthTextField from '@/components/auth/AuthTextField'
 import AuthSubmitButton from '@/components/auth/AuthSubmitButton'
 import AuthMessage from '@/components/auth/AuthMessage'
 import { useSession } from '@/components/SessionProvider'
-import { changePassword, logout, resendVerification, getStaffPendingCounts, type StaffPendingCounts } from '@/lib/authClient'
+import { changePassword, logout, resendVerification, getStaffPendingCounts, roleLabel, type StaffPendingCounts } from '@/lib/authClient'
 
 export default function AccountPage() {
   const router = useRouter()
@@ -84,18 +84,18 @@ export default function AccountPage() {
   return (
     <AuthPageShell eyebrow="Account" heading={user.displayName}>
       <p className="text-sm text-[#A1A1AA]">{user.email}</p>
-      <p className="mt-1 text-xs uppercase tracking-[0.1em] text-[#FF8A3D]">{user.role}</p>
+      <p className="mt-1 text-xs uppercase tracking-[0.1em] text-[#FF8A3D]">{roleLabel(user.role)}</p>
 
       <div className="mt-6 flex flex-col gap-2">
-        <AccountLinkCard
-          href="/account/courses"
-          title="Enrolled courses"
-          description="Manage your enrollments and view your progress."
-        />
         <AccountLinkCard
           href="/account/profile"
           title="Your profile"
           description="Set a picture and bio, and see how others view your profile."
+        />
+        <AccountLinkCard
+          href="/account/courses"
+          title="Enrolled courses"
+          description="Manage your enrollments and view your progress."
         />
         {user.role === 'student' && (
           <AccountLinkCard

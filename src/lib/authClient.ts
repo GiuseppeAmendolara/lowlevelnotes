@@ -18,6 +18,7 @@ export type AuthUser = {
   email: string
   displayName: string
   role: string
+  avatarUrl: string | null
   emailVerified: boolean
   isSuperAdmin: boolean
 }
@@ -184,6 +185,10 @@ export async function getLibrary() {
 // which has no way to send the session cookie server-side (host-only on
 // api.lowlevelnotes.com, never visible to the Next.js server).
 
+export type CourseAuthor = { id: number; displayName: string }
+export type CourseDifficulty = 'beginner' | 'intermediate' | 'advanced'
+export type CourseVisibility = 'public' | 'restricted'
+
 export type Course = {
   id: number
   slug: string
@@ -191,6 +196,9 @@ export type Course = {
   description: string | null
   category: string | null
   position: number
+  iconUrl: string | null
+  difficulty: CourseDifficulty | null
+  authors: CourseAuthor[]
 }
 
 export type LessonType = 'article' | 'video' | 'exercise' | 'quiz'
@@ -362,12 +370,29 @@ export function uploadMyAvatar(file: File) {
   return authFetchForm<{ avatarUrl: string }>('/v1/me/avatar', form)
 }
 
-// avatarUrl from a UserProfile is a bare R2 key (e.g. "avatars/42.png"),
-// same convention as content_path — this builds the actual <img src>,
-// same gated-assets base every other cross-subdomain image on this site
-// already uses (see getResourceRequestFileUrl above).
-export function getAvatarSrc(avatarUrl: string) {
-  return `${AUTH_API_BASE}/v1/library/assets/${avatarUrl}`
+// A bare R2 key (avatarUrl, a course's iconUrl, content_path, ...) — this
+// builds the actual <img src>, same gated-assets base every other
+// cross-subdomain image on this site already uses (see
+// getResourceRequestFileUrl above).
+export function getAssetSrc(key: string) {
+  return `${AUTH_API_BASE}/v1/library/assets/${key}`
+}
+
+// The stored role value is still 'administrator' everywhere in D1 and in
+// every backend permission check (role === 'administrator') — renaming
+// that would mean rebuilding the users table to change its CHECK
+// constraint, and this exact D1 environment has a confirmed bug where
+// dropping a table cascade-deletes every row in tables that reference it
+// with ON DELETE CASCADE (see worker/migrations/0014's comment, where an
+// earlier session hit this on `courses` and deliberately avoided it).
+// users is referenced that way by nearly every table in the schema, so
+// that rebuild isn't safe to attempt. This is the one, single place the
+// display label is translated instead — every UI surface should call
+// this rather than rendering a raw role string or keeping its own copy
+// of the label map.
+export function roleLabel(role: string): string {
+  if (role === 'administrator') return 'Staff'
+  return role.charAt(0).toUpperCase() + role.slice(1)
 }
 
 /* ==================== Phase 4: authorization roles ==================== */
@@ -586,6 +611,14 @@ export type InstructorCourse = {
   status: InstructorCourseStatus
   rejectionReason: string | null
   position: number
+  iconUrl: string | null
+  difficulty: CourseDifficulty | null
+  visibility: CourseVisibility
+  createdBy: number
+  authors: CourseAuthor[]
+  viewCount: number
+  enrolledCount: number
+  completedCount: number
 }
 
 export type InstructorQuizAnswer = { id: number; body: string; correct: boolean; position: number }
@@ -614,7 +647,7 @@ export type InstructorModule = {
   lessons: InstructorLesson[]
 }
 
-export type InstructorCourseDetail = InstructorCourse & { modules: InstructorModule[] }
+export type InstructorCourseDetail = InstructorCourse & { modules: InstructorModule[]; groupIds: number[] }
 
 export function createCourse(fields: { title: string; description?: string; category?: string }) {
   return authFetch<{ message: string; id: number; slug: string }>('/v1/instructor/courses', {
@@ -631,11 +664,78 @@ export function getMyCourse(id: number) {
   return authFetch<InstructorCourseDetail>(`/v1/instructor/courses/${id}`)
 }
 
-export function updateCourse(id: number, fields: { title: string; description?: string; category?: string }) {
+export function updateCourse(
+  id: number,
+  fields: { title: string; description?: string; category?: string; difficulty?: CourseDifficulty; visibility?: CourseVisibility }
+) {
   return authFetch<{ message: string }>(`/v1/instructor/courses/${id}`, {
     method: 'PUT',
     body: JSON.stringify(fields),
   })
+}
+
+export function uploadCourseIcon(courseId: number, file: File) {
+  const form = new FormData()
+  form.append('file', file)
+  return authFetchForm<{ iconUrl: string }>(`/v1/instructor/courses/${courseId}/icon`, form)
+}
+
+export function addCourseAuthor(courseId: number, email: string) {
+  return authFetch<{ message: string }>(`/v1/instructor/courses/${courseId}/authors`, {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  })
+}
+
+export function removeCourseAuthor(courseId: number, userId: number) {
+  return authFetch<{ message: string }>(`/v1/instructor/courses/${courseId}/authors/${userId}`, { method: 'DELETE' })
+}
+
+export function setCourseGroups(courseId: number, groupIds: number[]) {
+  return authFetch<{ message: string }>(`/v1/instructor/courses/${courseId}/groups`, {
+    method: 'PUT',
+    body: JSON.stringify({ groupIds }),
+  })
+}
+
+export type StudentGroup = { id: number; name: string; createdAt: string; memberCount: number }
+export type GroupMember = { id: number; email: string; displayName: string; addedAt: string }
+
+export function getMyGroups() {
+  return authFetch<StudentGroup[]>('/v1/instructor/groups')
+}
+
+export function createGroup(name: string) {
+  return authFetch<{ id: number; message: string }>('/v1/instructor/groups', {
+    method: 'POST',
+    body: JSON.stringify({ name }),
+  })
+}
+
+export function updateGroup(id: number, name: string) {
+  return authFetch<{ message: string }>(`/v1/instructor/groups/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({ name }),
+  })
+}
+
+export function deleteGroup(id: number) {
+  return authFetch<{ message: string }>(`/v1/instructor/groups/${id}`, { method: 'DELETE' })
+}
+
+export function getGroupMembers(id: number) {
+  return authFetch<GroupMember[]>(`/v1/instructor/groups/${id}/members`)
+}
+
+export function addGroupMember(id: number, email: string) {
+  return authFetch<{ message: string }>(`/v1/instructor/groups/${id}/members`, {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  })
+}
+
+export function removeGroupMember(id: number, userId: number) {
+  return authFetch<{ message: string }>(`/v1/instructor/groups/${id}/members/${userId}`, { method: 'DELETE' })
 }
 
 export function submitCourseForReview(id: number) {

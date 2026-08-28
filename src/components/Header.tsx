@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useSession } from './SessionProvider'
+import { getAssetSrc } from '@/lib/authClient'
 
 const links = [
   { href: '/', label: 'home' },
@@ -50,11 +51,25 @@ export default function Header() {
           {!loading && (
             <Link
               href={user ? '/account' : '/login'}
-              className={`ml-5 shrink-0 border-l border-white/10 pl-5 text-xs font-medium uppercase tracking-[0.12em] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF8A3D] ${
+              className={`ml-5 flex shrink-0 items-center gap-2 border-l border-white/10 pl-5 text-xs font-medium uppercase tracking-[0.12em] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF8A3D] ${
                 user ? 'text-[#A1A1AA] hover:text-white' : 'text-[#FF8A3D] hover:text-[#FFA15C]'
               }`}
             >
-              {user ? <>{user.displayName} ↗</> : 'Login'}
+              {user ? (
+                <>
+                  {user.avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- cross-subdomain, session-cookie-gated asset; next/image can't proxy this
+                    <img src={getAssetSrc(user.avatarUrl)} alt="" className="h-5 w-5 shrink-0 rounded-full object-cover" />
+                  ) : (
+                    <span aria-hidden="true" className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/10 text-[9px] font-bold normal-case text-white/60">
+                      {user.displayName.slice(0, 1).toUpperCase()}
+                    </span>
+                  )}
+                  {user.displayName} ↗
+                </>
+              ) : (
+                'Login'
+              )}
             </Link>
           )}
         </div>

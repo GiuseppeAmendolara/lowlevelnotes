@@ -96,7 +96,12 @@ export default function InstructorCoursesPage() {
           ← Account
         </Link>
         <p className="mt-4 text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">Instructor</p>
-        <h1 className="mt-4 text-4xl font-bold tracking-[-0.05em] text-white sm:text-5xl">Your courses</h1>
+        <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
+          <h1 className="text-4xl font-bold tracking-[-0.05em] text-white sm:text-5xl">Your courses</h1>
+          <Link href="/courses/builder/groups" className="text-sm text-white/70 underline underline-offset-2 transition-colors hover:text-white">
+            Manage student groups
+          </Link>
+        </div>
       </section>
 
       <section className="mx-auto max-w-3xl px-6 pb-24">

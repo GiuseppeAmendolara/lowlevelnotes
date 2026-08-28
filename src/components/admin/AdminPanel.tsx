@@ -15,6 +15,7 @@ import {
   blockIp,
   unblockIp,
   getStaffAuditLog,
+  roleLabel,
   type StaffUser,
   type BlockedIp,
   type AuditLogEntry,
@@ -48,7 +49,7 @@ export default function AdminPanel() {
         <Link href="/account" className="text-xs uppercase tracking-[0.12em] text-white/40 transition-colors hover:text-white">
           ← Account
         </Link>
-        <p className="mt-4 text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">Administration</p>
+        <p className="mt-4 text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">Staff</p>
         <h1 className="mt-4 text-4xl font-bold tracking-[-0.05em] text-white sm:text-5xl">Staff</h1>
         <Link href="/account/approvals" className="mt-4 inline-block text-sm text-white/70 underline underline-offset-2 transition-colors hover:text-white">
           Review role, resource, and course requests →
@@ -130,7 +131,7 @@ function UsersSection() {
   }
 
   async function handleBan(id: number) {
-    const reason = window.prompt('Ban reason (shown to no one but admins):')
+    const reason = window.prompt('Ban reason (shown to no one but staff):')
     if (reason === null) return
     setRefreshing(true)
     await banStaffUser(id, reason)
@@ -176,7 +177,7 @@ function UsersSection() {
         <input type="email" required placeholder="Email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} className={inputClass} />
         <input type="text" required placeholder="Display name" value={newName} onChange={(e) => setNewName(e.target.value)} className={inputClass} />
         <select value={newRole} onChange={(e) => setNewRole(e.target.value as Role)} className={inputClass}>
-          {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+          {ROLES.map((r) => <option key={r} value={r}>{roleLabel(r)}</option>)}
         </select>
         <button type="submit" disabled={creating} className={buttonClass}>{creating ? '…' : 'Create user'}</button>
       </form>
@@ -200,7 +201,7 @@ function UsersSection() {
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <select value={u.role} disabled={locked || refreshing} onChange={(e) => handleRoleChange(u.id, e.target.value as Role)} className={`${rowInputClass} disabled:opacity-50`}>
-                {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+                {ROLES.map((r) => <option key={r} value={r}>{roleLabel(r)}</option>)}
               </select>
               {u.bannedAt
                 ? <button type="button" disabled={locked || refreshing} onClick={() => handleUnban(u.id)} className={buttonClass}>Unban</button>

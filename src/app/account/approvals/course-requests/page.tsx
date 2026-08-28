@@ -36,7 +36,7 @@ export default function CourseRequestsPage() {
         <Link href="/account/approvals" className="text-xs uppercase tracking-[0.12em] text-white/40 transition-colors hover:text-white">
           ← Approvals
         </Link>
-        <p className="mt-4 text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">Administration</p>
+        <p className="mt-4 text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">Staff</p>
         <h1 className="mt-2 text-4xl font-bold tracking-[-0.05em] text-white sm:text-5xl">Course requests</h1>
       </section>
 

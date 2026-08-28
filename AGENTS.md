@@ -672,6 +672,122 @@ These are planning notes, not authorization to begin future phases early.
     lesson — completing an *already-backdated* lesson resets its own
     `completed_at` to now, a real gotcha hit during this verification),
     then deleted the QA account (cascades).
+- **Course metadata, multi-author, and group-restricted visibility,
+  concrete decisions** — migration `0017_course_groups_metadata.sql`:
+  `courses` gains `icon_path`, `difficulty` (nullable enum), `visibility`
+  (`'public'`/`'restricted'`, default public), `view_count`; new tables
+  `course_authors` (co-authors beyond `created_by`, which stays the
+  primary owner and is never duplicated in here), `groups`/`group_members`
+  (reusable rosters an instructor builds once and reuses across courses —
+  confirmed with the user over a per-course allowlist), and
+  `course_group_access` (which groups a restricted course is open to).
+  - **Co-authors get full edit rights**, same as the creator — every
+    ownership gate on the instructor-authoring surface (`courseOwnedBy()`
+    plus a repeated raw inline check across module/lesson create/update/
+    delete and image upload, 12 call sites total) now goes through
+    `isCourseAuthorV1(env, courseId, createdBy, sessionUser)` instead,
+    which adds a `course_authors` membership check on top of the
+    creator-or-admin check `courseOwnedBy` already did. Managing the
+    authors list itself (`POST`/`DELETE .../authors`) stays owner-or-admin
+    only, deliberately narrower — otherwise a co-author could remove the
+    original owner or add someone uninvited. A co-author must already
+    hold the `instructor` or `administrator` role — every course-editing
+    endpoint gates on that role *before* it ever checks `course_authors`,
+    so a plain student added as "co-author" would be listed but unable to
+    use any of the rights it's supposed to grant; caught during this
+    session's own verification, not by the user.
+  - **Groups are instructor-managed rosters, not self-service** — an
+    instructor (or admin) adds a student by email directly
+    (`POST .../groups/:id/members`), no invite code/join flow, confirmed
+    with the user. A group's owner (or an admin) is the only one who can
+    rename/delete it or edit its roster (`groupOwnedBy`, same shape as
+    `courseOwnedBy`). `PUT .../courses/:id/groups` (which groups a
+    restricted course is open to) only accepts groups the caller actually
+    owns (or, for an admin, any group) — otherwise an instructor could
+    restrict their course to a group they don't control.
+  - **A restricted course is fully invisible to non-members, not just
+    locked** — confirmed with the user over a "visible but can't enroll"
+    UX. `getCoursesV1`, `getCourseV1`, `getCourseLessonsV1`, `getLessonV1`,
+    and `enrollCourseV1` all gained the same additional WHERE clause
+    (`visibilityClause()`, written once and parameterized by whatever the
+    courses table/JOIN alias is in that query, rather than five
+    slightly-different copies): visible if `visibility = 'public'` OR the
+    caller is an author OR an administrator OR a member of a group with
+    `course_group_access` to it. A non-member gets the exact same 404
+    "Course not found"/"Lesson not found" a nonexistent slug or id would
+    — verified live that this holds at every layer (course detail, lesson
+    list, guessing a lesson id directly, enroll), not just the catalog
+    listing.
+  - **Views count on the detail fetch only** (`getCourseV1`), not the
+    catalog list — otherwise browsing `/courses` would inflate every
+    course's count just by rendering the list. Enrolled/completed counts
+    are plain live `COUNT(*)` queries against `enrollments`, no new
+    schema. All three are instructor/admin-facing only
+    (`mapCourseForInstructor`), never part of the public `mapCourse` shape.
+  - **Authors resolved via one correlated subquery per course**
+    (`authorsJsonSelect()` — a `UNION` of `created_by` and
+    `course_authors.user_id` joined to `users`, built into a JSON array
+    with `json_group_array`/`json_object`), not an N+1 lookup per course
+    in list endpoints. The frontend never assumes array order reflects
+    who owns the course (`UNION` doesn't guarantee it) — `createdBy` is
+    its own explicit field on the instructor-facing shape specifically so
+    the "who's the owner" UI decision (e.g. hiding the remove button for
+    them) doesn't depend on it; a real ordering bug caught during this
+    session's own frontend work, not shipped.
+  - Course icon upload (`POST .../courses/:id/icon`) and avatar upload
+    (Phase 9's `POST /v1/me/avatar`, above) share the same shape:
+    deterministic key (`courses/<slug>/icon.<ext>`), old-key `env.ASSETS
+    .delete()` on re-upload with a different extension, read back through
+    the existing gated `GET /v1/library/assets/:key` (the `avatars/`/
+    `courses/` prefixes need no new exemption there — `courses/` was
+    already ownership-gated by status, and this doesn't change that logic
+    for published courses).
+  - Verified end-to-end against production with four throwaway QA
+    accounts (never a real session): a co-author added to a course could
+    immediately create modules/lessons in it and it showed up in their
+    own course list; a student added to a group could see, enroll in, and
+    complete a lesson in a course restricted to that group; a fourth,
+    unrelated account got 404s (not 403s) on the course, its lessons, and
+    enroll, and the course was absent from that account's own catalog
+    listing entirely; icon upload/re-upload-with-different-extension
+    cleanup confirmed the same way avatar upload was; group deletion
+    confirmed to cascade `course_group_access` cleanly. All QA
+    accounts/courses/groups deleted after.
+- **"Administrator" renamed to "Staff" everywhere a person can see it —
+  deliberately not in the database.** `users.role`'s stored value stays
+  `'administrator'` permanently (barring a future, carefully-planned,
+  backed-up migration): changing it means rebuilding the `users` table to
+  alter its `CHECK` constraint (SQLite has no `ALTER` for `CHECK`), and
+  this exact D1 environment has a **confirmed, reproduced bug** where
+  dropping a table cascade-deletes every row in tables that reference it
+  `ON DELETE CASCADE` — not standard SQLite behavior, but real here (see
+  `0014_instructor_course_authoring.sql`'s comment, where an earlier
+  session hit this rebuilding `courses` and chose a derived-status column
+  instead specifically to avoid it). `users` is referenced that way by
+  nearly every table in the schema — sessions, enrollments, progress,
+  quiz attempts, achievements, groups, courses, and more — so the same
+  rebuild here risks losing essentially all real user data. Every
+  backend permission check (`role === "administrator"`, `requireRole`,
+  `courseOwnedBy`, `groupOwnedBy`, `visibilityClause`, `notifyAdminsV1`'s
+  `WHERE role = 'administrator'`, ~69 occurrences total) stays exactly as
+  written, comparing against the real stored value. The translation to
+  "Staff" happens in exactly one place, `roleLabel()` in
+  `src/lib/authClient.ts` — every UI surface displaying a role calls this
+  rather than rendering the raw string or keeping its own label map
+  (a few pages had done exactly that already — a hardcoded `<option>{r}
+  </option>` in `AdminPanel.tsx`'s two role `<select>`s, and a duplicated
+  `ROLE_LABEL` map on the public profile page that had drifted to still
+  say "Administrator" — both now call the shared helper instead). Also
+  caught in the same pass: several `/account/approvals/*` pages' *loaded*
+  state rendered a hardcoded "Administration" eyebrow in a hand-rolled
+  `<main>` layout, entirely separate from the `AuthPageShell` "Staff"
+  eyebrow already fixed in an earlier pass on those same pages' *loading*
+  state — the two states are genuinely different render paths, and only
+  one had been touched.
+- Session responses (`GET /v1/auth/session`, `POST /v1/auth/login`, and
+  `getSessionUser()` itself) now carry `avatarUrl`, so `Header.tsx` can
+  show a small picture next to a logged-in user's own name in the nav —
+  the one place a user's name appears fleet-wide, not just on `/account`.
 - **Phase 3 (authentication), concrete decisions** — see WORKLOG's "Phase
   3" entry for the full security reasoning:
   - Password hashing: PBKDF2-HMAC-SHA256, 100,000 iterations, via
