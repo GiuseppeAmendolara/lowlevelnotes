@@ -39,31 +39,108 @@ It supplements the durable project guidance in `AGENTS.md`.
   `content/` gitignore entry, and the `content/courses/_example/`
   sample all gone. `AGENTS.md` updated to match — content authoring is
   now exclusively through `/instructor/courses`.
-- **Frontend: implemented, `tsc`/`lint`/`build` all clean, verified via
-  Playwright against mocked API responses (screenshots confirm the
-  design system match) — but not yet committed**, same standing rule as
-  always (the user commits, not the agent). This includes: the Slice 3
-  quiz-taking UI (`QuizBody`), the whole instructor course builder
-  (`/instructor/courses`, `/instructor/courses/[id]` including the
-  article image-upload control, a new `PendingCoursesSection` in
-  `AdminPanel.tsx`), and the earlier-session polish batch (homepage
-  discipline-copy edit, contrast fixes for `LibraryBrowser.tsx`/
-  `CourseCatalogCard.tsx`/`AdminPanel.tsx`'s role dropdown).
+- **Frontend committed**: the batch this entry originally flagged as
+  "implemented but not yet committed" (Slice 3 quiz UI, the instructor
+  course builder, the polish batch) shipped in commit `585e81f` later the
+  same day — this note was stale until the 2026-08-28 audit below caught
+  it against `git log`.
 - Both `TURNSTILE_SECRET` and `CLOUDFLARE_WAF_TOKEN` are set and verified
   working live. Phase 4 has no outstanding blockers.
-- **Next action:** hand this whole batch to the user to review/commit.
-  Once committed and deployed (Vercel), a real browser pass is still
-  owed on everything backlogged across this session (motion timing,
-  contrast fixes, homepage copy, the quiz UI's real interactive feel,
-  and now the instructor course builder's real interactive feel) — all
-  of this session's verification was local/Playwright/curl against
-  live endpoints, never an actual browser click-through. After that:
-  writing real course content is fully unblocked — any instructor can
-  build a course through the browser UI, no repo/Cloudflare access
-  needed — or Slice 4 (progress surfacing — largely already covered by
-  `/account/courses`, worth confirming against the Phase 7 scoping plan)
-  if more UI work is preferred first.
-- **Last updated:** 2026-08-27
+- **Slice 4 (progress surfacing) confirmed done**, closing out all four
+  staged Phase 7 slices: `/account/courses` (stats row + per-enrollment
+  progress) already covers it — see the 2026-08-28 entry below.
+- **Next action:** an actual browser click-through pass is still owed on
+  everything this session and the course-builder session verified only
+  via Playwright-against-mocks/curl (motion timing, contrast fixes,
+  homepage copy, the quiz UI's real interactive feel, the instructor
+  course builder's, and now the new `/approval/*` pages') — no browser
+  extension has been available in any of these sessions. Otherwise: real
+  course content is fully unblocked (any instructor can build one through
+  the browser UI), and Phase 7 itself is functionally complete.
+- **Last updated:** 2026-08-28
+
+## Phase 7 audit: security fix, course review + delete, /approval split (2026-08-28)
+
+User asked whether Phase 7 was actually fully implemented and raised three
+criticisms after an audit against `AGENTS.md`/`WORKLOG.md`/`git log`:
+
+**Docs were stale.** The "implemented but not yet committed" line for the
+quiz UI/instructor builder frontend was left over from before commit
+`585e81f` (which shipped it) — `AGENTS.md` and this file's Status section
+both corrected. Slice 4 (progress surfacing) was also still marked
+"worth confirming" — confirmed satisfied by `/account/courses` (stats
+row + per-enrollment progress, already built as Slice 2's follow-up); all
+four staged Phase 7 slices are now done.
+
+**Real fix #1 — security**: `getLibraryAssetV1` (`GET /v1/library/
+assets/:key`) only checked for a session, not ownership, and had become
+the read path for draft course content once the instructor builder
+shipped — any logged-in user who knew a draft's `content_path` could
+read unpublished article text. This was already flagged as a known,
+deliberately-deferred gap in `AGENTS.md`. Fixed: for any key matching
+`courses/<slug>/...`, look up the course by that slug and require
+`courseOwnedBy` (creator or admin) unless it's already `published`.
+Verified live with three throwaway accounts (instructor/admin/unrelated
+student, created directly in D1 with hand-issued session tokens, all
+cleaned up after): owning instructor → 200, unrelated user → 403 on the
+identical key, same key → 200 for anyone once approved. See AGENTS.md's
+"Ownership gap, fixed" bullet for the full detail.
+
+**Real fix #2 — no way to review course content before approving.**
+`PendingCoursesSection` (old `/staff`) showed title/instructor/category/
+description only — an admin approved or rejected blind. New
+`/approval/course-requests/[id]` (`CourseReviewPanel.tsx`) calls `GET
+/v1/instructor/courses/:id` — which already returns full content for any
+course when the caller is an admin, `courseOwnedBy`'s existing bypass, no
+backend change needed there — and renders every lesson: `ArticleBody`/
+`VideoBody`/`ExerciseBody` (pulled out of the lesson page into
+`src/components/lesson/LessonContentViews.tsx`, now shared with the
+student-facing page instead of duplicated) plus a small new `QuizReview`
+showing every quiz answer with `correct` already flagged. Approve/Reject
+now live only on this detail page, not the list, so an admin has to
+actually open a course to act on it.
+
+**Real fix #3 — no way to remove a course.** New `DELETE
+/v1/staff/courses/:id` (admin-only). Confirmed with the user this should
+work on a course in *any* status (draft/pending/published), admin-only
+(not the owning instructor). Verified live: plain `DELETE FROM courses`
+cascades cleanly to `modules`/`lessons`/`exercises`/`questions`/`answers`/
+`enrollments`/`lesson_progress`/`quiz_attempts` via the existing `ON
+DELETE CASCADE` FKs (a real `DELETE`, not the `DROP TABLE`-during-
+migration case from the instructor-builder session that had the cascade
+surprise — that one doesn't apply here), removed from `GET /v1/courses`
+immediately, and logged to the audit log as `delete_course`. Doesn't
+clean up the course's R2 objects — accepted as orphaned-storage debris,
+not a blocker.
+
+**Restructure, per explicit user request**: role requests, resource
+requests, and course requests moved out of `/staff` into their own
+admin-gated pages at `/approval/role-requests`, `/approval/
+resource-requests`, `/approval/course-requests` (plus an `/approval`
+landing page) — `/staff` now holds only Users, Blocked IPs, and the
+Activity log. `GET /v1/staff/courses/pending` generalized into `GET
+/v1/staff/courses?status=pending|published|draft` (same `?status=`
+convention the role/resource-request staff endpoints already used) so
+the new course-requests page can tab between all three states, each
+tab's rows deletable, not just pending ones.
+
+Also fixed two small pre-existing bugs hit while doing this:
+`AuthPageShell`'s back-link always read "← Account" regardless of
+`backHref` (new optional `backLabel` prop, defaulting to `'Account'` so
+every existing caller is unaffected; also applied to `/instructor/
+courses/[id]`, which had the same mismatch pointing at `/instructor/
+courses`), and `AdminPanel.tsx`'s `ACTION_LABELS` map never had entries
+for `approve_course`/`reject_course`/`delete_course`, so they rendered as
+raw action strings in the activity log.
+
+All backend changes deployed (`wrangler deploy`) and smoke-tested against
+real production with three throwaway accounts created directly in D1
+(users + hand-issued session rows, not through the public register flow)
+and cleaned up immediately after. `tsc`/`lint`/`build` all clean. No
+browser extension available this session — same recurring gap — so the
+new `/approval/*` pages' redirect guards and `CourseReviewPanel`'s
+rendering are unverified in an actual browser, same caveat as everything
+else backlogged in the Status section above.
 
 ## Homepage review (2026-08-26)
 

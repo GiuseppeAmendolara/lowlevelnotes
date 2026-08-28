@@ -11,26 +11,16 @@ import {
   unbanStaffUser,
   deleteStaffUser,
   getStaffUserIps,
-  getStaffRoleRequests,
-  reviewRoleRequest,
-  getStaffResourceRequests,
-  reviewResourceRequest,
-  getResourceRequestFileUrl,
   getStaffBlockedIps,
   blockIp,
   unblockIp,
   getStaffAuditLog,
-  getStaffPendingCourses,
-  reviewCourse,
   type StaffUser,
-  type StaffRoleRequest,
-  type StaffResourceRequest,
   type BlockedIp,
   type AuditLogEntry,
   type Role,
-  type RequestStatus,
-  type StaffPendingCourse,
 } from '@/lib/authClient'
+import { SectionHeading, inputClass, rowInputClass, buttonClass, blockButtonClass } from '@/components/admin/shared'
 
 const ACTION_LABELS: Record<string, string> = {
   role_change: 'Role change',
@@ -44,6 +34,9 @@ const ACTION_LABELS: Record<string, string> = {
   reject_role_request: 'Reject role request',
   approve_resource_request: 'Approve resource request',
   reject_resource_request: 'Reject resource request',
+  approve_course: 'Approve course',
+  reject_course: 'Reject course',
+  delete_course: 'Delete course',
 }
 
 const ROLES: Role[] = ['student', 'contributor', 'instructor', 'administrator']
@@ -57,32 +50,19 @@ export default function AdminPanel() {
         </Link>
         <p className="mt-4 text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">Administration</p>
         <h1 className="mt-4 text-4xl font-bold tracking-[-0.05em] text-white sm:text-5xl">Staff</h1>
+        <Link href="/approval" className="mt-4 inline-block text-sm text-white/70 underline underline-offset-2 transition-colors hover:text-white">
+          Review role, resource, and course requests →
+        </Link>
       </section>
 
       <section className="mx-auto flex max-w-5xl flex-col gap-16 px-6 pb-24">
         <UsersSection />
-        <RoleRequestsSection />
-        <ResourceRequestsSection />
-        <PendingCoursesSection />
         <BlockedIpsSection />
         <AuditLogSection />
       </section>
     </main>
   )
 }
-
-function SectionHeading({ children }: { children: React.ReactNode }) {
-  return <h2 className="text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">{children}</h2>
-}
-
-const inputClass = "border border-white/15 bg-[#0D0D0D] px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none"
-// Same as inputClass, but for controls sitting on a bg-[#0D0D0D] row
-// (e.g. the per-user role select) rather than the page background —
-// lighter-on-darker, same relationship CodeBlock uses against its
-// darker section, so the control doesn't blend into its own row.
-const rowInputClass = "border border-white/15 bg-[#171717] px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none"
-const buttonClass = "border border-[#FF8A3D]/50 px-3 py-1.5 text-xs font-medium text-[#FF8A3D] transition-colors transition-transform duration-150 hover:border-[#FF8A3D] hover:bg-[#FF8A3D]/10 active:scale-[0.98] motion-reduce:transition-none disabled:opacity-50 disabled:active:scale-100"
-const blockButtonClass = "border border-[#FF8A3D]/50 px-5 py-3.5 text-xs font-medium text-[#FF8A3D] transition-colors transition-transform duration-150 hover:border-[#FF8A3D] hover:bg-[#FF8A3D]/10 active:scale-[0.98] motion-reduce:transition-none disabled:opacity-50 disabled:active:scale-100"
 
 /* ==================== Users ==================== */
 
@@ -252,225 +232,6 @@ function UsersSection() {
   )
 }
 
-/* ==================== Role requests ==================== */
-
-function RoleRequestsSection() {
-  const [status, setStatus] = useState<RequestStatus>('pending')
-  const [requests, setRequests] = useState<StaffRoleRequest[] | null>(null)
-  // See UsersSection's identical `refreshing` guard — same reflow hazard,
-  // Approve/Reject remove a row from the pending list and shift the rest.
-  const [refreshing, setRefreshing] = useState(false)
-
-  function load() {
-    return getStaffRoleRequests(status).then((result) => {
-      if (result.ok) setRequests(result.data)
-    })
-  }
-
-  useEffect(() => {
-    load()
-  }, [status])
-
-  async function handleApprove(id: number) {
-    setRefreshing(true)
-    await reviewRoleRequest(id, 'approve')
-    await load()
-    setRefreshing(false)
-  }
-
-  async function handleReject(id: number) {
-    const reason = window.prompt('Rejection reason (shown to the requester):')
-    if (reason === null) return
-    setRefreshing(true)
-    await reviewRoleRequest(id, 'reject', reason)
-    await load()
-    setRefreshing(false)
-  }
-
-  return (
-    <div>
-      <SectionHeading>Role requests</SectionHeading>
-
-      <StatusFilter status={status} onChange={setStatus} />
-
-      <div className="mt-4 border-l border-t border-white/10">
-        {requests === null && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>}
-        {requests?.length === 0 && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA]">Nothing here.</p>}
-        {requests?.map((r) => (
-          <div key={r.id} className="border-b border-r border-white/10 bg-[#0D0D0D] p-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <span className="text-sm font-medium text-white">{r.requesterDisplayName}</span>
-                <span className="ml-2 text-xs text-[#A1A1AA]">{r.requesterEmail}</span>
-                <span className="ml-2 text-xs uppercase tracking-[0.1em] text-[#FF8A3D]">→ {r.requestedRole}</span>
-              </div>
-              {r.status === 'pending' && (
-                <div className="flex gap-2">
-                  <button type="button" disabled={refreshing} onClick={() => handleApprove(r.id)} className={buttonClass}>Approve</button>
-                  <button type="button" disabled={refreshing} onClick={() => handleReject(r.id)} className={buttonClass}>Reject</button>
-                </div>
-              )}
-            </div>
-            {r.message && <p className="mt-2 text-sm text-[#A1A1AA]">{r.message}</p>}
-            {r.status === 'rejected' && r.rejectionReason && (
-              <p className="mt-2 text-xs text-[#F85149]">Rejected: {r.rejectionReason}</p>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-/* ==================== Resource requests ==================== */
-
-function ResourceRequestsSection() {
-  const [status, setStatus] = useState<RequestStatus>('pending')
-  const [requests, setRequests] = useState<StaffResourceRequest[] | null>(null)
-  // See UsersSection's identical `refreshing` guard.
-  const [refreshing, setRefreshing] = useState(false)
-
-  function load() {
-    return getStaffResourceRequests(status).then((result) => {
-      if (result.ok) setRequests(result.data)
-    })
-  }
-
-  useEffect(() => {
-    load()
-  }, [status])
-
-  async function handleApprove(id: number) {
-    setRefreshing(true)
-    await reviewResourceRequest(id, 'approve')
-    await load()
-    setRefreshing(false)
-  }
-
-  async function handleReject(id: number) {
-    const reason = window.prompt('Rejection reason (shown to the requester):')
-    if (reason === null) return
-    setRefreshing(true)
-    await reviewResourceRequest(id, 'reject', reason)
-    await load()
-    setRefreshing(false)
-  }
-
-  return (
-    <div>
-      <SectionHeading>Resource requests</SectionHeading>
-
-      <StatusFilter status={status} onChange={setStatus} />
-
-      <div className="mt-4 border-l border-t border-white/10">
-        {requests === null && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>}
-        {requests?.length === 0 && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA]">Nothing here.</p>}
-        {requests?.map((r) => (
-          <div key={r.id} className="border-b border-r border-white/10 bg-[#0D0D0D] p-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <span className="text-sm font-medium text-white">{r.title}</span>
-                <span className="ml-2 text-xs uppercase tracking-[0.1em] text-[#A1A1AA]">{r.type} · {r.category}</span>
-              </div>
-              {r.status === 'pending' && (
-                <div className="flex gap-2">
-                  <button type="button" disabled={refreshing} onClick={() => handleApprove(r.id)} className={buttonClass}>Approve</button>
-                  <button type="button" disabled={refreshing} onClick={() => handleReject(r.id)} className={buttonClass}>Reject</button>
-                </div>
-              )}
-            </div>
-
-            <div className="mt-1 text-xs text-[#A1A1AA]">
-              {r.requesterEmail} <span className="uppercase tracking-[0.1em] text-[#FF8A3D]">({r.requesterRole})</span>
-            </div>
-
-            {r.description && <p className="mt-2 text-sm text-[#A1A1AA]">{r.description}</p>}
-
-            <div className="mt-2">
-              {r.url && (
-                <a href={r.url} target="_blank" rel="noopener noreferrer" className="text-xs text-white/70 underline underline-offset-2 hover:text-white">
-                  Open link
-                </a>
-              )}
-              {r.hasFile && (
-                <a href={getResourceRequestFileUrl(r.id)} target="_blank" rel="noopener noreferrer" className="text-xs text-white/70 underline underline-offset-2 hover:text-white">
-                  Preview file
-                </a>
-              )}
-            </div>
-
-            {r.status === 'rejected' && r.rejectionReason && (
-              <p className="mt-2 text-xs text-[#F85149]">Rejected: {r.rejectionReason}</p>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-/* ==================== Pending courses ==================== */
-
-function PendingCoursesSection() {
-  const [courses, setCourses] = useState<StaffPendingCourse[] | null>(null)
-  // Same reflow hazard as every other list here — Approve/Reject remove a
-  // row from the pending list and shift the rest.
-  const [refreshing, setRefreshing] = useState(false)
-
-  function load() {
-    return getStaffPendingCourses().then((result) => {
-      if (result.ok) setCourses(result.data)
-    })
-  }
-
-  useEffect(() => {
-    load()
-  }, [])
-
-  async function handleApprove(id: number) {
-    setRefreshing(true)
-    await reviewCourse(id, 'approve')
-    await load()
-    setRefreshing(false)
-  }
-
-  async function handleReject(id: number) {
-    const reason = window.prompt('Rejection reason (shown to the instructor):')
-    if (reason === null) return
-    setRefreshing(true)
-    await reviewCourse(id, 'reject', reason)
-    await load()
-    setRefreshing(false)
-  }
-
-  return (
-    <div>
-      <SectionHeading>Pending courses</SectionHeading>
-
-      <div className="mt-4 border-l border-t border-white/10">
-        {courses === null && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>}
-        {courses?.length === 0 && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA]">Nothing here.</p>}
-        {courses?.map((c) => (
-          <div key={c.id} className="border-b border-r border-white/10 bg-[#0D0D0D] p-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <span className="text-sm font-medium text-white">{c.title}</span>
-                <span className="ml-2 text-xs text-[#A1A1AA]">{c.instructorEmail}</span>
-                {c.category && <span className="ml-2 text-xs uppercase tracking-[0.1em] text-[#FF8A3D]">{c.category}</span>}
-              </div>
-              <div className="flex gap-2">
-                <button type="button" disabled={refreshing} onClick={() => handleApprove(c.id)} className={buttonClass}>Approve</button>
-                <button type="button" disabled={refreshing} onClick={() => handleReject(c.id)} className={buttonClass}>Reject</button>
-              </div>
-            </div>
-            {c.description && <p className="mt-2 text-sm text-[#A1A1AA]">{c.description}</p>}
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
 /* ==================== Blocked IPs ==================== */
 
 function BlockedIpsSection() {
@@ -587,26 +348,6 @@ function AuditLogSection() {
           </div>
         ))}
       </div>
-    </div>
-  )
-}
-
-function StatusFilter({ status, onChange }: { status: RequestStatus; onChange: (s: RequestStatus) => void }) {
-  const options: RequestStatus[] = ['pending', 'approved', 'rejected']
-  return (
-    <div className="mt-4 flex gap-2">
-      {options.map((s) => (
-        <button
-          key={s}
-          type="button"
-          onClick={() => onChange(s)}
-          className={`border px-3 py-1.5 text-xs uppercase tracking-[0.1em] transition-colors ${
-            status === s ? 'border-[#FF8A3D] text-[#FF8A3D]' : 'border-white/15 text-[#A1A1AA] hover:border-white/40'
-          }`}
-        >
-          {s}
-        </button>
-      ))}
     </div>
   )
 }

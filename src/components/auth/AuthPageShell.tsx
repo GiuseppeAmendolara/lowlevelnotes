@@ -10,16 +10,17 @@ type Props = {
   heading: string
   subtext?: string
   backHref?: string
+  backLabel?: string
   children: React.ReactNode
 }
 
-export default function AuthPageShell({ eyebrow, heading, subtext, backHref, children }: Props) {
+export default function AuthPageShell({ eyebrow, heading, subtext, backHref, backLabel = 'Account', children }: Props) {
   return (
     <main className="min-h-screen bg-[#171717]">
       <section className="mx-auto max-w-sm px-6 pb-24 pt-20 sm:pt-28">
         {backHref && (
           <Link href={backHref} className="mb-4 inline-block text-xs uppercase tracking-[0.12em] text-white/40 transition-colors hover:text-white">
-            ← Account
+            ← {backLabel}
           </Link>
         )}
         <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">{eyebrow}</p>

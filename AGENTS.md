@@ -75,21 +75,27 @@ phase.
    this phase — see "Data and API direction" below), questions, quizzes,
    and lesson completion. All Worker-side endpoints for Slices 1–3
    (session-gated catalog + R2-backed content pipeline; enroll +
-   mark-complete; quiz grading) plus the new instructor course-authoring
-   write API are deployed and **live in production**. The matching
+   mark-complete; quiz grading) plus the instructor course-authoring
+   write API are deployed and **live in production**; the matching
    frontend (quiz-taking UI, the instructor course builder at
-   `/instructor/courses`) is implemented and verified but **not yet
-   committed** — same standing rule as everywhere else in this project,
-   the user commits, not the agent. A structured content-authoring layer
-   (frontmatter + folder convention, `npm run content:sync`) exists
-   alongside the content-bytes pipeline for fast scriptable import — see
-   "Data and API direction" below. On top of that, a full instructor
-   course-authoring surface (write API + a browser course builder, with
-   admin review before publishing) means an instructor no longer needs
-   repo/Cloudflare access to build a course at all once the frontend
-   lands; the YAML pipeline remains a separate, faster path for bulk
-   import. See WORKLOG's "Phase 7 scoping" and "Instructor course
-   builder" entries for the remaining staged slices and the full design.
+   `/instructor/courses`) has been **live on `main` since commit
+   `585e81f`** (the "not yet committed" note that used to live here was
+   stale — corrected during the admin-restructure pass below). Slice 4
+   (progress surfacing) is confirmed satisfied by `/account/courses`
+   (stats row + per-enrollment progress, built as Slice 2's follow-up) —
+   all four staged slices are done; see WORKLOG's "Phase 7 scoping" entry
+   for the original breakdown. The YAML/frontmatter scriptable pipeline
+   that existed briefly alongside the instructor UI was removed the same
+   day it shipped — content authoring is exclusively through
+   `/instructor/courses` now (write API + a browser course builder, with
+   admin review before publishing), so an instructor no longer needs
+   repo/Cloudflare access to build a course at all. Course review/
+   publish/removal now lives at `/approval/course-requests` (moved out of
+   `/staff`, along with role- and resource-request review, into their own
+   `/approval/*` pages — see "Phase 7 (learning system UI), concrete
+   decisions so far" below for the full design and why). See WORKLOG's
+   "Phase 7 scoping" and "Instructor course builder" entries for the
+   original staged-slice plan.
 7. **Phase 8:** Exercises, including standard-library-free programming tasks and
    x86-64 assembly tasks.
 8. **Phase 9:** Progress: course/lesson progress, quiz scores, exercise results,
@@ -433,7 +439,8 @@ These are planning notes, not authorization to begin future phases early.
       `POST .../lessons/:id/images` for article images (multipart, same
       `env.ASSETS.put` mechanism, returns the relative filename to
       reference from markdown), `POST .../submit-for-review`,
-      `GET /v1/staff/courses/pending`, `PUT /v1/staff/courses/:id/review`.
+      `GET /v1/staff/courses?status=`, `PUT /v1/staff/courses/:id/review`,
+      `DELETE /v1/staff/courses/:id`.
       Quiz questions/answers use a delete-and-reinsert-by-lesson approach
       keyed on `(lesson_id, position)` — simpler than diffing individual
       rows, and safe because `quiz_attempts` only stores an aggregate
@@ -455,14 +462,71 @@ These are planning notes, not authorization to begin future phases early.
       (`POST /v1/instructor/modules/:id/images`, not lesson-scoped),
       since the R2 path only depends on course+module slugs, so an image
       can be uploaded before a brand-new article lesson is even saved.
-    - **Known gap, not fixed in this pass**: `GET /v1/library/assets/:key`
-      (reused for the article-content preview/edit loop) is session-gated
-      but not ownership-gated — any authenticated user who somehow knew a
-      draft course's exact `content_path` could read that draft's article
-      text before it's published. Pre-existing behavior for the endpoint
-      generally, just newly relevant now that draft (not just published)
-      content flows through it. Worth a real fix if this becomes a
-      concern with real outside instructors.
+    - **Ownership gap, fixed**: `GET /v1/library/assets/:key` (reused for
+      the article-content preview/edit loop) was session-gated but not
+      ownership-gated — any authenticated user who knew a draft course's
+      exact `content_path` could read that draft's article text before
+      it's published. `getLibraryAssetV1` now looks up the course by the
+      slug segment of any `courses/<slug>/...` key and, if that course
+      isn't `published`, requires `courseOwnedBy` (creator or
+      administrator) before streaming the object — 403 otherwise. Any
+      other key (ordinary library assets, the two `drafts/`-keyed seed
+      courses, or a published course's content) keeps the original
+      session-only gate; no behavior change for those. Verified live: the
+      owning instructor and an admin both get the draft article, a third
+      logged-in user gets 403 on the identical key, and the same key
+      becomes readable by anyone once the course is approved.
+  - **Review/approval moved to `/approval/*`, admin-only, plus course
+    deletion** — direct user feedback: `/staff`'s old `PendingCoursesSection`
+    let an admin approve or reject a course without ever seeing a single
+    lesson ("you just sort of have to trust the person"), and there was no
+    way to remove a course in any state. Fixed by:
+    - `GET /v1/instructor/courses/:id` needed no change — `courseOwnedBy`
+      already bypasses ownership for administrators, so it already
+      returns the full modules → lessons → quiz-answers-with-`correct`
+      structure for *any* course, not just the caller's own. The new
+      review page just calls it.
+    - `GET /v1/staff/courses/pending` generalized into `GET
+      /v1/staff/courses?status=pending|published|draft` (same `?status=`
+      convention as `/v1/staff/role-requests` and `/v1/staff/
+      resource-requests`), so admins can see and act on a course in any
+      state, not just ones awaiting review. New `DELETE
+      /v1/staff/courses/:id` (admin-only, any status) hard-deletes the
+      row; confirmed live this cascades cleanly through `modules →
+      lessons → exercises/questions/answers` and
+      `enrollments`/`lesson_progress`/`quiz_attempts` via the existing
+      `ON DELETE CASCADE` foreign keys — a real `DELETE`, unlike the
+      `DROP TABLE`-during-migration case above, so none of that surprise
+      cascade behavior applies. Doesn't clean up the course's R2 objects
+      (markdown/images) — accepted orphaned-storage tradeoff, not a
+      blocker. Logs `delete_course` to the audit log same as
+      approve/reject (`staff_audit_log.action` has no CHECK constraint,
+      so no migration needed for any of this).
+    - Confirmed with the user: deletion is admin-only (not the owning
+      instructor) and works on a course in any status, not just
+      pending/rejected ones.
+    - Frontend: `RoleRequestsSection`/`ResourceRequestsSection`/
+      `PendingCoursesSection` moved out of `AdminPanel.tsx` verbatim into
+      their own components (`src/components/admin/{RoleRequestsPanel,
+      ResourceRequestsPanel,CourseRequestsPanel}.tsx`) behind new
+      admin-gated pages at `/approval/role-requests`,
+      `/approval/resource-requests`, `/approval/course-requests` (plus an
+      `/approval` landing page), same guard pattern as `/staff/page.tsx`.
+      `/staff` (`AdminPanel.tsx`) now holds only Users, Blocked IPs, and
+      the Activity log. `/approval/course-requests` lists courses by
+      status (tabs, same `StatusFilter` component generalized with a
+      type parameter since courses don't share the
+      pending/approved/rejected union) with each row linking to
+      `/approval/course-requests/[id]` instead of one-click approve/
+      reject — that detail page (`CourseReviewPanel.tsx`) is what
+      actually renders the content: `ArticleBody`/`VideoBody`/
+      `ExerciseBody` (moved out of the lesson page into
+      `src/components/lesson/LessonContentViews.tsx` so both it and the
+      student-facing lesson page reuse the same markdown/shiki rendering
+      pipeline, no duplication) per lesson type, plus a small read-only
+      `QuizReview` for quiz lessons showing every answer with `correct`
+      already flagged. Approve/Reject only show for `pending_review`;
+      Delete shows for any status.
 - **Phase 3 (authentication), concrete decisions** — see WORKLOG's "Phase
   3" entry for the full security reasoning:
   - Password hashing: PBKDF2-HMAC-SHA256, 100,000 iterations, via
@@ -703,6 +767,9 @@ main domain is scoped against — see below.
 | GET | `/v1/resource-requests/:id/file` | owner or administrator | streams a pending file for review |
 | GET, PUT | `/v1/staff/role-requests`, `/v1/staff/role-requests/:id` | administrator | list (filterable `?status=`) / approve or reject |
 | GET, PUT | `/v1/staff/resource-requests`, `/v1/staff/resource-requests/:id` | administrator | list (joined with requester email + role) / approve or reject |
+| GET | `/v1/staff/courses` | administrator | list by `?status=pending\|published\|draft` (default `pending`) |
+| PUT | `/v1/staff/courses/:id/review` | administrator | approve (publishes) or reject (back to draft with a reason) |
+| DELETE | `/v1/staff/courses/:id` | administrator | hard delete, any status, cascades to modules/lessons/quiz data |
 | GET, POST | `/v1/staff/users` | administrator | list / create (see below) |
 | PUT | `/v1/staff/users/:id/role`, `/ban`, `/unban` | administrator | direct role change; ban kills active sessions; both ban and delete refuse the admin's own account |
 | DELETE | `/v1/staff/users/:id` | administrator | hard delete, cascades |

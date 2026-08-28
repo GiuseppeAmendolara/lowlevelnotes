@@ -87,7 +87,7 @@ export default function InstructorCourseBuilderPage({ params }: { params: Promis
 
   if (sessionLoading || !user || (user.role !== 'instructor' && user.role !== 'administrator')) {
     return (
-      <AuthPageShell eyebrow="Instructor" heading="Course" backHref="/instructor/courses">
+      <AuthPageShell eyebrow="Instructor" heading="Course" backHref="/instructor/courses" backLabel="Your courses">
         <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>
       </AuthPageShell>
     )
@@ -95,7 +95,7 @@ export default function InstructorCourseBuilderPage({ params }: { params: Promis
 
   if (error) {
     return (
-      <AuthPageShell eyebrow="Instructor" heading="Course" backHref="/instructor/courses">
+      <AuthPageShell eyebrow="Instructor" heading="Course" backHref="/instructor/courses" backLabel="Your courses">
         <p className="text-sm text-[#F85149]">{error}</p>
       </AuthPageShell>
     )
@@ -103,7 +103,7 @@ export default function InstructorCourseBuilderPage({ params }: { params: Promis
 
   if (!course) {
     return (
-      <AuthPageShell eyebrow="Instructor" heading="Course" backHref="/instructor/courses">
+      <AuthPageShell eyebrow="Instructor" heading="Course" backHref="/instructor/courses" backLabel="Your courses">
         <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>
       </AuthPageShell>
     )

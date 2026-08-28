@@ -105,11 +105,18 @@ export default function AccountPage() {
           />
         )}
         {user.role === 'administrator' && (
-          <AccountLinkCard
-            href="/staff"
-            title="Admin"
-            description="Manage users, requests, and blocked IPs."
-          />
+          <>
+            <AccountLinkCard
+              href="/staff"
+              title="Admin"
+              description="Manage users, blocked IPs, and the activity log."
+            />
+            <AccountLinkCard
+              href="/approval"
+              title="Approvals"
+              description="Review role, resource, and course requests."
+            />
+          </>
         )}
       </div>
 

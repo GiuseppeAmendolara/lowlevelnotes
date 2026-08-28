@@ -672,10 +672,16 @@ export function uploadLessonImage(moduleId: number, file: File) {
 
 // -------- Staff: courses --------
 
+export type StaffCourseStatus = 'pending' | 'published' | 'draft'
+
 export type StaffPendingCourse = InstructorCourse & { instructorEmail: string }
 
-export function getStaffPendingCourses() {
-  return authFetch<StaffPendingCourse[]>('/v1/staff/courses/pending')
+export function getStaffCourses(status?: StaffCourseStatus) {
+  return authFetch<StaffPendingCourse[]>(`/v1/staff/courses${status ? `?status=${status}` : ''}`)
+}
+
+export function deleteStaffCourse(id: number) {
+  return authFetch<{ message: string }>(`/v1/staff/courses/${id}`, { method: 'DELETE' })
 }
 
 export function reviewCourse(id: number, action: 'approve' | 'reject', reason?: string) {
