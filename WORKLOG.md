@@ -3499,3 +3499,130 @@ actual commit contained, not this session's uncommitted work.
 clean on the frontend side. Only `next.config.ts` is a tracked, committable
 change — everything else lives in `worker/index.js`, gitignored, already
 deployed.
+
+## Changelog fetch stopped caching under an already-dynamic page (2026-08-29)
+
+User reported the v4.3.0 entry added the day before wasn't showing on the
+live `/changelog` page. Diagnosed properly rather than guessed: the raw
+Worker API (`api.lowlevelnotes.com/changelog`) already returned it first;
+the live page's own response headers (`x-vercel-cache: MISS`,
+`cf-cache-status: DYNAMIC`) confirmed the page itself wasn't being
+edge/CDN-cached either. The actual cause was one layer deeper —
+`apiFetch()` in `src/lib/api.ts` (the page's only data source, via
+`getChangelog()`) fetched with `next: { revalidate: 60 }`, sitting
+underneath a route that's already `export const dynamic = 'force-dynamic'`.
+That combination bought nothing (the page re-renders every request
+regardless) but added a real failure mode: Vercel's Data Cache for a
+`next.revalidate` fetch only refreshes when a request actually triggers
+revalidation, and can keep serving a stale value indefinitely if that
+background refetch doesn't cleanly land — which is what happened here,
+for almost a full day.
+
+Fixed by dropping the cache entirely (`cache: 'no-store'`) — `apiFetch`
+had exactly one caller (`getChangelog`), confirmed by reading the whole
+file, so this was safe to change directly rather than needing a
+per-call override. Side effect, in the right direction: `sitemap.ts`
+also calls `getChangelog()` and went from statically-generated to
+server-rendered per-request in the build output — the same staleness bug
+would have applied there too, just less visibly.
+
+Needs the user's own push/deploy to take effect on the live site — same
+as the security-headers `next.config.ts` change earlier this session,
+this repo's Worker changes deploy directly from this session, but its
+Next.js/Vercel changes don't.
+
+## Live Discord posting for new changelog entries (2026-08-29)
+
+User wants new changelog entries to post automatically to a Discord
+channel. Changelog entries are written straight to D1 (`INSERT INTO
+changelog`, never through a Worker endpoint — there isn't one), so there
+was no single "just published" code path to hook a webhook call onto.
+Piggybacked on the existing 5-minute cron (`scheduled()` in
+`worker/index.js`, already running `recordHealthCheck`/`cleanupAuthData`)
+instead: a new `discord_posted_at` column
+(`migrations/0018_changelog_discord.sql`) tracks which rows have already
+been posted, and `postNewChangelogEntriesToDiscord(env)` — a third
+`ctx.waitUntil()` added to the same `scheduled()` handler — checks for
+anything still `NULL`, posts each as a Discord embed (title = version +
+name, description = the entry text, linked back to
+`lowlevelnotes.com/changelog`, timestamped from `release_date`, `#FF8A3D`
+accent color), and stamps `discord_posted_at` only on a confirmed
+successful send — a failed post (Discord `429`/outage) is left `NULL` on
+purpose, so the next cron tick five minutes later just retries it rather
+than silently losing it.
+
+**Backfill, confirmed with the user first**: the migration's `ALTER
+TABLE ADD COLUMN` left every existing row `NULL`, which would have
+dumped the site's *entire* changelog history (back to v3.1.0) into
+Discord on the very first cron tick after the secret was set. Backfilled
+every row except the newest (v4.3.0) with a synthetic
+`discord_posted_at` immediately after applying the migration, so only
+the one entry the user actually wanted posted retroactively was left
+eligible.
+
+Code shipped and deployed *before* the webhook URL existed —
+`postNewChangelogEntriesToDiscord` no-ops immediately if
+`env.DISCORD_WEBHOOK_URL` isn't set, so this was always safe to have
+live. Once the user provided the real webhook URL, stored it via
+`wrangler secret put DISCORD_WEBHOOK_URL` (never written to any file,
+tracked or not). Verified two ways: a one-off direct `curl` POST of a
+throwaway test embed straight to the webhook (confirmed `HTTP 204` —
+the URL itself is live and correctly scoped) before touching the real
+data path at all, then polled the live `changelog.discord_posted_at`
+column every 30s and confirmed the real cron-driven pipeline picked up
+v4.3.0 and marked it posted within about a minute of the secret going
+live — not just the direct test, the actual production code path.
+
+## Split worker/index.js into modules (2026-08-29)
+
+User noticed `worker/index.js` had grown to 5,237 lines/~150 functions
+and asked to split it up. Confirmed first that this is a pure
+organizational move, not a platform workaround: Cloudflare Workers'
+`wrangler` bundles a Worker with esbuild, which fully supports multi-file
+ES module `import`/`export` regardless of file extension — and `worker/`
+has no `package.json` at all, so nothing about CommonJS/module-type
+config was ever in play either way.
+
+Took a full inventory first (every function name + line number via
+`grep -n "^async function \|^function "`) before drawing module
+boundaries, rather than guessing at a shape and discovering mismatches
+mid-split. Landed on: `worker/lib/{http,crypto,validate,session,
+rateLimit,email,mappers,courseAccess}.js` for cross-cutting helpers
+(response building, hashing/tokens, session/cookie handling, D1-backed
+rate limiting, email + Turnstile, the 15 snake_case→camelCase mappers,
+and course/module/lesson ownership+access helpers), `worker/routes/
+{auth,courses,instructor,groups,profile,library,badges,requests,
+staff}.js` for one file per feature domain, and `worker/cron.js` for the
+three `scheduled()` jobs. `index.js` itself shrank to ~600 lines: the
+file-header comment, the in-memory rate limiter (kept local — tightly
+coupled to `fetch()`, not worth extracting), the full route-dispatch `if`
+chain (structurally unchanged, just calling imported names instead of
+same-file ones), and `scheduled()`.
+
+Zero behavioral changes anywhere — every function body moved
+byte-for-byte; only `export`/`import` lines were added, plus two
+constants (`AVATAR_EXTENSIONS`, previously inline in two different
+upload handlers) consolidated into `lib/validate.js` since both call
+sites needed the identical set.
+
+**Verification, in order**: (1) `wrangler deploy --dry-run
+--outdir=/tmp/worker-build` — a real esbuild bundle without publishing.
+This is the actual correctness check for a multi-file split in a
+`package.json`-less directory; `node --check` doesn't understand ESM
+`import`/`export` on a bare `.js` file the way esbuild does, so a
+dry-run bundle (which fails loudly on any unresolved import/export) is
+the right tool, not a fallback. (2) Diffed the full list of top-level
+function names across every new file against the original inventory —
+all 152 accounted for (a couple more than the ~150 estimate, which
+included some inner/nested function counts). (3) Real `wrangler deploy`.
+(4) Smoked one representative endpoint per new module against
+production — `/health`, `/v1/auth/session`, `/v1/courses`, `/stats.svg`,
+`/changelog`, `/resources`, `/v1/instructor/courses`,
+`/v1/staff/pending-counts`, and an unknown route for the 404 fallback —
+every response code matched what the original code would have returned
+(401 where a session was required, 403 where `requireRole` gates it,
+200/404 otherwise). (5) Confirmed the moved cron logic still runs:
+polled `api_health` after deploy and got a fresh row at the next
+5-minute tick from the new `cron.js`, and confirmed
+`changelog.discord_posted_at` state was untouched (still zero unposted
+rows, matching pre-split state).

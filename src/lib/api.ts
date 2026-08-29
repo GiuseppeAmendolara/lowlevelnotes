@@ -50,9 +50,19 @@ async function fetchWithRetry(url: string, init: RequestInit, attempts = 2): Pro
   throw lastError
 }
 
+// No `next: { revalidate }` — this fetch's only caller (getChangelog,
+// below) backs a `force-dynamic` page that already re-renders on every
+// request, so a fetch-level cache on top buys nothing except staleness:
+// a 60s revalidate window here left a real published entry invisible on
+// the live page for almost a full day, since Vercel's Data Cache for a
+// `next.revalidate` fetch doesn't reliably refresh itself just because
+// the window elapsed — it needs an actual request to trigger
+// revalidation, and even then can keep serving the stale value if that
+// background refetch doesn't land. `cache: 'no-store'` matches what the
+// route is already doing and removes the failure mode entirely.
 async function apiFetch<T>(endpoint: string): Promise<T> {
   const res = await fetchWithRetry(`${API_BASE}${endpoint}`, {
-    next: { revalidate: 60 },
+    cache: 'no-store',
     headers: {
       'x-internal-key': process.env.INTERNAL_API_KEY!,
     },

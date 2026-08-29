@@ -195,6 +195,23 @@ These are planning notes, not authorization to begin future phases early.
 
 ### Data and API direction
 
+- **Worker source layout (2026-08-29):** `worker/index.js` grew to 5,237
+  lines/~150 functions across this project's lifetime and was split into
+  a thin entry point plus `worker/lib/{http,crypto,validate,session,
+  rateLimit,email,mappers,courseAccess}.js` (cross-cutting helpers) and
+  `worker/routes/{auth,courses,instructor,groups,profile,library,badges,
+  requests,staff}.js` (one file per feature domain) and `worker/cron.js`
+  (the three `scheduled()` jobs). Pure reorganization — every function
+  body moved unchanged, only `export`/`import` lines were added; verified
+  via `wrangler deploy --dry-run` (esbuild resolves the whole import
+  graph — the correct syntax check here, since `worker/` has no
+  `package.json` and plain `node --check` doesn't understand ESM
+  `import`/`export` on a bare `.js` file the way esbuild does) before the
+  real deploy. Mentions of "`worker/index.js`" elsewhere in this doc
+  predate the split and point at logic that's now in one of these files
+  instead — the split didn't move any of the reasoning, just the file it
+  lives in. All of `worker/` (new files included) stays gitignored, same
+  as before.
 - Schema is live in D1 (`lowlevelnotes-db`), defined in
   `worker/migrations/0001_phase1_learning_platform.sql`: `users`, `courses`,
   `modules`, `lessons`, `enrollments`, `lesson_progress`, `exercises`,
@@ -830,6 +847,26 @@ These are planning notes, not authorization to begin future phases early.
     was caught as a live bug in the fix itself, not designed in
     correctly the first time; see the WORKLOG entry for how it was
     found and re-verified.
+- **Changelog: no fetch-level cache, and now posts live to Discord** —
+  `src/lib/api.ts`'s `apiFetch()` (the changelog page's only data
+  source) no longer uses `next: { revalidate: 60 }` — that page is
+  already `export const dynamic = 'force-dynamic'`, so the cache bought
+  nothing and once left a real published entry invisible on the live
+  site for almost a day (see WORKLOG's "Changelog fetch stopped caching"
+  entry for the full diagnosis). Separately, new changelog entries now
+  post automatically to a Discord webhook — piggybacked on the existing
+  5-minute cron (`scheduled()` in `worker/index.js`) rather than a
+  publish-time hook, since changelog entries are written straight to D1
+  and there's no endpoint to hook into. A `discord_posted_at` column on
+  `changelog` (migration `0018`) tracks what's already gone out; **any
+  future direct-SQL changelog insert doesn't need to set this column —
+  leaving it `NULL` is exactly what makes a new entry eligible to post**.
+  The webhook URL lives only as the `DISCORD_WEBHOOK_URL` Worker secret,
+  never in any file; `postNewChangelogEntriesToDiscord()` no-ops
+  entirely if it's unset. See WORKLOG's "Live Discord posting" entry for
+  the backfill reasoning (why the migration didn't dump the entire
+  changelog history into Discord on its first run) and how both the
+  webhook itself and the real cron-driven pipeline were verified.
 - **Phase 3 (authentication), concrete decisions** — see WORKLOG's "Phase
   3" entry for the full security reasoning:
   - Password hashing: PBKDF2-HMAC-SHA256, 100,000 iterations, via
