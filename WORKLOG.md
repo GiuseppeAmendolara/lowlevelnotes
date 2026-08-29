@@ -3625,4 +3625,194 @@ every response code matched what the original code would have returned
 polled `api_health` after deploy and got a fresh row at the next
 5-minute tick from the new `cron.js`, and confirmed
 `changelog.discord_posted_at` state was untouched (still zero unposted
+entries), matching pre-split state.
+
+## Production outage: home page + /changelog silently broken by Bot Fight Mode (2026-08-29)
+
+After shipping real course/library data on the home page (see the entry
+above this one — two new public Worker endpoints,
+`getFeaturedCourses`/`getLibraryCategoryStats` fetched server-side from
+`src/app/page.tsx`), the user reported the live site showing "No courses
+published yet." / "No resources catalogued yet." on the home page, and a
+hard 500 on `/changelog` — a page that had been working and that this
+session's changes never touched.
+
+**Diagnostic path, in order, including the dead ends** (kept because the
+elimination itself is the useful record, not just the answer):
+
+1. Confirmed the Worker itself was completely healthy — direct `curl` to
+   every affected endpoint, with or without headers, always returned
+   200 with correct data. This meant the problem was specifically in
+   the Vercel→Cloudflare→Worker path, not the Worker's own code.
+2. First theory: `INTERNAL_API_KEY` mismatch between Vercel's env and
+   the WAF rule's expected value. Disproven conclusively — added a
+   temporary diagnostic to `apiFetch()`'s thrown error (key
+   length/prefix/suffix, never the full secret) and the user's live
+   error showed a byte-exact match. Wrong theory, but the diagnostic
+   pattern (put the debug info directly in the error the user already
+   has to paste back) turned out to be the single most useful technique
+   in the whole investigation — reused twice more below.
+3. Second theory: the Worker's own in-memory per-IP rate limiter
+   (`isRateLimited` in `index.js`) miscounting because Vercel's
+   serverless functions share outbound IPs across unrelated projects.
+   Added a genuine improvement either way — an `x-internal-key`-based
+   exemption from that specific counter only, gated on a new
+   `INTERNAL_API_KEY` Worker secret (never previously needed server-side,
+   since this header was WAF-only before) — but `wrangler tail`ing the
+   Worker while triggering the live failure showed **nothing**, proving
+   requests weren't reaching the Worker at all. Kept the fix (it's
+   correct and harmless) but it wasn't the cause.
+4. Got a real Vercel Runtime Log from the user for the first time:
+   `apiFetch` was getting a literal `403` back — a real HTTP response,
+   not a network failure. Reproduced that exact 403 myself by
+   deliberately sending a *wrong* key against the live Worker, which
+   pointed back at the key theory (now with a real repro) — until the
+   user re-saved the *already-correct* key on Vercel and redeployed,
+   and it still failed. That combination (real 403, but key
+   independently confirmed correct twice) is what forced a full reset
+   of the investigation rather than continuing to patch the same theory.
+5. Checked Cloudflare's actual custom WAF rule expressions directly via
+   the Rulesets API (the account's API token has `Zone WAF Edit`).
+   Found two rules with no `x-internal-key` exemption at all: "Block AI
+   crawlers & countries" (blocks by `ip.src.country`, no header check)
+   and "API direct access prevention" (blocks by `Referer`, no header
+   check either). Patched both to add the same exemption the
+   suspicious-UA rule already had. Directly reproduced and fixed the
+   Referer rule's exact failure mode via `curl -e` — genuine bugs, both
+   still live as hardening — but the site was *still* down after both
+   fixes, 5/5 and then 8/8 on repeated checks.
+6. Expanded the diagnostic a second time — this time capturing the
+   actual response body snippet and the `cf-mitigated` header in
+   `apiFetch`'s error, to settle definitively whether Cloudflare's edge
+   or the Worker was producing the block, instead of continuing to
+   infer it from a bare status code. The next error the user pasted
+   showed `cf-mitigated=challenge` and a body starting
+   `<!DOCTYPE html>...<title>Just a moment...`  — Cloudflare's Bot
+   Fight Mode interstitial. This was the actual cause: a serverless
+   `fetch()` can never solve a JS challenge, so it just gets the raw
+   challenge page back as a 403, forever, and Bot Fight Mode's
+   probabilistic bot-scoring explains the apparent intermittency
+   earlier in the investigation.
+7. Confirmed with the user that Bot Fight Mode was in fact enabled.
+   Tried the obvious fix — a Custom Rule `skip` action targeting the
+   `http_request_sbfm` phase for internal-key traffic — and hit
+   `exceeded the maximum number of rules in the phase
+   http_request_firewall_custom: 6 out of 5` (**the Free plan caps
+   custom rules at 5**; deleted the currently-dormant `/assets/`
+   hotlink-protection rule to make room, with the user's confirmation,
+   since it protects nothing while that folder is empty). The skip rule
+   went in cleanly but had zero effect. A web search of Cloudflare's own
+   community/docs confirmed why: **Bot Fight Mode doesn't run on the
+   Ruleset Engine at all on the Free plan — no Skip rule, Custom Rule,
+   or `products` parameter can exempt anything from it.** Only the paid
+   Super Bot Fight Mode (Pro+) supports Skip rules; `http_request_sbfm`
+   specifically only applies to that paid product. This is a hard
+   platform limit, not a configuration mistake.
+8. Given the user's explicit preference (don't weaken WAF/rate-limiting
+   broadly) and no appetite for the $20/month Pro upgrade, presented the
+   three real remaining options — turn Bot Fight Mode off entirely,
+   upgrade to Pro for Super Bot Fight Mode's selective Skip support, or
+   move the fetch client-side to avoid the server-to-server call
+   altogether — and the user chose to turn Bot Fight Mode off via the
+   dashboard (outside API-token scope; `zones/.../settings/bot_fight_mode`
+   returned "Unauthorized" for both read and write with the token's
+   current permissions). Confirmed fixed: 6/6 then further checks all
+   200, real content rendering on both `/changelog` and the home page.
+
+**Cleanup once confirmed working**: removed the now-inert
+`http_request_sbfm` skip rule (freeing the slot back up), recreated the
+`/assets/` hotlink rule exactly as it was, and stripped the temporary
+body/header diagnostic back out of `apiFetch()`. The two WAF rule
+exemptions (country/crawler rule, referer rule) and the rate-limiter
+exemption plus its new `INTERNAL_API_KEY` Worker secret were all kept —
+independently correct hardening discovered along the way, even though
+none of them were the actual cause.
+
+## Real "administrator" → "staff" schema migration (2026-08-29)
+
+User asked directly: "why does the code still say administrator, not
+staff" — pointed at the display-only rename from earlier in this
+session (`roleLabel()`), deliberately not extended to the database at
+the time because of the confirmed D1 `DROP TABLE` cascade-delete bug
+(see `0014_instructor_course_authoring.sql`'s comment). User's response
+to having this explained again: "Do the real migration."
+
+**Before touching anything**: took a D1 Time Travel bookmark
+(`wrangler d1 time-travel info`) and a full `wrangler d1 export`, saved
+locally. Neither was needed in the end, but both were real, verified
+working — the bookmark command actually returned a restorable ID, the
+export actually downloaded a 345KB SQL file — not just assumed available.
+
+**Mapping the real blast radius before writing any SQL**: queried
+`sqlite_master` directly for every table with `REFERENCES users`, then
+checked those tables' own referrers, and so on, until the graph closed.
+It's bigger than "just `users`": `groups.created_by` is ALSO `ON DELETE
+CASCADE` to `users`, and `group_members`/`course_group_access` reference
+`groups` the same way — a second level of dependency the original
+"just rebuild users" framing (from the very first display-only decision,
+and again in this session's own initial reply before checking) had
+missed. Final count: 13 tables needed rebuilding, not 1. Also pulled the
+exact `CREATE TABLE` SQL and every explicit index (`sessions` × 2,
+`auth_tokens` × 1, plus `role_requests`' partial unique index enforcing
+"one pending request per user") for all 13, so nothing got silently
+dropped in the rebuild.
+
+**The actual safe sequence** (documented in full in the new
+`0019_administrator_to_staff.sql`, since this matters for the next
+person who needs to rebuild a table with live CASCADE children in this
+D1 environment): `0014`'s own comment claimed even a rename-then-drop
+sequence reproduced the cascade bug, which looked like it might mean
+the bug was simply unavoidable. It doesn't mean that — that earlier test
+only renamed the *parent* away and dropped it, never touching the
+*children*. A child's FK stays pointed at whatever the parent is
+*currently* named, no matter how many times it's renamed, so dropping
+that table under any name still cascades. The actual fix: rename the
+parent away (safe — SQLite ≥3.25 auto-rewrites every child's FK text to
+the new name, and a rename alone never triggers the bug since nothing is
+dropped), create the real replacement under the final name, copy data
+across (translating `role` inline for `users`), then — separately —
+rebuild every child table too, with its FK corrected back to the real
+final table instead of the renamed-away one, and only drop the
+renamed-away original once `sqlite_master` confirms nothing references
+it anymore. Applied bottom-up: `users`, then `groups` (which depends on
+`users`), then all 11 leaf tables in one batch (independent of each
+other), verified nothing still referenced either `_old` table, then
+dropped both.
+
+**Verification, not assumption, at every stage**: recorded exact row
+counts for all 13 tables before starting (only 2 real user accounts on
+this platform, for what it's worth — the smallest-possible real-world
+blast radius, though the procedure doesn't get to skip a step just
+because of that). Re-checked all 13 after the leaf-table rebuilds
+(exact match), and again after the final two `DROP TABLE`s specifically
+because that's the step that would reproduce the bug if any child's FK
+still pointed at an `_old` table — also exact match. Ran a live
+`SELECT ... sqlite_master WHERE sql LIKE '%users_old%' OR '%groups_old%'`
+query immediately before those final drops and got zero rows back, as a
+direct precondition check rather than inferring safety from the earlier
+steps having gone fine. Closed the loop with a real authenticated
+request afterward: a throwaway staff account's session correctly
+authorized against `/v1/staff/pending-counts` and `/v1/staff/users`,
+the latter showing the real owner account's `role` as `"staff"` through
+the actual live API — not just checked in the database directly.
+
+**Code side**: updated all ~69 backend occurrences (`lib/courseAccess.js`,
+`lib/email.js`, `lib/session.js`, `routes/instructor.js`, `routes/groups.js`,
+`routes/library.js`, `routes/requests.js`, `routes/staff.js`) from
+comparing against `'administrator'` to `'staff'` — the quoted-string
+role-check literals via a scripted pass, then every remaining prose
+comment and user-facing string (email copy, error messages) individually
+by hand, since a blind global replace would have mangled grammar
+("an administrator" → "an staff") and silently missed anything spelled
+with a capital A. Same pass on the frontend (11 files: every
+`/account/approvals/*` and `/courses/builder/*` role gate, `AdminPanel.tsx`'s
+role list, `authClient.ts`'s types). `roleLabel()` is now just a plain
+capitalizer — the special-case branch for `'administrator'` is dead code
+now that the database never produces that value, so it was removed
+rather than left in as a no-op.
+
+Confirmed via `git diff`-equivalent grep, case-insensitive, across both
+`worker/` and `src/`, that zero references to "administrator" remain
+anywhere in actual code — the only surviving occurrence in either tree
+is the migration's own filename, named for what it did.
 rows, matching pre-split state).

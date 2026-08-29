@@ -40,7 +40,7 @@ const ACTION_LABELS: Record<string, string> = {
   delete_course: 'Delete course',
 }
 
-const ROLES: Role[] = ['student', 'contributor', 'instructor', 'administrator']
+const ROLES: Role[] = ['student', 'contributor', 'instructor', 'staff']
 
 export default function AdminPanel() {
   return (
@@ -312,7 +312,7 @@ function BlockedIpsSection() {
 // What makes the super-admin role above actually mean something — a
 // super admin isn't meant to do day-to-day administration, they're meant
 // to spot-check this. Read-only, no filters yet: at this scale scrolling
-// the latest 200 entries is enough, and every administrator can see it
+// the latest 200 entries is enough, and every staff member can see it
 // (not just super admins) — there's nothing here anyone could use to
 // cover their tracks, so there's no reason to hide it.
 function AuditLogSection() {

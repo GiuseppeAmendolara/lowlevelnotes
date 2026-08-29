@@ -11,13 +11,19 @@ type Props = {
   subtext?: string
   backHref?: string
   backLabel?: string
+  // Defaults to the original single-field-form width; the login/register/
+  // password-recovery pages pass a wider value since their forms (email +
+  // password, sometimes two password fields) felt cramped at max-w-sm —
+  // every other AuthPageShell caller (account settings, approvals, staff)
+  // keeps the default, unaffected.
+  maxWidth?: string
   children: React.ReactNode
 }
 
-export default function AuthPageShell({ eyebrow, heading, subtext, backHref, backLabel = 'Account', children }: Props) {
+export default function AuthPageShell({ eyebrow, heading, subtext, backHref, backLabel = 'Account', maxWidth = 'max-w-sm', children }: Props) {
   return (
     <main className="min-h-screen bg-[#171717]">
-      <section className="mx-auto max-w-sm px-6 pb-24 pt-20 sm:pt-28">
+      <section className={`mx-auto ${maxWidth} px-6 pb-24 pt-20 sm:pt-28`}>
         {backHref && (
           <Link href={backHref} className="mb-4 inline-block text-xs uppercase tracking-[0.12em] text-white/40 transition-colors hover:text-white">
             ← {backLabel}

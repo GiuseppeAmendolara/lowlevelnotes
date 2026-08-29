@@ -77,7 +77,7 @@ export default function InstructorCourseBuilderPage({ params }: { params: Promis
       router.replace('/login')
       return
     }
-    if (user.role !== 'instructor' && user.role !== 'administrator') {
+    if (user.role !== 'instructor' && user.role !== 'staff') {
       router.replace('/')
     }
   }, [sessionLoading, user, router])
@@ -90,11 +90,11 @@ export default function InstructorCourseBuilderPage({ params }: { params: Promis
   }
 
   useEffect(() => {
-    if (user && (user.role === 'instructor' || user.role === 'administrator')) load()
+    if (user && (user.role === 'instructor' || user.role === 'staff')) load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, id])
 
-  if (sessionLoading || !user || (user.role !== 'instructor' && user.role !== 'administrator')) {
+  if (sessionLoading || !user || (user.role !== 'instructor' && user.role !== 'staff')) {
     return (
       <AuthPageShell eyebrow="Instructor" heading="Course" backHref="/courses/builder" backLabel="Your courses">
         <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>

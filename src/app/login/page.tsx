@@ -50,7 +50,7 @@ export default function LoginPage() {
   }
 
   return (
-    <AuthPageShell eyebrow="Welcome back" heading="Login">
+    <AuthPageShell eyebrow="Welcome back" heading="Login" maxWidth="max-w-md">
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <AuthTextField label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" required />
         <AuthTextField label="Password" type="password" value={password} onChange={setPassword} autoComplete="current-password" required />

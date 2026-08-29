@@ -11,6 +11,7 @@ import { changePassword, deleteMyAccount, logout, resendVerification, getStaffPe
 import { useReveal, revealClass, revealState } from '@/lib/useReveal'
 
 type AccountLink = { href: string; title: string; description: string; badge?: number | null }
+type AccountSection = { heading: string | null; links: AccountLink[] }
 
 export default function AccountPage() {
   const router = useRouter()
@@ -78,7 +79,7 @@ export default function AccountPage() {
   }
 
   useEffect(() => {
-    if (user?.role !== 'administrator') return
+    if (user?.role !== 'staff') return
 
     getStaffPendingCounts().then((result) => {
       if (result.ok) setPendingCounts(result.data)
@@ -99,30 +100,65 @@ export default function AccountPage() {
     ? pendingCounts.roleRequests + pendingCounts.resourceRequests + pendingCounts.courseRequests
     : 0
 
-  const links: AccountLink[] = [
-    { href: '/account/profile', title: 'Your profile', description: 'Set a picture and bio, and see how others view your profile.' },
-    { href: '/account/courses', title: 'Enrolled courses', description: 'Manage your enrollments and view your progress.' },
-    ...(user.role === 'student'
-      ? [{ href: '/contribute', title: 'Request contributor access', description: 'Apply to submit resources to the library.' }]
-      : []),
-    ...(user.role === 'contributor' || user.role === 'instructor' || user.role === 'administrator'
-      ? [{ href: '/contribute', title: 'Contribute', description: 'Submit a resource for review.' }]
-      : []),
-    ...(user.role === 'instructor' || user.role === 'administrator'
-      ? [{ href: '/courses/builder', title: 'Build a course', description: 'Create and edit your own courses, submit them for review.' }]
-      : []),
-    ...(user.role === 'administrator'
-      ? [
-          { href: '/account/staff', title: 'Staff', description: 'Manage users, blocked IPs, and the activity log.' },
-          {
-            href: '/account/approvals',
-            title: 'Approvals',
-            description: 'Review role, resource, and course requests.',
-            badge: pendingTotal > 0 ? pendingTotal : null,
-          },
-        ]
-      : []),
-  ]
+  // Unnamed default section first (every account has these two, so a
+  // label would just be noise), then one section per role tier —
+  // Contributor/Instructor/Staff — each only rendered if the current
+  // role actually has links in it. A student sees just the default
+  // section plus a single "request access" link in Contributor; staff
+  // sees all four.
+  const sections: AccountSection[] = [
+    {
+      heading: null,
+      links: [
+        { href: '/account/profile', title: 'Your profile', description: 'Set a picture and bio, and see how others view your profile.' },
+        { href: '/account/courses', title: 'Enrolled courses', description: 'Manage your enrollments and view your progress.' },
+      ],
+    },
+    {
+      heading: 'Contributor',
+      links: [
+        ...(user.role === 'student'
+          ? [{ href: '/contribute', title: 'Request contributor access', description: 'Apply to submit resources to the library.' }]
+          : []),
+        ...(user.role === 'contributor' || user.role === 'instructor' || user.role === 'staff'
+          ? [{ href: '/contribute', title: 'Contribute', description: 'Submit a resource for review.' }]
+          : []),
+      ],
+    },
+    {
+      heading: 'Instructor',
+      links: [
+        ...(user.role === 'instructor' || user.role === 'staff'
+          ? [{ href: '/courses/builder', title: 'Build a course', description: 'Create and edit your own courses, submit them for review.' }]
+          : []),
+      ],
+    },
+    {
+      heading: 'Staff',
+      links: [
+        ...(user.role === 'staff'
+          ? [
+              { href: '/account/staff', title: 'Staff', description: 'Manage users, blocked IPs, and the activity log.' },
+              {
+                href: '/account/approvals',
+                title: 'Approvals',
+                description: 'Review role, resource, and course requests.',
+                badge: pendingTotal > 0 ? pendingTotal : null,
+              },
+            ]
+          : []),
+      ],
+    },
+  ].filter((section) => section.links.length > 0)
+
+  // A running index across every section's cards, computed once up front
+  // rather than mutated during render, so the staggered reveal cascades
+  // smoothly down the whole page instead of restarting per section.
+  let nextIndex = 0
+  const sectionsWithIndices = sections.map((section) => ({
+    ...section,
+    links: section.links.map((link) => ({ link, index: nextIndex++ })),
+  }))
 
   return (
     <main className="min-h-screen bg-[#171717]">
@@ -168,12 +204,19 @@ export default function AccountPage() {
         )}
       </section>
 
-      <section className="mx-auto max-w-5xl px-6 pb-16">
-        <div className="grid grid-cols-1 gap-px border border-white/10 bg-white/10 sm:grid-cols-2">
-          {links.map((link, i) => (
-            <AccountLinkCard key={`${link.href}-${link.title}`} index={i} {...link} />
-          ))}
-        </div>
+      <section className="mx-auto flex max-w-5xl flex-col gap-10 px-6 pb-16">
+        {sectionsWithIndices.map((section) => (
+          <div key={section.heading ?? 'default'}>
+            {section.heading && (
+              <p className="mb-3 text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">{section.heading}</p>
+            )}
+            <div className="grid grid-cols-1 gap-px border border-white/10 bg-white/10 sm:grid-cols-2">
+              {section.links.map(({ link, index }) => (
+                <AccountLinkCard key={`${link.href}-${link.title}`} index={index} {...link} />
+              ))}
+            </div>
+          </div>
+        ))}
       </section>
 
       <section className="mx-auto max-w-5xl px-6 pb-24">

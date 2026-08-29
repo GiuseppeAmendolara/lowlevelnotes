@@ -10,7 +10,7 @@ export default async function ResetPasswordPage({
   const { token } = await searchParams
 
   return (
-    <AuthPageShell eyebrow="Password recovery" heading="Reset your password">
+    <AuthPageShell eyebrow="Password recovery" heading="Reset your password" maxWidth="max-w-md">
       {token ? (
         <ResetPasswordForm token={token} />
       ) : (

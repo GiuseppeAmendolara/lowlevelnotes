@@ -770,37 +770,52 @@ These are planning notes, not authorization to begin future phases early.
     cleanup confirmed the same way avatar upload was; group deletion
     confirmed to cascade `course_group_access` cleanly. All QA
     accounts/courses/groups deleted after.
-- **"Administrator" renamed to "Staff" everywhere a person can see it —
-  deliberately not in the database.** `users.role`'s stored value stays
-  `'administrator'` permanently (barring a future, carefully-planned,
-  backed-up migration): changing it means rebuilding the `users` table to
-  alter its `CHECK` constraint (SQLite has no `ALTER` for `CHECK`), and
-  this exact D1 environment has a **confirmed, reproduced bug** where
-  dropping a table cascade-deletes every row in tables that reference it
-  `ON DELETE CASCADE` — not standard SQLite behavior, but real here (see
-  `0014_instructor_course_authoring.sql`'s comment, where an earlier
-  session hit this rebuilding `courses` and chose a derived-status column
-  instead specifically to avoid it). `users` is referenced that way by
-  nearly every table in the schema — sessions, enrollments, progress,
-  quiz attempts, achievements, groups, courses, and more — so the same
-  rebuild here risks losing essentially all real user data. Every
-  backend permission check (`role === "administrator"`, `requireRole`,
+- **"Administrator" renamed to "Staff" everywhere, including the database
+  (2026-08-29, `worker/migrations/0019_administrator_to_staff.sql`).**
+  This was initially shipped as a display-only rename (`roleLabel()` in
+  `src/lib/authClient.ts` translating the stored value at render time)
+  specifically because of the confirmed D1 bug where `DROP TABLE`
+  cascade-deletes rows in any table referencing it `ON DELETE CASCADE` —
+  see `0014_instructor_course_authoring.sql`'s comment for the original
+  finding, and `0019_administrator_to_staff.sql`'s own comment for the
+  corrected understanding of that bug: a rename-then-drop of just the
+  parent isn't enough (0014's test only did that and still reproduced
+  the bug); every child table's FK has to be repointed to the new parent
+  *before* the old one is dropped, or it cascades the exact same way.
+  Once that fuller sequence was worked out, the real migration was run
+  directly against production: `users.role`'s CHECK constraint now says `'staff'`, not
+  `'administrator'`, full stop — no display-layer translation left
+  anywhere. 13 tables needed rebuilding, not just `users` — `groups` also
+  has an `ON DELETE CASCADE` reference to `users`, and is itself
+  referenced the same way by `group_members`/`course_group_access`, so
+  the dependency graph was two levels deep. Verified via row-count checks
+  at every stage (all 13 tables matched their pre-migration count exactly,
+  both after the leaf-table rebuilds and again after the final `DROP
+  TABLE users_old`/`groups_old` — the step that would have reproduced the
+  bug if the sequence were wrong) and a live end-to-end test (a throwaway
+  staff account correctly authorized against staff-only endpoints,
+  `GET /v1/staff/users` showing the real owner account's `role` as
+  `"staff"` through the actual API). A Time Travel bookmark and a full
+  `wrangler d1 export` were both taken immediately before starting, as a
+  restore path that was never needed.
+  Every backend permission check (`role === "staff"`, `requireRole`,
   `courseOwnedBy`, `groupOwnedBy`, `visibilityClause`, `notifyAdminsV1`'s
-  `WHERE role = 'administrator'`, ~69 occurrences total) stays exactly as
-  written, comparing against the real stored value. The translation to
-  "Staff" happens in exactly one place, `roleLabel()` in
-  `src/lib/authClient.ts` — every UI surface displaying a role calls this
-  rather than rendering the raw string or keeping its own label map
-  (a few pages had done exactly that already — a hardcoded `<option>{r}
+  `WHERE role = 'staff'`, ~69 occurrences total) was updated to compare
+  against the new real value — same call sites as before, just the
+  literal changed. `roleLabel()` is now just a plain capitalizer (no
+  special case needed — `'staff'` already capitalizes correctly), kept as
+  the one shared place every UI surface gets a role label from rather
+  than each page rendering the raw string or keeping its own copy (a few
+  pages had done exactly that already — a hardcoded `<option>{r}
   </option>` in `AdminPanel.tsx`'s two role `<select>`s, and a duplicated
   `ROLE_LABEL` map on the public profile page that had drifted to still
-  say "Administrator" — both now call the shared helper instead). Also
-  caught in the same pass: several `/account/approvals/*` pages' *loaded*
+  say "Administrator" — both call the shared helper instead). Also caught
+  in the same earlier pass: several `/account/approvals/*` pages' *loaded*
   state rendered a hardcoded "Administration" eyebrow in a hand-rolled
   `<main>` layout, entirely separate from the `AuthPageShell` "Staff"
-  eyebrow already fixed in an earlier pass on those same pages' *loading*
-  state — the two states are genuinely different render paths, and only
-  one had been touched.
+  eyebrow already fixed on those same pages' *loading* state — the two
+  states are genuinely different render paths, and only one had been
+  touched at the time.
 - Session responses (`GET /v1/auth/session`, `POST /v1/auth/login`, and
   `getSessionUser()` itself) now carry `avatarUrl`, so `Header.tsx` can
   show a small picture next to a logged-in user's own name in the nav —
@@ -1326,6 +1341,39 @@ throughout the product:
   enforce anything on its own. Local point-in-time backups of the live
   config live in `/cloudflare-backups/` (gitignored, pulled via the API
   before/after a review pass — not automatically kept in sync).
+  **The Free plan hard-caps custom rules at 5** — confirmed by hitting
+  `exceeded the maximum number of rules in the phase
+  http_request_firewall_custom: 6 out of 5` while adding a 6th; adding
+  a new one means deleting or merging an existing one first (the
+  currently-dormant `/assets/` hotlink rule is the natural one to
+  temporarily sacrifice, since it protects nothing while that folder is
+  empty — just remember to recreate it once it isn't).
+- The country/crawler rule and the anchored-referer API rule both now
+  carry `and not (http.request.headers["x-internal-key"][0] eq
+  "<INTERNAL_API_KEY>")` — added 2026-08-29 while chasing a live
+  `/changelog`+home-page outage, so verified internal (Vercel
+  server-to-server) calls skip both checks. Neither one was actually the
+  outage's cause; they're real, narrowly-scoped hardening left in place
+  since discovering the gap.
+- **Bot Fight Mode is now OFF, permanently, not a temporary state.**
+  It was the real cause of the 2026-08-29 outage: Vercel's server-side
+  `getChangelog()`/`getFeaturedCourses()`/`getLibraryCategoryStats()`
+  calls (`apiFetch()` in `src/lib/api.ts`) were intermittently served
+  Cloudflare's "Just a moment..." JS-challenge page (`cf-mitigated:
+  challenge`) instead of a real response — a challenge only a browser
+  can solve, so a server-to-server `fetch()` just gets a permanent `403`
+  back, crashing `/changelog` (no try/catch there) and degrading the
+  home page to its empty-state fallback (it does have one). **Confirmed
+  via Cloudflare's own docs/community that Bot Fight Mode cannot be
+  selectively exempted on the Free plan by any Custom Rule Skip
+  action — it doesn't run on the Ruleset Engine at all; only the paid
+  Super Bot Fight Mode (Pro+) supports Skip rules.** A `skip` rule
+  targeting the `http_request_sbfm` phase was tried first and does
+  nothing on Free — don't repeat that. The other WAF layers (suspicious-
+  UA/path-probe blocking, referer checks, per-user rate limits on actual
+  content endpoints) already cover most of what Bot Fight Mode
+  targeted, so this was judged an acceptable trade rather than upgrading
+  to Pro or re-architecting the fetch path to run client-side.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

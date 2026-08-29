@@ -50,7 +50,7 @@ export default function ForgotPasswordPage() {
 
   if (done) {
     return (
-      <AuthPageShell eyebrow="Password recovery" heading="Check your email">
+      <AuthPageShell eyebrow="Password recovery" heading="Check your email" maxWidth="max-w-md">
         <AuthMessage message="If that email is registered, a password reset link has been sent." tone="success" />
       </AuthPageShell>
     )
@@ -61,6 +61,7 @@ export default function ForgotPasswordPage() {
       eyebrow="Password recovery"
       heading="Forgot your password?"
       subtext="Enter your email and we'll send you a link to reset it."
+      maxWidth="max-w-md"
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <AuthTextField label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" required />

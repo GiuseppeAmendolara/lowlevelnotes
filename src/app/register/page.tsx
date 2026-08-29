@@ -57,7 +57,7 @@ export default function RegisterPage() {
 
   if (done) {
     return (
-      <AuthPageShell eyebrow="Almost there" heading="Check your email">
+      <AuthPageShell eyebrow="Almost there" heading="Check your email" maxWidth="max-w-md">
         <AuthMessage message="Check your email to verify your account, then login." tone="success" />
         <p className="mt-6 text-sm text-[#A1A1AA]">
           <Link href="/login" className="text-white/70 underline underline-offset-2 transition-colors hover:text-white">
@@ -69,7 +69,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <AuthPageShell eyebrow="Create an account" heading="Register">
+    <AuthPageShell eyebrow="Create an account" heading="Register" maxWidth="max-w-md">
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <AuthTextField label="Display name" value={displayName} onChange={setDisplayName} autoComplete="name" required />
         <AuthTextField label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" required />

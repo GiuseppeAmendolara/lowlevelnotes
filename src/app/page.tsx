@@ -77,7 +77,7 @@ export default async function Home() {
 
           <div>
             <h1 className="max-w-3xl animate-fade-in-up text-balance text-5xl font-bold leading-[0.96] tracking-[-0.07em] text-white motion-reduce:animate-none sm:text-7xl lg:text-8xl">
-              LowLevelNotes
+              <span className="text-[#FF8A3D]">0x</span>LowLevelNotes
             </h1>
             <p
               style={{ animationDelay: '80ms' }}

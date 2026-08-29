@@ -17,12 +17,12 @@ export default function CourseReviewPage({ params }: { params: Promise<{ id: str
       router.replace('/login')
       return
     }
-    if (user.role !== 'administrator') {
+    if (user.role !== 'staff') {
       router.replace('/')
     }
   }, [sessionLoading, user, router])
 
-  if (sessionLoading || !user || user.role !== 'administrator') {
+  if (sessionLoading || !user || user.role !== 'staff') {
     return (
       <AuthPageShell eyebrow="Staff" heading="Course request" backHref="/account/approvals/course-requests" backLabel="Course requests">
         <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>

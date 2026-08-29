@@ -354,7 +354,7 @@ export type UserProfile = {
   id: number
   displayName: string
   avatarUrl: string | null
-  role: 'student' | 'contributor' | 'instructor' | 'administrator'
+  role: 'student' | 'contributor' | 'instructor' | 'staff'
   bio: string | null
   joinedAt: string
   achievements: UserAchievement[]
@@ -385,26 +385,20 @@ export function getAssetSrc(key: string) {
   return `${AUTH_API_BASE}/v1/library/assets/${key}`
 }
 
-// The stored role value is still 'administrator' everywhere in D1 and in
-// every backend permission check (role === 'administrator') — renaming
-// that would mean rebuilding the users table to change its CHECK
-// constraint, and this exact D1 environment has a confirmed bug where
-// dropping a table cascade-deletes every row in tables that reference it
-// with ON DELETE CASCADE (see worker/migrations/0014's comment, where an
-// earlier session hit this on `courses` and deliberately avoided it).
-// users is referenced that way by nearly every table in the schema, so
-// that rebuild isn't safe to attempt. This is the one, single place the
-// display label is translated instead — every UI surface should call
-// this rather than rendering a raw role string or keeping its own copy
-// of the label map.
+// users.role is genuinely 'staff' in D1 now (see
+// worker/migrations/0019_administrator_to_staff.sql — a real schema
+// migration, not just a display-label translation; that display-only
+// approach was the interim state before this one shipped). This is just
+// a plain capitalizer now, kept as the one place every UI surface gets
+// a role label from, rather than each page rendering the raw string or
+// keeping its own copy of the capitalization logic.
 export function roleLabel(role: string): string {
-  if (role === 'administrator') return 'Staff'
   return role.charAt(0).toUpperCase() + role.slice(1)
 }
 
 /* ==================== Phase 4: authorization roles ==================== */
 
-export type Role = 'student' | 'contributor' | 'instructor' | 'administrator'
+export type Role = 'student' | 'contributor' | 'instructor' | 'staff'
 export type RequestStatus = 'pending' | 'approved' | 'rejected'
 
 export type RoleRequest = {

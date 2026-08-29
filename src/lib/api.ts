@@ -73,29 +73,13 @@ async function fetchWithRetry(url: string, init: RequestInit, attempts = 2): Pro
 // background refetch doesn't land. `cache: 'no-store'` matches what the
 // route is already doing and removes the failure mode entirely.
 async function apiFetch<T>(endpoint: string): Promise<T> {
-  const key = process.env.INTERNAL_API_KEY ?? ''
   const res = await fetchWithRetry(`${API_BASE}${endpoint}`, {
     cache: 'no-store',
     headers: {
-      'x-internal-key': key,
+      'x-internal-key': process.env.INTERNAL_API_KEY!,
     },
   })
-  if (!res.ok) {
-    // TEMPORARY diagnostic while tracking down a live 403 that survived a
-    // confirmed-correct key and two WAF rule fixes — the key length/
-    // prefix/suffix already ruled out a corrupted secret, so this now
-    // also captures the actual response body's start (Cloudflare's block
-    // pages are HTML; the Worker's own responses are always JSON) and the
-    // cf-mitigated header (set when a Cloudflare challenge/block fired),
-    // to tell definitively which layer produced this rather than
-    // continuing to guess from the status code alone.
-    const bodySnippet = (await res.text().catch(() => '')).slice(0, 150).replace(/\s+/g, ' ')
-    throw new Error(
-      `API ${endpoint} failed: ${res.status} (key len=${key.length}, prefix=${key.slice(0, 8)}, suffix=${key.slice(-8)}) ` +
-      `cf-mitigated=${res.headers.get('cf-mitigated') ?? 'none'} content-type=${res.headers.get('content-type') ?? 'none'} ` +
-      `body="${bodySnippet}"`
-    )
-  }
+  if (!res.ok) throw new Error(`API ${endpoint} failed: ${res.status}`)
   return res.json()
 }
 

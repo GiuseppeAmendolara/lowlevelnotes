@@ -18,20 +18,20 @@ export default function ApprovalPage() {
       router.replace('/login')
       return
     }
-    if (user.role !== 'administrator') {
+    if (user.role !== 'staff') {
       router.replace('/')
     }
   }, [sessionLoading, user, router])
 
   useEffect(() => {
-    if (user?.role !== 'administrator') return
+    if (user?.role !== 'staff') return
 
     getStaffPendingCounts().then((result) => {
       if (result.ok) setCounts(result.data)
     })
   }, [user])
 
-  if (sessionLoading || !user || user.role !== 'administrator') {
+  if (sessionLoading || !user || user.role !== 'staff') {
     return (
       <AuthPageShell eyebrow="Staff" heading="Approvals" backHref="/account/staff" backLabel="Staff">
         <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>

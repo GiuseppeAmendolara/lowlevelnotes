@@ -47,7 +47,7 @@ export default function InstructorCoursesPage() {
       router.replace('/login')
       return
     }
-    if (user.role !== 'instructor' && user.role !== 'administrator') {
+    if (user.role !== 'instructor' && user.role !== 'staff') {
       router.replace('/')
     }
   }, [sessionLoading, user, router])
@@ -59,7 +59,7 @@ export default function InstructorCoursesPage() {
   }
 
   useEffect(() => {
-    if (user && (user.role === 'instructor' || user.role === 'administrator')) load()
+    if (user && (user.role === 'instructor' || user.role === 'staff')) load()
   }, [user])
 
   async function handleCreate(e: React.FormEvent) {
@@ -81,7 +81,7 @@ export default function InstructorCoursesPage() {
     load()
   }
 
-  if (sessionLoading || !user || (user.role !== 'instructor' && user.role !== 'administrator')) {
+  if (sessionLoading || !user || (user.role !== 'instructor' && user.role !== 'staff')) {
     return (
       <AuthPageShell eyebrow="Instructor" heading="Your courses" backHref="/account">
         <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>
