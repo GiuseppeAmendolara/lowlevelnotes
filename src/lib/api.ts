@@ -73,13 +73,22 @@ async function fetchWithRetry(url: string, init: RequestInit, attempts = 2): Pro
 // background refetch doesn't land. `cache: 'no-store'` matches what the
 // route is already doing and removes the failure mode entirely.
 async function apiFetch<T>(endpoint: string): Promise<T> {
+  const key = process.env.INTERNAL_API_KEY ?? ''
   const res = await fetchWithRetry(`${API_BASE}${endpoint}`, {
     cache: 'no-store',
     headers: {
-      'x-internal-key': process.env.INTERNAL_API_KEY!,
+      'x-internal-key': key,
     },
   })
-  if (!res.ok) throw new Error(`API ${endpoint} failed: ${res.status}`)
+  if (!res.ok) {
+    // TEMPORARY diagnostic while tracking down a live 403 that persisted
+    // through a Vercel env var re-save/redeploy — never logs the actual
+    // key, just enough (length + first/last 8 of 64 hex chars) to compare
+    // against the known-good value and catch whitespace/truncation/wrong-
+    // value corruption that a visual compare in the Vercel UI would miss.
+    // Remove once the real value is confirmed to round-trip correctly.
+    throw new Error(`API ${endpoint} failed: ${res.status} (key len=${key.length}, prefix=${key.slice(0, 8)}, suffix=${key.slice(-8)})`)
+  }
   return res.json()
 }
 

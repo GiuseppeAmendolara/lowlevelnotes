@@ -2,7 +2,7 @@ export default function PrivacyPage() {
   return (
     <main className="min-h-screen bg-[#171717]">
       <section className="mx-auto max-w-3xl px-6 pb-24 pt-20 sm:pt-28">
-        <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">Plain language, no boilerplate</p>
+        <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">Full disclosure</p>
         <h1 className="mt-4 text-4xl font-bold tracking-[-0.05em] text-white sm:text-5xl">Privacy</h1>
         <p className="mt-4 max-w-xl leading-7 text-[#A1A1AA]">
           What data we collect and why, based on what the code actually does.
