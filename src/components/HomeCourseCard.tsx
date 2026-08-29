@@ -20,7 +20,7 @@ export default function HomeCourseCard({ course, index }: { course: Course; inde
   return (
     <Link
       ref={ref}
-      href="/courses"
+      href={`/courses/${course.slug}`}
       style={{ transitionDelay: `${Math.min(index, 6) * 40}ms` }}
       className={`group block min-h-48 border-b border-r border-white/10 bg-[#171717] p-6 hover:bg-[#1f1f1f] hover:-translate-y-0.5 motion-reduce:hover:translate-y-0 sm:p-8 ${revealClass} ${revealState(visible)}`}
     >

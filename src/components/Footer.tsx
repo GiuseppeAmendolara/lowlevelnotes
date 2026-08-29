@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { DiscordIcon, GithubIcon, LicenseIcon } from '@/components/icons'
 
 export default function Footer() {
@@ -17,7 +18,6 @@ export default function Footer() {
           <div className="flex flex-col items-start gap-1 text-sm text-[#A1A1AA]">
             <p className="flex items-center gap-1.5">
               <DiscordIcon className="h-3.5 w-3.5 shrink-0 text-white/40" />
-              Discord:{' '}
               <a
                 href="https://discord.gg/emC3NKEP4a"
                 target="_blank"
@@ -29,18 +29,24 @@ export default function Footer() {
             </p>
             <p className="flex items-center gap-1.5">
               <LicenseIcon className="h-3.5 w-3.5 shrink-0 text-white/40" />
-              License: MIT License
+              <a
+                href="https://github.com/GiuseppeAmendolara/lowlevelnotes/blob/main/LICENSE"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-white/70 underline underline-offset-2 transition-colors hover:text-white"
+              >
+                MIT license
+              </a>
             </p>
             <p className="flex items-center gap-1.5">
               <GithubIcon className="h-3.5 w-3.5 shrink-0 text-white/40" />
-              Repository:{' '}
               <a
                 href="https://github.com/GiuseppeAmendolara/lowlevelnotes"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-white/70 underline underline-offset-2 transition-colors hover:text-white"
               >
-                github.com/GiuseppeAmendolara/lowlevelnotes
+                Repository
               </a>
             </p>
           </div>
@@ -50,9 +56,12 @@ export default function Footer() {
           <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">
             Free &amp; open source · Full privacy · Zero ads
           </p>
-          <p className="text-xs text-white/30">
-            &copy; {new Date().getFullYear()} lowlevelnotes. All rights reserved.
-          </p>
+          <div className="flex items-center gap-4 text-xs text-white/30">
+            <Link href="/privacy" className="underline underline-offset-2 transition-colors hover:text-white/60">
+              Privacy
+            </Link>
+            <p>&copy; {new Date().getFullYear()} lowlevelnotes. All rights reserved.</p>
+          </div>
         </div>
       </div>
     </footer>

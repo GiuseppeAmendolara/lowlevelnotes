@@ -129,6 +129,13 @@ export function logout() {
   return authFetch<void>('/v1/auth/logout', { method: 'POST' })
 }
 
+export function deleteMyAccount(password: string) {
+  return authFetch<void>('/v1/me', {
+    method: 'DELETE',
+    body: JSON.stringify({ password }),
+  })
+}
+
 export function changePassword(currentPassword: string, newPassword: string) {
   return authFetch<{ message: string }>('/v1/auth/change-password', {
     method: 'PUT',

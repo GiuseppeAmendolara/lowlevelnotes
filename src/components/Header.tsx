@@ -49,14 +49,12 @@ export default function Header() {
           </div>
 
           {!loading && (
-            <Link
-              href={user ? '/account' : '/login'}
-              className={`ml-5 flex shrink-0 items-center gap-2 border-l border-white/10 pl-5 text-xs font-medium uppercase tracking-[0.12em] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF8A3D] ${
-                user ? 'text-[#A1A1AA] hover:text-white' : 'text-[#FF8A3D] hover:text-[#FFA15C]'
-              }`}
-            >
+            <div className="ml-5 shrink-0 border-l border-white/10 pl-5">
               {user ? (
-                <>
+                <Link
+                  href="/account"
+                  className="flex items-center gap-2 border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium uppercase tracking-[0.12em] text-[#A1A1AA] transition-colors hover:border-white/25 hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF8A3D]"
+                >
                   {user.avatarUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element -- cross-subdomain, session-cookie-gated asset; next/image can't proxy this
                     <img src={getAssetSrc(user.avatarUrl)} alt="" className="h-5 w-5 shrink-0 rounded-full object-cover" />
@@ -66,11 +64,16 @@ export default function Header() {
                     </span>
                   )}
                   {user.displayName} ↗
-                </>
+                </Link>
               ) : (
-                'Login'
+                <Link
+                  href="/login"
+                  className="text-xs font-medium uppercase tracking-[0.12em] text-[#FF8A3D] transition-colors hover:text-[#FFA15C] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF8A3D]"
+                >
+                  Login
+                </Link>
               )}
-            </Link>
+            </div>
           )}
         </div>
       </nav>
