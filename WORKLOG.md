@@ -3356,3 +3356,146 @@ production** — same discipline as the course builder itself:
 
 `tsc --noEmit`, `npm run lint`, `npm run build` all clean. Nothing from
 this pass is committed either, same as everything else pending review.
+
+## Full platform security review (2026-08-29)
+
+User asked for a review "like a cybersec engineer/specialist would" —
+done as an actual code audit (SQL injection surface, XSS, CSRF, auth/
+session/password handling, authorization/IDOR, rate limiting, security
+headers, file upload validation, CORS, dependency vulnerabilities,
+secrets hygiene), not a generic checklist pass, with every claim traced
+to real code rather than assumed from a comment.
+
+**Verified clean, with specifics** (worth recording so a future pass
+doesn't re-litigate these):
+- **SQL injection**: every `${...}` interpolation in a `.prepare()` call
+  audited individually (`grep`'d for the pattern platform-wide) — all
+  are either fixed internal SQL text (`visibilityClause()`,
+  `authorsJsonSelect()`, `courseStatsSelect()`) or a value looked up from
+  a hardcoded allowlist object (`STAFF_COURSE_STATUS_CLAUSES[status]`),
+  never raw user input. Every actual value goes through `.bind()`.
+- **XSS**: `renderLessonMarkdown()` (`src/lib/markdown.ts`) has raw HTML
+  disabled by default (no `rehype-raw` in the pipeline, so
+  `remark-rehype`'s `allowDangerousHtml` stays at its `false` default) —
+  a literal `<script>` typed into lesson markdown renders as escaped
+  text, not a live element. Independently re-derived (not just trusted
+  from the existing comment) that `rehypeRewriteImages`'s relative-path
+  rewrite actually neutralizes a `javascript:` `src`, by tracing what
+  `new URL("javascript:...", base).pathname` actually returns.
+- **CSRF**: comprehensively closed by the session cookie's
+  `SameSite=Strict` alone — a cross-site request never carries it,
+  regardless of HTTP method, so there was no need to hunt for GET-based
+  mutations separately.
+- **Password/token handling**: PBKDF2-SHA256 at workerd's 100k-iteration
+  cap, per-user salt, constant-time comparison, and a decoy-salt
+  derivation that runs (at the same cost as a real check) for both "no
+  such account" and "malformed hash" — timing can't distinguish either
+  case from a real wrong-password attempt. Every token type gets 256
+  bits of CSPRNG entropy and is hashed before storage. Password reset
+  uses an atomic guarded claim (`UPDATE ... WHERE used_at IS NULL`,
+  checking `changes === 1`) — a real fix for the check-then-update reuse
+  race, not just a check-then-write. Registration and forgot-password
+  both already return identical responses regardless of whether the
+  account exists.
+- **File-serving**: `getLibraryAssetV1` and the resource-request file
+  endpoint both recompute `Content-Type` from the R2 key's extension at
+  *read* time (`assetMimeType(key)`), never trusting whatever
+  `httpMetadata.contentType` was stored at upload time — quietly
+  neutralizes upload-time content-type spoofing regardless of what a
+  client claims `file.type` is.
+- **CORS**: `corsHeaders()` is a real allowlist (never reflects an
+  arbitrary `Origin`), and `Access-Control-Allow-Credentials` is only
+  ever set alongside a genuine allowlist match, never paired with a
+  wildcard.
+- `npm audit`: 0 vulnerabilities, prod and dev dependencies. No
+  hardcoded secrets found in any tracked file (checked common
+  key/secret/PEM patterns across the whole repo, not just recently
+  touched files).
+
+**Findings, fixed same session:**
+1. **Email/role enumeration** — `addCourseAuthorV1` returned a
+   distinguishable 404 ("No user with that email") vs. a 400 ("Only
+   instructors or administrators can be added as co-authors"), letting
+   any instructor-tier account learn whether an arbitrary email was
+   registered, and if so, whether it held an elevated role. The one
+   place in the codebase that didn't follow the anti-enumeration
+   discipline used everywhere else. Fixed by collapsing both outcomes
+   into one identical message/status — verified live that a nonexistent
+   email and a real student's email now produce byte-identical
+   responses. `addGroupMemberV1` had the milder version (existence only,
+   no role tier to leak, since any role can be a group member) — same
+   generic-message treatment applied.
+2. **No security headers anywhere in the stack** — neither
+   `next.config.ts` nor the Worker set `X-Content-Type-Options`,
+   `X-Frame-Options`, any `Content-Security-Policy`, or
+   `Referrer-Policy`. Added a `SECURITY_HEADERS` constant
+   (`worker/index.js`) merged into every response path (`json()`,
+   `svgResponse()`, both raw asset-streaming responses) and an
+   equivalent `headers()` block in `next.config.ts`. Deliberately just
+   `frame-ancestors 'none'` for CSP, not a full resource-loading policy
+   — script/style/img/connect-src allowlisting needs real browser
+   testing (Turnstile's iframe, external fonts) this environment can't
+   do, so a full CSP stays a separate, later effort rather than risking
+   silently breaking the live site.
+3. **SVG upload XSS-if-navigated-directly** — an SVG embedded via
+   `<img>` can't execute scripts in a modern browser, but a direct
+   navigation to the raw (session-gated but link-shareable) asset URL
+   is a top-level document load, where it can. `LESSON_IMAGE_EXTENSIONS`
+   still allowed it; avatars/course icons already didn't. Removed `svg`
+   from the lesson-image whitelist. **Caught a real, pre-existing
+   inconsistency while fixing this**: `uploadCourseIconV1` was actually
+   validating against `LESSON_IMAGE_EXTENSIONS` (svg included) instead
+   of the svg-free `AVATAR_EXTENSIONS` set — meaning the original
+   report's claim that "course icons already excluded svg" was simply
+   wrong. Switched it to `AVATAR_EXTENSIONS`, the semantically-correct
+   set for a small profile-picture-style asset anyway.
+4. **Six (really eight, once fully counted) endpoints with no dedicated
+   rate limit** — `createGroupV1`, `updateGroupV1`, `deleteGroupV1`,
+   `addGroupMemberV1`, `removeGroupMemberV1`, `addCourseAuthorV1`,
+   `removeCourseAuthorV1`, `setCourseGroupsV1` all relied solely on the
+   generic 120-req/60s-per-IP limiter, unlike every other content-
+   mutating endpoint in this codebase. Added `checkCourseWriteRateLimit`
+   + `course_content_write` logging to all eight, reusing the existing
+   event type rather than adding a new one (same "building/managing a
+   course is legitimately many small saves" reasoning `checkCourseWriteRateLimit`
+   already documents).
+   - **Caught a real bug in this fix while verifying it, not before
+     shipping**: for `addCourseAuthorV1`/`addGroupMemberV1` specifically,
+     the first version placed the rate-limit *check* before the email
+     lookup (correct) but only called `logAuthEvent` after a
+     *successful* add (the existing pattern every other
+     `course_content_write` caller uses, e.g. `createModuleV1`) — which
+     meant a failed probe against a nonexistent/wrong-role email never
+     incremented the counter at all, so the exact attack finding #1
+     described remained completely unthrottled. Confirmed by scripting
+     65 probes against a live throwaway account and watching zero of
+     them return 429. Fixed by logging the attempt unconditionally,
+     right after the rate-limit check passes and before the lookup —
+     same pattern `register_attempt` already uses for the same reason.
+     Re-verified: 62 repeated probes now trip a 429 exactly at the 60th
+     combined event (2 pre-existing + 58 new).
+5. **Informational, not fixed**: `corsHeaders()` and `verifyTurnstile()`
+   both permanently allow `localhost`/`127.0.0.1` in production. Not
+   remotely exploitable (Origin/hostname can't be forged cross-machine),
+   just a standing note that these aren't dev-only exceptions.
+
+**Verified end-to-end** with throwaway QA accounts (never a real
+session, all deleted after): the enumeration fix (identical responses
+for a nonexistent email vs. a real student's email), the rate-limit fix
+(scripted probing actually trips 429, re-tested after finding the
+logging-order bug above), security headers present on live `/health`,
+`/stats.svg`, and asset responses (`curl -I` initially looked like they
+were missing — false alarm, `curl -I` sends `HEAD` and the router only
+matches literal `GET`, so it was hitting the generic 404 fallback, not
+the real route).
+
+**Known limitation**: the Next.js `headers()` addition is verified
+correct via a clean local build only — Vercel deploys from a push, which
+is the user's action, not something this session does. Confirmed via
+`git log`/`git status` that the live site is running whatever the last
+actual commit contained, not this session's uncommitted work.
+
+`node --check`/deploy clean on the Worker side; `tsc`/eslint/`next build`
+clean on the frontend side. Only `next.config.ts` is a tracked, committable
+change — everything else lives in `worker/index.js`, gitignored, already
+deployed.

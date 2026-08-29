@@ -788,6 +788,48 @@ These are planning notes, not authorization to begin future phases early.
   `getSessionUser()` itself) now carry `avatarUrl`, so `Header.tsx` can
   show a small picture next to a logged-in user's own name in the nav —
   the one place a user's name appears fleet-wide, not just on `/account`.
+- **Full platform security review (2026-08-29)** — see WORKLOG's "Full
+  platform security review" entry for the complete findings list,
+  including everything checked and verified clean (SQL injection
+  surface, XSS in the markdown pipeline, CSRF, password/token handling,
+  file-serving content-type spoofing, CORS, `npm audit`). Four real
+  findings were fixed the same session:
+  - A `SECURITY_HEADERS` constant in `worker/index.js`
+    (`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
+    `Content-Security-Policy: frame-ancestors 'none'`,
+    `Referrer-Policy: strict-origin-when-cross-origin`) merged into
+    every response path (`json()`, `svgResponse()`, both asset-streaming
+    responses), plus an equivalent `headers()` block in `next.config.ts`.
+    Deliberately just `frame-ancestors` for CSP — a real
+    resource-loading policy (script/style/img/connect-src) needs actual
+    browser testing before shipping (Turnstile's iframe, external
+    fonts), which isn't available in this environment; that stays a
+    separate, later effort. **Any new response-construction path added
+    to the Worker should spread `SECURITY_HEADERS` in too**, the same
+    way `corsHeaders()` already gets spread everywhere.
+  - `addCourseAuthorV1`/`addGroupMemberV1` no longer distinguish "no
+    such user" from "wrong role" in their error response — both are
+    exactly the discipline `registerV1`/`forgotPasswordV1` already
+    followed; these two were the one place that hadn't.
+  - Neither avatars, course icons, nor lesson images accept `.svg`
+    anymore (`AVATAR_EXTENSIONS`/`LESSON_IMAGE_EXTENSIONS`, both in
+    `worker/index.js`) — an `<img>`-embedded SVG can't run script in a
+    modern browser, but a direct navigation to the raw asset URL is a
+    top-level document load, where it can.
+  - Every mutation under `/v1/instructor/groups/*` and the course
+    author/group-access endpoints now shares the existing
+    `course_content_write` rate limit (`checkCourseWriteRateLimit`),
+    same as the rest of the instructor-authoring surface. **For
+    `addCourseAuthorV1`/`addGroupMemberV1` specifically, the rate-limit
+    check runs and gets logged *before* the email lookup, unconditionally
+    — not just before the eventual write.** Any endpoint where the
+    lookup/validation step itself is the sensitive operation (not just
+    the write that might follow it) needs this same ordering, or a
+    limit that only counts successes leaves every failed probe — the
+    actual thing being protected against — completely unthrottled. This
+    was caught as a live bug in the fix itself, not designed in
+    correctly the first time; see the WORKLOG entry for how it was
+    found and re-verified.
 - **Phase 3 (authentication), concrete decisions** — see WORKLOG's "Phase
   3" entry for the full security reasoning:
   - Password hashing: PBKDF2-HMAC-SHA256, 100,000 iterations, via
