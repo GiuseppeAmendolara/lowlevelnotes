@@ -81,13 +81,20 @@ async function apiFetch<T>(endpoint: string): Promise<T> {
     },
   })
   if (!res.ok) {
-    // TEMPORARY diagnostic while tracking down a live 403 that persisted
-    // through a Vercel env var re-save/redeploy — never logs the actual
-    // key, just enough (length + first/last 8 of 64 hex chars) to compare
-    // against the known-good value and catch whitespace/truncation/wrong-
-    // value corruption that a visual compare in the Vercel UI would miss.
-    // Remove once the real value is confirmed to round-trip correctly.
-    throw new Error(`API ${endpoint} failed: ${res.status} (key len=${key.length}, prefix=${key.slice(0, 8)}, suffix=${key.slice(-8)})`)
+    // TEMPORARY diagnostic while tracking down a live 403 that survived a
+    // confirmed-correct key and two WAF rule fixes — the key length/
+    // prefix/suffix already ruled out a corrupted secret, so this now
+    // also captures the actual response body's start (Cloudflare's block
+    // pages are HTML; the Worker's own responses are always JSON) and the
+    // cf-mitigated header (set when a Cloudflare challenge/block fired),
+    // to tell definitively which layer produced this rather than
+    // continuing to guess from the status code alone.
+    const bodySnippet = (await res.text().catch(() => '')).slice(0, 150).replace(/\s+/g, ' ')
+    throw new Error(
+      `API ${endpoint} failed: ${res.status} (key len=${key.length}, prefix=${key.slice(0, 8)}, suffix=${key.slice(-8)}) ` +
+      `cf-mitigated=${res.headers.get('cf-mitigated') ?? 'none'} content-type=${res.headers.get('content-type') ?? 'none'} ` +
+      `body="${bodySnippet}"`
+    )
   }
   return res.json()
 }
