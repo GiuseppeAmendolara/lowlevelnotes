@@ -52,7 +52,7 @@ export default function Header() {
               {user ? (
                 <Link
                   href="/account"
-                  className="flex items-center gap-2 border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium uppercase tracking-[0.12em] text-[#90939A] transition-colors hover:border-white/25 hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF7A33]"
+                  className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.12em] text-[#90939A] transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF7A33]"
                 >
                   {user.avatarUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element -- cross-subdomain, session-cookie-gated asset; next/image can't proxy this
@@ -62,7 +62,7 @@ export default function Header() {
                       {user.displayName.slice(0, 1).toUpperCase()}
                     </span>
                   )}
-                  {user.displayName} ↗
+                  {user.displayName}
                 </Link>
               ) : (
                 <Link

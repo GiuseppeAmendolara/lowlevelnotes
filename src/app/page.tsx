@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import CodeBlock from '@/components/CodeBlock'
+import HeroBackground from '@/components/HeroBackground'
 import HomeExplore from '@/components/HomeExplore'
 import ScrollReveal from '@/components/ScrollReveal'
 import { DiscordIcon, GithubIcon } from '@/components/icons'
@@ -21,32 +22,6 @@ const CATEGORY_BLURBS: Record<string, string> = {
   'Systems Fundamentals': 'How the machine you’re actually running on works, from the ground up.',
   'Archives': 'Blogs and websites that collect a wide range of computer-science topics in one place.',
 }
-
-// A real, self-consistent x86 disassembly — the standard -O0 shape a
-// compiler emits for a small counting loop (prologue, a stack-local
-// counter, a jmp-to-condition/jle-back-to-top loop, epilogue). Every byte
-// length and every relative jump offset here actually adds up: eb 09 at
-// 401037 really does land on 401042, and 7e f1's signed -15 really does
-// land back on 401039 — this isn't just plausible-looking hex, it
-// decodes. Decorative only (see the aria-hidden wrapper); repeated twice
-// to fill the column height, hence the address reset partway down.
-const DISASSEMBLY_DUMP = Array(2).fill(`sub_401020:
-00401020  55                     push    rbp
-00401021  48 89 e5               mov     rbp, rsp
-00401024  48 83 ec 20            sub     rsp, 20h
-00401028  48 89 7d f8            mov     [rbp+8], rdi
-0040102c  48 89 75 f0            mov     [rbp-10h], rsi
-00401030  c7 45 fc 00 00 00 00   mov     dword ptr [rbp-4], 0
-00401037  eb 09                  jmp     short loc_401042
-00401039  8b 45 fc               mov     eax, [rbp-4]
-0040103c  83 c0 01               add     eax, 1
-0040103f  89 45 fc               mov     [rbp-4], eax
-00401042  83 7d fc 09            cmp     dword ptr [rbp-4], 9
-00401046  7e f1                  jle     short loc_401039
-00401048  b8 00 00 00 00         mov     eax, 0
-0040104d  48 83 c4 20            add     rsp, 20h
-00401051  5d                     pop     rbp
-00401052  c3                     retn`).join('\n')
 
 const csharpSnippet = `
 // Import a namespace to use its classes and functions.
@@ -93,20 +68,7 @@ export default async function Home() {
   return (
     <main className="overflow-hidden bg-[#0B0B0D]">
       <section className="relative overflow-hidden border-b border-white/10">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 select-none overflow-hidden [mask-image:linear-gradient(to_bottom,black,transparent)]"
-        >
-          <div className="absolute inset-y-0 right-0 hidden w-[68%] items-start justify-end [mask-image:linear-gradient(to_left,black_50%,transparent)] sm:flex">
-            <pre className="whitespace-pre pr-4 font-mono text-base leading-[1.7] tracking-wide text-white/[0.025]">
-{DISASSEMBLY_DUMP}
-            </pre>
-          </div>
-        </div>
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-y-0 right-0 hidden w-[68%] bg-[radial-gradient(circle_at_85%_15%,rgba(255,138,61,0.16),transparent_16rem)] sm:block"
-        />
+        <HeroBackground />
 
         <div className="relative mx-auto max-w-6xl px-6 pb-20 pt-20 sm:pb-28 sm:pt-28">
           <div className="mb-10 flex items-center gap-3 text-xs font-medium uppercase tracking-[0.18em] text-[#90939A]">
