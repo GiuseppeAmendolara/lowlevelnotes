@@ -1,15 +1,18 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useSession } from '@/components/SessionProvider'
+import { useToast } from '@/components/ToastProvider'
+import { Skeleton, SkeletonStatTile } from '@/components/Skeleton'
 import {
   getMyProgress,
   getMyStatistics,
   unenrollCourse,
+  unwrapResult,
   type MyEnrollment,
-  type MyStatistics,
 } from '@/lib/authClient'
 import Eyebrow from '@/components/Eyebrow'
 
@@ -17,9 +20,19 @@ export default function AccountCoursesPage() {
   const router = useRouter()
   const { user, loading: sessionLoading } = useSession()
 
-  const [enrollments, setEnrollments] = useState<MyEnrollment[] | null>(null)
-  const [stats, setStats] = useState<MyStatistics | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const progressQuery = useQuery({
+    queryKey: ['progress'],
+    queryFn: () => unwrapResult(getMyProgress()),
+    enabled: !!user,
+    staleTime: 0,
+  })
+  const { data: stats } = useQuery({
+    queryKey: ['myStatistics'],
+    queryFn: () => unwrapResult(getMyStatistics()),
+    enabled: !!user,
+  })
+  const enrollments = progressQuery.data?.enrollments ?? null
+  const error = progressQuery.error?.message ?? null
 
   useEffect(() => {
     if (!sessionLoading && !user) {
@@ -27,25 +40,13 @@ export default function AccountCoursesPage() {
     }
   }, [sessionLoading, user, router])
 
-  useEffect(() => {
-    if (!user) return
-
-    Promise.all([getMyProgress(), getMyStatistics()]).then(([progressResult, statsResult]) => {
-      if (!progressResult.ok) {
-        setError(progressResult.error)
-        return
-      }
-      setEnrollments(progressResult.data.enrollments)
-      if (statsResult.ok) setStats(statsResult.data)
-    })
-  }, [user])
-
-  function handleUnenrolled(courseSlug: string) {
-    setEnrollments((prev) => (prev ? prev.filter((e) => e.courseSlug !== courseSlug) : prev))
-  }
-
   if (sessionLoading || !user) {
-    return <p className="pt-1 text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
+    return (
+      <div>
+        <Skeleton className="h-3 w-16" />
+        <Skeleton className="mt-2 h-9 w-56" />
+      </div>
+    )
   }
 
   return (
@@ -55,20 +56,30 @@ export default function AccountCoursesPage() {
 
       {error && <p className="mt-4 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
 
-      {stats && (
-        <div className="mt-8 grid grid-cols-2 gap-px border border-white/10 bg-white/10 sm:grid-cols-5">
-          <StatTile label="Courses enrolled" value={stats.coursesEnrolled} />
-          <StatTile label="Courses completed" value={stats.coursesCompleted} />
-          <StatTile label="Lessons completed" value={stats.lessonsCompleted} />
-          <StatTile label="Quiz attempts" value={stats.quizAttempts} />
-          <StatTile
-            label="Avg. quiz score"
-            value={stats.averageQuizScorePercent === null ? '—' : `${stats.averageQuizScorePercent}%`}
-          />
-        </div>
-      )}
+      <div className="mt-8 grid grid-cols-2 gap-px border border-white/10 bg-white/10 sm:grid-cols-5">
+        {stats ? (
+          <>
+            <StatTile label="Courses enrolled" value={stats.coursesEnrolled} />
+            <StatTile label="Courses completed" value={stats.coursesCompleted} />
+            <StatTile label="Lessons completed" value={stats.lessonsCompleted} />
+            <StatTile label="Quiz attempts" value={stats.quizAttempts} />
+            <StatTile
+              label="Avg. quiz score"
+              value={stats.averageQuizScorePercent === null ? '—' : `${stats.averageQuizScorePercent}%`}
+            />
+          </>
+        ) : (
+          Array.from({ length: 5 }).map((_, i) => <SkeletonStatTile key={i} />)
+        )}
+      </div>
 
       <div className="mt-10 flex flex-col gap-3">
+        {!enrollments && !error && (
+          <>
+            <Skeleton className="h-24 border border-white/10" />
+            <Skeleton className="h-24 border border-white/10" />
+          </>
+        )}
         {enrollments && enrollments.length === 0 && (
           <p className="text-sm text-[#90939A]">
             You&apos;re not enrolled in any courses yet.{' '}
@@ -79,7 +90,7 @@ export default function AccountCoursesPage() {
           </p>
         )}
         {enrollments?.map((enrollment) => (
-          <EnrollmentCard key={enrollment.courseSlug} enrollment={enrollment} onUnenrolled={handleUnenrolled} />
+          <EnrollmentCard key={enrollment.courseSlug} enrollment={enrollment} />
         ))}
       </div>
     </div>
@@ -95,32 +106,23 @@ function StatTile({ label, value }: { label: string; value: number | string }) {
   )
 }
 
-function EnrollmentCard({
-  enrollment,
-  onUnenrolled,
-}: {
-  enrollment: MyEnrollment
-  onUnenrolled: (courseSlug: string) => void
-}) {
-  const [unenrolling, setUnenrolling] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+function EnrollmentCard({ enrollment }: { enrollment: MyEnrollment }) {
+  const queryClient = useQueryClient()
+  const toast = useToast()
+  const unenrollMutation = useMutation({
+    mutationFn: () => unwrapResult(unenrollCourse(enrollment.courseSlug)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['progress'] })
+      toast.success(`Unenrolled from ${enrollment.courseTitle}.`)
+    },
+    onError: (error) => toast.error(error.message),
+  })
 
-  async function handleUnenroll() {
+  function handleUnenroll() {
     if (!window.confirm('Unenroll from this course? Your progress is kept — re-enrolling picks up where you left off.')) {
       return
     }
-
-    setUnenrolling(true)
-    setError(null)
-    const result = await unenrollCourse(enrollment.courseSlug)
-    setUnenrolling(false)
-
-    if (!result.ok) {
-      setError(result.error)
-      return
-    }
-
-    onUnenrolled(enrollment.courseSlug)
+    unenrollMutation.mutate()
   }
 
   return (
@@ -145,14 +147,13 @@ function EnrollmentCard({
           <button
             type="button"
             onClick={handleUnenroll}
-            disabled={unenrolling}
+            disabled={unenrollMutation.isPending}
             className="text-sm text-white/50 underline underline-offset-2 transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {unenrolling ? 'Unenrolling…' : 'Unenroll'}
+            {unenrollMutation.isPending ? 'Unenrolling…' : 'Unenroll'}
           </button>
         </div>
       </div>
-      {error && <p className="mt-2 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
     </div>
   )
 }

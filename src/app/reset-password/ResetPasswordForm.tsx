@@ -2,34 +2,22 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useMutation } from '@tanstack/react-query'
 import AuthTextField from '@/components/auth/AuthTextField'
 import AuthSubmitButton from '@/components/auth/AuthSubmitButton'
 import AuthMessage from '@/components/auth/AuthMessage'
-import { resetPassword } from '@/lib/authClient'
+import { resetPassword, unwrapResult } from '@/lib/authClient'
 
 export default function ResetPasswordForm({ token }: { token: string }) {
   const [newPassword, setNewPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [submitting, setSubmitting] = useState(false)
-  const [done, setDone] = useState(false)
+  const resetMutation = useMutation({ mutationFn: () => unwrapResult(resetPassword(token, newPassword)) })
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setError(null)
-    setSubmitting(true)
-
-    const result = await resetPassword(token, newPassword)
-    setSubmitting(false)
-
-    if (!result.ok) {
-      setError(result.error)
-      return
-    }
-
-    setDone(true)
+    resetMutation.mutate()
   }
 
-  if (done) {
+  if (resetMutation.isSuccess) {
     return (
       <>
         <AuthMessage message="Password has been reset." tone="success" />
@@ -46,9 +34,9 @@ export default function ResetPasswordForm({ token }: { token: string }) {
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <AuthTextField label="New password" type="password" value={newPassword} onChange={setNewPassword} autoComplete="new-password" required />
 
-      {error && <AuthMessage message={error} />}
+      {resetMutation.error && <AuthMessage message={resetMutation.error.message} />}
 
-      <AuthSubmitButton loading={submitting}>Reset password</AuthSubmitButton>
+      <AuthSubmitButton loading={resetMutation.isPending}>Reset password</AuthSubmitButton>
     </form>
   )
 }

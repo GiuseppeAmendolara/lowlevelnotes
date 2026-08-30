@@ -1,16 +1,24 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { Skeleton } from '@/components/Skeleton'
+import { useQuery } from '@tanstack/react-query'
 import { useSession } from '@/components/SessionProvider'
-import { getStaffPendingCounts, type StaffPendingCounts } from '@/lib/authClient'
+import { getStaffPendingCounts, unwrapResult } from '@/lib/authClient'
 import Eyebrow from '@/components/Eyebrow'
 
 export default function ApprovalPage() {
   const router = useRouter()
   const { user, loading: sessionLoading } = useSession()
-  const [counts, setCounts] = useState<StaffPendingCounts | null>(null)
+  // Same key as AccountShell's sidebar badge — shares that cache instead
+  // of firing a second, redundant request for the same counts.
+  const { data: counts } = useQuery({
+    queryKey: ['staffPendingCounts'],
+    queryFn: () => unwrapResult(getStaffPendingCounts()),
+    enabled: user?.role === 'staff',
+  })
 
   useEffect(() => {
     if (sessionLoading) return
@@ -23,16 +31,13 @@ export default function ApprovalPage() {
     }
   }, [sessionLoading, user, router])
 
-  useEffect(() => {
-    if (user?.role !== 'staff') return
-
-    getStaffPendingCounts().then((result) => {
-      if (result.ok) setCounts(result.data)
-    })
-  }, [user])
-
   if (sessionLoading || !user || user.role !== 'staff') {
-    return <p className="pt-1 text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
+    return (
+      <div>
+        <Skeleton className="h-3 w-16" />
+        <Skeleton className="mt-2 h-9 w-56" />
+      </div>
+    )
   }
 
   return (

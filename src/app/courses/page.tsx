@@ -2,10 +2,12 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useQuery } from '@tanstack/react-query'
 import { useSession } from '@/components/SessionProvider'
-import { getCourses, type Course } from '@/lib/authClient'
+import { getCourses, unwrapResult } from '@/lib/authClient'
 import CourseCatalogCard from '@/components/CourseCatalogCard'
 import Eyebrow from '@/components/Eyebrow'
+import { Skeleton } from '@/components/Skeleton'
 
 // Client-gated and client-fetched, matching /library — the Worker now
 // requires a session for the course catalog too, and the Next.js server
@@ -16,8 +18,15 @@ export default function CoursesPage() {
   const router = useRouter()
   const { user, loading: sessionLoading } = useSession()
 
-  const [courses, setCourses] = useState<Course[] | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  // Cached under the 'courses' key — navigating away and back (e.g. via
+  // /account) reuses this instead of refetching, then quietly revalidates
+  // once it's past QueryProvider's 60s staleTime.
+  const { data: courses, error: coursesError } = useQuery({
+    queryKey: ['courses'],
+    queryFn: () => unwrapResult(getCourses()).then((d) => d.data),
+    enabled: !!user,
+  })
+  const error = coursesError instanceof Error ? coursesError.message : null
   const [category, setCategory] = useState<string | null>(null)
 
   const categories = useMemo(() => {
@@ -41,23 +50,13 @@ export default function CoursesPage() {
     }
   }, [sessionLoading, user, router])
 
-  useEffect(() => {
-    if (!user) return
-
-    getCourses().then((result) => {
-      if (result.ok) {
-        setCourses(result.data.data)
-      } else {
-        setError(result.error)
-      }
-    })
-  }, [user])
-
   if (sessionLoading || !user) {
     return (
       <main className="min-h-screen bg-[#0B0B0D]">
-        <section className="mx-auto max-w-5xl px-6 pb-10 pt-20 sm:pt-28">
-          <p className="text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
+        <section className="mx-auto max-w-6xl px-6 pb-10 pt-20 sm:pt-28">
+          <Skeleton className="h-3 w-32" />
+          <Skeleton className="mt-4 h-10 w-56" />
+          <Skeleton className="mt-4 h-4 w-72 max-w-full" />
         </section>
       </main>
     )
@@ -65,7 +64,7 @@ export default function CoursesPage() {
 
   return (
     <main className="min-h-screen bg-[#0B0B0D]">
-      <section className="mx-auto max-w-5xl px-6 pb-10 pt-20 sm:pt-28">
+      <section className="mx-auto max-w-6xl px-6 pb-10 pt-20 sm:pt-28">
         <Eyebrow>Learning system</Eyebrow>
         <h1 className="mt-4 text-4xl font-bold tracking-[-0.05em] text-white sm:text-5xl">Courses</h1>
         <p className="mt-4 max-w-lg leading-7 text-[#90939A]">
@@ -73,7 +72,7 @@ export default function CoursesPage() {
         </p>
       </section>
 
-      <section className="mx-auto max-w-5xl px-6 pb-24">
+      <section className="mx-auto max-w-6xl px-6 pb-24">
         {error && <p className="text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
 
         {categories.length > 1 && (
@@ -102,11 +101,24 @@ export default function CoursesPage() {
           </div>
         )}
 
+        {courses === undefined && !error && (
+          <div className="grid grid-cols-1 gap-px border border-white/10 bg-transparent sm:grid-cols-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-40 bg-[#17181B]" />
+            ))}
+          </div>
+        )}
         {courses && courses.length === 0 && (
           <p className="text-sm text-[#90939A]">No courses published yet.</p>
         )}
         {filtered && filtered.length > 0 && (
-          <div className="grid grid-cols-1 gap-px border border-white/10 bg-white/10 sm:grid-cols-2">
+          /* Transparent, not the usual bg-white/10 hairline fill — a
+             filtered result set is often just one course, and a lone
+             card in a 2-column grid left the untouched second cell
+             showing that fill as a solid gray block next to it. The 1px
+             gap still reads fine as a divider against the page's own
+             background when there are two or more cards. */
+          <div className="grid grid-cols-1 gap-px border border-white/10 bg-transparent sm:grid-cols-2">
             {filtered.map((course, i) => (
               <CourseCatalogCard key={course.id} course={course} index={i} />
             ))}

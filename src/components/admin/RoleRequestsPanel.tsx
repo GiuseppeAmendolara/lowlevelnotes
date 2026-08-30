@@ -1,47 +1,46 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   getStaffRoleRequests,
   reviewRoleRequest,
-  type StaffRoleRequest,
+  unwrapResult,
   type RequestStatus,
 } from '@/lib/authClient'
 import { SectionHeading, StatusFilter, buttonClass } from '@/components/admin/shared'
+import { useToast } from '@/components/ToastProvider'
+import { SkeletonRow } from '@/components/Skeleton'
 
 const STATUS_OPTIONS: RequestStatus[] = ['pending', 'approved', 'rejected']
 
 export default function RoleRequestsPanel() {
+  const queryClient = useQueryClient()
+  const toast = useToast()
   const [status, setStatus] = useState<RequestStatus>('pending')
-  const [requests, setRequests] = useState<StaffRoleRequest[] | null>(null)
-  // See AdminPanel's UsersSection `refreshing` guard — same reflow hazard,
-  // Approve/Reject remove a row from the pending list and shift the rest.
-  const [refreshing, setRefreshing] = useState(false)
 
-  function load() {
-    return getStaffRoleRequests(status).then((result) => {
-      if (result.ok) setRequests(result.data)
-    })
-  }
+  const { data: requests } = useQuery({
+    queryKey: ['staffRoleRequests', status],
+    queryFn: () => unwrapResult(getStaffRoleRequests(status)),
+  })
 
-  useEffect(() => {
-    load()
-  }, [status])
+  // Approving/rejecting also moves the sidebar/approvals-overview pending
+  // count, so both keys go stale together.
+  const reviewMutation = useMutation({
+    mutationFn: ({ id, action, reason }: { id: number; action: 'approve' | 'reject'; reason?: string }) =>
+      unwrapResult(reviewRoleRequest(id, action, reason)),
+    onSuccess: (_, { action }) => {
+      queryClient.invalidateQueries({ queryKey: ['staffRoleRequests'] })
+      queryClient.invalidateQueries({ queryKey: ['staffPendingCounts'] })
+      toast.success(action === 'approve' ? 'Request approved.' : 'Request rejected.')
+    },
+    onError: (error) => toast.error(error.message),
+  })
 
-  async function handleApprove(id: number) {
-    setRefreshing(true)
-    await reviewRoleRequest(id, 'approve')
-    await load()
-    setRefreshing(false)
-  }
-
-  async function handleReject(id: number) {
+  function handleReject(id: number) {
     const reason = window.prompt('Rejection reason (shown to the requester):')
     if (reason === null) return
-    setRefreshing(true)
-    await reviewRoleRequest(id, 'reject', reason)
-    await load()
-    setRefreshing(false)
+    reviewMutation.mutate({ id, action: 'reject', reason })
   }
 
   return (
@@ -51,7 +50,7 @@ export default function RoleRequestsPanel() {
       <StatusFilter status={status} options={STATUS_OPTIONS} onChange={setStatus} />
 
       <div className="mt-4 border-l border-t border-white/10">
-        {requests === null && <p className="border-b border-r border-white/10 bg-[#17181B] p-4 text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>}
+        {requests === undefined && <SkeletonRow count={3} />}
         {requests?.length === 0 && <p className="border-b border-r border-white/10 bg-[#17181B] p-4 text-sm text-[#90939A]">Nothing here.</p>}
         {requests?.map((r) => (
           <div key={r.id} className="border-b border-r border-white/10 bg-[#17181B] p-4">
@@ -63,8 +62,8 @@ export default function RoleRequestsPanel() {
               </div>
               {r.status === 'pending' && (
                 <div className="flex gap-2">
-                  <button type="button" disabled={refreshing} onClick={() => handleApprove(r.id)} className={buttonClass}>Approve</button>
-                  <button type="button" disabled={refreshing} onClick={() => handleReject(r.id)} className={buttonClass}>Reject</button>
+                  <button type="button" disabled={reviewMutation.isPending} onClick={() => reviewMutation.mutate({ id: r.id, action: 'approve' })} className={buttonClass}>Approve</button>
+                  <button type="button" disabled={reviewMutation.isPending} onClick={() => handleReject(r.id)} className={buttonClass}>Reject</button>
                 </div>
               )}
             </div>

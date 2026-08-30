@@ -1,22 +1,25 @@
 'use client'
 
-import { use, useEffect, useState } from 'react'
+import { use, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useSession } from '@/components/SessionProvider'
+import { useToast } from '@/components/ToastProvider'
 import ActionButton from '@/components/ActionButton'
 import CourseTreeRail from '@/components/CourseTreeRail'
 import { CourseIcon } from '@/components/CourseIcon'
+import { Skeleton } from '@/components/Skeleton'
 import {
   getCourse,
   getCourseLessons,
   getMyProgress,
   enrollCourse,
   unenrollCourse,
+  unwrapResult,
+  ApiError,
   type Course,
   type CourseDifficulty,
-  type Lesson,
-  type MyEnrollment,
 } from '@/lib/authClient'
 
 const DIFFICULTY_LABEL: Record<CourseDifficulty, string> = {
@@ -36,16 +39,49 @@ export default function CoursePage({ params }: { params: Promise<{ course: strin
   const { course: slug } = use(params)
   const router = useRouter()
   const { user, loading: sessionLoading } = useSession()
+  const queryClient = useQueryClient()
+  const toast = useToast()
 
-  const [course, setCourse] = useState<Course | null>(null)
-  const [lessons, setLessons] = useState<Lesson[] | null>(null)
-  const [enrollment, setEnrollment] = useState<MyEnrollment | null>(null)
-  const [completedLessonIds, setCompletedLessonIds] = useState<Set<number>>(new Set())
-  const [error, setError] = useState<{ message: string; notFound: boolean } | null>(null)
-  const [enrolling, setEnrolling] = useState(false)
-  const [enrollError, setEnrollError] = useState<string | null>(null)
-  const [unenrolling, setUnenrolling] = useState(false)
-  const [unenrollError, setUnenrollError] = useState<string | null>(null)
+  const courseQuery = useQuery({
+    queryKey: ['course', slug],
+    queryFn: () => unwrapResult(getCourse(slug)),
+    enabled: !!user,
+  })
+  const lessonsQuery = useQuery({
+    queryKey: ['course', slug, 'lessons'],
+    queryFn: () => unwrapResult(getCourseLessons(slug)),
+    enabled: !!user,
+  })
+  // A global key, not scoped by slug — enrolling/completing a lesson can
+  // happen from the lesson page too, which invalidates this same key so
+  // this page never shows progress that's stale from an action taken
+  // elsewhere. staleTime: 0 overrides QueryProvider's default 60s for
+  // this one query specifically, since progress changes from user
+  // actions rather than content edits, and should always revalidate on
+  // mount rather than trust a minute-old cache.
+  const progressQuery = useQuery({
+    queryKey: ['progress'],
+    queryFn: () => unwrapResult(getMyProgress()),
+    enabled: !!user,
+    staleTime: 0,
+  })
+
+  const enrollMutation = useMutation({
+    mutationFn: () => unwrapResult(enrollCourse(slug)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['progress'] })
+      toast.success('Enrolled.')
+    },
+    onError: (error) => toast.error(error.message),
+  })
+  const unenrollMutation = useMutation({
+    mutationFn: () => unwrapResult(unenrollCourse(slug)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['progress'] })
+      toast.success('Unenrolled.')
+    },
+    onError: (error) => toast.error(error.message),
+  })
 
   useEffect(() => {
     if (!sessionLoading && !user) {
@@ -53,97 +89,34 @@ export default function CoursePage({ params }: { params: Promise<{ course: strin
     }
   }, [sessionLoading, user, router])
 
-  useEffect(() => {
-    if (!user) return
-
-    Promise.all([getCourse(slug), getCourseLessons(slug), getMyProgress()]).then(
-      ([courseResult, lessonsResult, progressResult]) => {
-        if (!courseResult.ok) {
-          setError({ message: courseResult.error, notFound: courseResult.status === 404 })
-          return
-        }
-        if (!lessonsResult.ok) {
-          setError({ message: lessonsResult.error, notFound: lessonsResult.status === 404 })
-          return
-        }
-        setCourse(courseResult.data)
-        setLessons(lessonsResult.data)
-
-        if (progressResult.ok) {
-          const found = progressResult.data.enrollments.find((e) => e.courseSlug === slug)
-          setEnrollment(found ?? null)
-          setCompletedLessonIds(
-            new Set(
-              progressResult.data.lessonProgress
-                .filter((p) => p.courseSlug === slug && p.status === 'completed')
-                .map((p) => p.lessonId)
-            )
-          )
-        }
-      }
-    )
-  }, [user, slug])
-
-  async function handleEnroll() {
-    setEnrolling(true)
-    setEnrollError(null)
-    const result = await enrollCourse(slug)
-    setEnrolling(false)
-
-    if (!result.ok) {
-      setEnrollError(result.error)
-      return
-    }
-
-    setEnrollment({
-      id: 0,
-      courseId: course?.id ?? 0,
-      courseSlug: slug,
-      courseTitle: course?.title ?? '',
-      status: 'active',
-      enrolledAt: new Date().toISOString(),
-      completedAt: null,
-      totalLessons: lessons?.length ?? 0,
-      completedLessons: 0,
-    })
-  }
-
-  async function handleUnenroll() {
+  function handleUnenroll() {
     if (!window.confirm('Unenroll from this course? Your progress is kept — re-enrolling picks up where you left off.')) {
       return
     }
-
-    setUnenrolling(true)
-    setUnenrollError(null)
-    const result = await unenrollCourse(slug)
-    setUnenrolling(false)
-
-    if (!result.ok) {
-      setUnenrollError(result.error)
-      return
-    }
-
-    setEnrollment(null)
+    unenrollMutation.mutate()
   }
 
   if (sessionLoading || !user) {
     return (
       <main className="min-h-screen bg-[#0B0B0D]">
-        <section className="mx-auto max-w-4xl px-6 pb-10 pt-20 sm:pt-28">
-          <p className="text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
+        <section className="mx-auto max-w-6xl px-6 pb-10 pt-20 sm:pt-28">
+          <CourseDetailSkeleton />
         </section>
       </main>
     )
   }
 
-  if (error) {
+  const notFoundError = [courseQuery.error, lessonsQuery.error].find((e) => e instanceof ApiError && e.status === 404)
+  const otherError = courseQuery.error ?? lessonsQuery.error
+
+  if (otherError) {
     return (
       <main className="min-h-screen bg-[#0B0B0D]">
-        <section className="mx-auto max-w-4xl px-6 pb-10 pt-20 sm:pt-28">
+        <section className="mx-auto max-w-6xl px-6 pb-10 pt-20 sm:pt-28">
           <h1 className="text-2xl font-bold tracking-[-0.04em] text-white">
-            {error.notFound ? 'Course not found' : 'Something went wrong'}
+            {notFoundError ? 'Course not found' : 'Something went wrong'}
           </h1>
-          <p className="mt-3 text-sm text-[#90939A]">{error.message}</p>
+          <p className="mt-3 text-sm text-[#90939A]">{otherError.message}</p>
           <Link href="/courses" className="mt-6 inline-block text-sm text-[#FF7A33] underline underline-offset-2">
             ← Back to courses
           </Link>
@@ -152,19 +125,29 @@ export default function CoursePage({ params }: { params: Promise<{ course: strin
     )
   }
 
+  const course = courseQuery.data
+  const lessons = lessonsQuery.data
+
   if (!course || !lessons) {
     return (
       <main className="min-h-screen bg-[#0B0B0D]">
-        <section className="mx-auto max-w-4xl px-6 pb-10 pt-20 sm:pt-28">
-          <p className="text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
+        <section className="mx-auto max-w-6xl px-6 pb-10 pt-20 sm:pt-28">
+          <CourseDetailSkeleton />
         </section>
       </main>
     )
   }
 
+  const enrollment = progressQuery.data?.enrollments.find((e) => e.courseSlug === slug) ?? null
+  const completedLessonIds = new Set(
+    (progressQuery.data?.lessonProgress ?? [])
+      .filter((p) => p.courseSlug === slug && p.status === 'completed')
+      .map((p) => p.lessonId)
+  )
+
   return (
     <main className="min-h-screen bg-[#0B0B0D]">
-      <section className="mx-auto max-w-5xl px-6 pb-24 pt-20 sm:pt-28">
+      <section className="mx-auto max-w-6xl px-6 pb-24 pt-20 sm:pt-28">
         <Link href="/courses" className="text-xs uppercase tracking-[0.12em] text-white/40 transition-colors hover:text-white">
           ← Courses
         </Link>
@@ -215,21 +198,17 @@ export default function CoursePage({ params }: { params: Promise<{ course: strin
                     <button
                       type="button"
                       onClick={handleUnenroll}
-                      disabled={unenrolling}
+                      disabled={unenrollMutation.isPending}
                       className="text-white/50 underline underline-offset-2 transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      {unenrolling ? 'Unenrolling…' : 'Unenroll'}
+                      {unenrollMutation.isPending ? 'Unenrolling…' : 'Unenroll'}
                     </button>
                   </p>
-                  {unenrollError && <p className="mt-2 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{unenrollError}</p>}
                 </>
               ) : (
-                <>
-                  <ActionButton onClick={handleEnroll} loading={enrolling}>
-                    Enroll
-                  </ActionButton>
-                  {enrollError && <p className="mt-2 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{enrollError}</p>}
-                </>
+                <ActionButton onClick={() => enrollMutation.mutate()} loading={enrollMutation.isPending}>
+                  Enroll
+                </ActionButton>
               )}
             </div>
           </div>
@@ -240,5 +219,22 @@ export default function CoursePage({ params }: { params: Promise<{ course: strin
         </div>
       </section>
     </main>
+  )
+}
+
+function CourseDetailSkeleton() {
+  return (
+    <div className="grid grid-cols-1 gap-10 md:grid-cols-[1fr_280px]">
+      <div>
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-12 w-12 border border-white/10" />
+          <Skeleton className="h-4 w-24" />
+        </div>
+        <Skeleton className="mt-4 h-10 w-72 max-w-full" />
+        <Skeleton className="mt-4 h-4 w-96 max-w-full" />
+        <Skeleton className="mt-6 h-9 w-28" />
+      </div>
+      <Skeleton className="h-64" />
+    </div>
   )
 }

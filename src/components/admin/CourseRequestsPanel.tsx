@@ -1,25 +1,21 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
-import { getStaffCourses, type StaffPendingCourse, type StaffCourseStatus } from '@/lib/authClient'
+import { useQuery } from '@tanstack/react-query'
+import { getStaffCourses, unwrapResult, type StaffCourseStatus } from '@/lib/authClient'
 import { SectionHeading, StatusFilter } from '@/components/admin/shared'
+import { SkeletonRow } from '@/components/Skeleton'
 
 const STATUS_OPTIONS: StaffCourseStatus[] = ['pending', 'published', 'draft']
 
 export default function CourseRequestsPanel() {
   const [status, setStatus] = useState<StaffCourseStatus>('pending')
-  const [courses, setCourses] = useState<StaffPendingCourse[] | null>(null)
 
-  function load() {
-    return getStaffCourses(status).then((result) => {
-      if (result.ok) setCourses(result.data)
-    })
-  }
-
-  useEffect(() => {
-    load()
-  }, [status])
+  const { data: courses } = useQuery({
+    queryKey: ['staffCourses', status],
+    queryFn: () => unwrapResult(getStaffCourses(status)),
+  })
 
   return (
     <div>
@@ -28,12 +24,12 @@ export default function CourseRequestsPanel() {
       <StatusFilter status={status} options={STATUS_OPTIONS} onChange={setStatus} />
 
       <div className="mt-4 border-l border-t border-white/10">
-        {courses === null && <p className="border-b border-r border-white/10 bg-[#17181B] p-4 text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>}
+        {courses === undefined && <SkeletonRow count={3} />}
         {courses?.length === 0 && <p className="border-b border-r border-white/10 bg-[#17181B] p-4 text-sm text-[#90939A]">Nothing here.</p>}
         {courses?.map((c) => (
           <Link
             key={c.id}
-            href={`/approval/course-requests/${c.id}`}
+            href={`/account/approvals/course-requests/${c.id}`}
             className="block border-b border-r border-white/10 bg-[#17181B] p-4 transition-colors hover:bg-white/[0.03]"
           >
             <div className="flex flex-wrap items-center justify-between gap-3">

@@ -1,75 +1,80 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   getMyCourse,
   reviewCourse,
   deleteStaffCourse,
-  type InstructorCourseDetail,
+  unwrapResult,
   type InstructorQuizQuestion,
 } from '@/lib/authClient'
 import { ArticleBody, VideoBody, ExerciseBody } from '@/components/lesson/LessonContentViews'
 import { SectionHeading, buttonClass } from '@/components/admin/shared'
 import Eyebrow from '@/components/Eyebrow'
+import { useToast } from '@/components/ToastProvider'
+import { Skeleton } from '@/components/Skeleton'
 
 export default function CourseReviewPanel({ id }: { id: number }) {
   const router = useRouter()
-  const [course, setCourse] = useState<InstructorCourseDetail | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [acting, setActing] = useState(false)
+  const queryClient = useQueryClient()
+  const toast = useToast()
 
-  useEffect(() => {
-    getMyCourse(id).then((result) => {
-      if (result.ok) setCourse(result.data)
-      else setError(result.error)
-    })
-  }, [id])
+  const { data: course, error: courseError } = useQuery({
+    queryKey: ['myCourse', id],
+    queryFn: () => unwrapResult(getMyCourse(id)),
+  })
 
-  async function handleApprove() {
-    setActing(true)
-    const result = await reviewCourse(id, 'approve')
-    setActing(false)
-    if (!result.ok) {
-      setError(result.error)
-      return
-    }
+  // Every action here navigates away on success, back to the list this
+  // course was reviewed from — invalidating it there keeps that list from
+  // showing this course under its old status/still in the pending filter.
+  // The toast fires here but renders on whatever page router.push lands
+  // on next, since ToastProvider lives above the route content.
+  function backToList(message: string) {
+    queryClient.invalidateQueries({ queryKey: ['staffCourses'] })
+    queryClient.invalidateQueries({ queryKey: ['staffPendingCounts'] })
+    toast.success(message)
     router.push('/account/approvals/course-requests')
   }
 
-  async function handleReject() {
+  const reviewMutation = useMutation({
+    mutationFn: ({ action, reason }: { action: 'approve' | 'reject'; reason?: string }) => unwrapResult(reviewCourse(id, action, reason)),
+    onSuccess: (_, { action }) => backToList(action === 'approve' ? 'Course approved.' : 'Course rejected.'),
+    onError: (error) => toast.error(error.message),
+  })
+  const deleteMutation = useMutation({
+    mutationFn: () => unwrapResult(deleteStaffCourse(id)),
+    onSuccess: () => backToList('Course deleted.'),
+    onError: (error) => toast.error(error.message),
+  })
+
+  const acting = reviewMutation.isPending || deleteMutation.isPending
+
+  function handleReject() {
     const reason = window.prompt('Rejection reason (shown to the instructor):')
     if (reason === null) return
-    setActing(true)
-    const result = await reviewCourse(id, 'reject', reason)
-    setActing(false)
-    if (!result.ok) {
-      setError(result.error)
-      return
-    }
-    router.push('/account/approvals/course-requests')
+    reviewMutation.mutate({ action: 'reject', reason })
   }
 
-  async function handleDelete() {
+  function handleDelete() {
     if (!course) return
     if (!window.confirm(`Permanently delete "${course.title}"? This removes every module, lesson, and quiz in it. This cannot be undone.`)) return
-    setActing(true)
-    const result = await deleteStaffCourse(id)
-    setActing(false)
-    if (!result.ok) {
-      setError(result.error)
-      return
-    }
-    router.push('/account/approvals/course-requests')
+    deleteMutation.mutate()
   }
 
-  if (error && !course) {
-    return <p className="text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>
+  if (courseError && !course) {
+    return <p className="text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{courseError.message}</p>
   }
 
   if (!course) {
-    return <p className="text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
+    return (
+      <div>
+        <Skeleton className="h-3 w-32" />
+        <Skeleton className="mt-3 h-9 w-72 max-w-full" />
+        <Skeleton className="mt-8 h-40" />
+      </div>
+    )
   }
 
   return (
@@ -89,7 +94,7 @@ export default function CourseReviewPanel({ id }: { id: number }) {
         <div className="flex shrink-0 gap-2">
           {course.status === 'pending_review' && (
             <>
-              <button type="button" disabled={acting} onClick={handleApprove} className={buttonClass}>Approve</button>
+              <button type="button" disabled={acting} onClick={() => reviewMutation.mutate({ action: 'approve' })} className={buttonClass}>Approve</button>
               <button type="button" disabled={acting} onClick={handleReject} className={buttonClass}>Reject</button>
             </>
           )}
@@ -104,7 +109,7 @@ export default function CourseReviewPanel({ id }: { id: number }) {
         </div>
       </div>
 
-      {error && <p className="mt-4 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
+      {courseError && <p className="mt-4 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{courseError.message}</p>}
 
       <div className="mt-10 flex flex-col gap-10">
         {course.modules.length === 0 && <p className="text-sm text-[#90939A]">This course has no modules yet.</p>}

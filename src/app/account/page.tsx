@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { useSession } from '@/components/SessionProvider'
 import {
   resendVerification,
@@ -10,18 +11,35 @@ import {
   getAssetSrc,
   getMyStatistics,
   getMyProgress,
-  type MyStatistics,
-  type MyEnrollment,
+  unwrapResult,
 } from '@/lib/authClient'
 import Eyebrow from '@/components/Eyebrow'
+import { Skeleton, SkeletonStatTile } from '@/components/Skeleton'
 
 export default function AccountPage() {
   const router = useRouter()
   const { user, loading: sessionLoading } = useSession()
 
-  const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent'>('idle')
-  const [stats, setStats] = useState<MyStatistics | null>(null)
-  const [continuing, setContinuing] = useState<MyEnrollment | null>(null)
+  const resendMutation = useMutation({ mutationFn: () => unwrapResult(resendVerification()) })
+  const { data: stats } = useQuery({
+    queryKey: ['myStatistics'],
+    queryFn: () => unwrapResult(getMyStatistics()),
+    enabled: !!user,
+  })
+  // Same ['progress'] key the course pages use — if either was visited
+  // this session, this renders instantly from that cache instead of
+  // re-fetching.
+  const { data: progress } = useQuery({
+    queryKey: ['progress'],
+    queryFn: () => unwrapResult(getMyProgress()),
+    enabled: !!user,
+    staleTime: 0,
+  })
+  // "Continue learning" surfaces whatever's in progress, not completed —
+  // the most recently touched active enrollment, falling back to the
+  // first one if none carry a completedAt/enrolledAt ordering worth
+  // relying on client-side.
+  const continuing = progress ? progress.enrollments.find((e) => e.status !== 'completed') ?? progress.enrollments[0] ?? null : null
 
   useEffect(() => {
     if (!sessionLoading && !user) {
@@ -29,31 +47,19 @@ export default function AccountPage() {
     }
   }, [sessionLoading, user, router])
 
-  async function handleResendVerification() {
-    setResendState('sending')
-    const result = await resendVerification()
-    setResendState(result.ok ? 'sent' : 'idle')
-  }
-
-  useEffect(() => {
-    if (!user) return
-
-    getMyStatistics().then((result) => {
-      if (result.ok) setStats(result.data)
-    })
-    getMyProgress().then((result) => {
-      if (!result.ok) return
-      // "Continue learning" surfaces whatever's in progress, not completed —
-      // the most recently touched active enrollment, falling back to the
-      // first one if none carry a completedAt/enrolledAt ordering worth
-      // relying on client-side.
-      const active = result.data.enrollments.find((e) => e.status !== 'completed') ?? result.data.enrollments[0] ?? null
-      setContinuing(active)
-    })
-  }, [user])
-
   if (sessionLoading || !user) {
-    return <p className="pt-1 text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
+    return (
+      <div>
+        <Skeleton className="h-3 w-20" />
+        <div className="mt-5 flex items-center gap-5">
+          <Skeleton className="h-16 w-16 shrink-0 border border-white/10 sm:h-20 sm:w-20" />
+          <div className="flex flex-col gap-2">
+            <Skeleton className="h-7 w-48" />
+            <Skeleton className="h-3 w-32" />
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -66,10 +72,10 @@ export default function AccountPage() {
           <img
             src={getAssetSrc(user.avatarUrl)}
             alt=""
-            className="h-16 w-16 shrink-0 rounded-full border border-white/10 object-cover sm:h-20 sm:w-20"
+            className="h-16 w-16 shrink-0 border border-white/10 object-cover sm:h-20 sm:w-20"
           />
         ) : (
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-white/10 bg-[#17181B] text-xl font-bold text-white/40 sm:h-20 sm:w-20 sm:text-2xl">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center border border-white/10 bg-[#17181B] text-xl font-bold text-white/40 sm:h-20 sm:w-20 sm:text-2xl">
             {user.displayName.slice(0, 1).toUpperCase()}
           </div>
         )}
@@ -83,29 +89,33 @@ export default function AccountPage() {
       {!user.emailVerified && (
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border border-white/10 bg-[#17181B] px-4 py-3 text-xs text-[#90939A] animate-fade-in-up motion-reduce:animate-none">
           <span>Your email isn&apos;t verified.</span>
-          {resendState === 'sent' ? (
+          {resendMutation.isSuccess ? (
             <span className="text-[#3FB950]">Sent — check your email.</span>
           ) : (
             <button
               type="button"
-              onClick={handleResendVerification}
-              disabled={resendState === 'sending'}
+              onClick={() => resendMutation.mutate()}
+              disabled={resendMutation.isPending}
               className="text-white/70 underline underline-offset-2 transition-colors hover:text-white disabled:opacity-50"
             >
-              {resendState === 'sending' ? 'Sending…' : 'Resend verification email'}
+              {resendMutation.isPending ? 'Sending…' : 'Resend verification email'}
             </button>
           )}
         </div>
       )}
 
-      {stats && (
-        <div className="mt-10 grid grid-cols-2 gap-px border border-white/10 bg-white/10 sm:grid-cols-4">
-          <StatTile label="Enrolled" value={stats.coursesEnrolled} />
-          <StatTile label="Completed" value={stats.coursesCompleted} />
-          <StatTile label="Lessons done" value={stats.lessonsCompleted} />
-          <StatTile label="Avg. quiz score" value={stats.averageQuizScorePercent === null ? '—' : `${stats.averageQuizScorePercent}%`} />
-        </div>
-      )}
+      <div className="mt-10 grid grid-cols-2 gap-px border border-white/10 bg-white/10 sm:grid-cols-4">
+        {stats ? (
+          <>
+            <StatTile label="Enrolled" value={stats.coursesEnrolled} />
+            <StatTile label="Completed" value={stats.coursesCompleted} />
+            <StatTile label="Lessons done" value={stats.lessonsCompleted} />
+            <StatTile label="Avg. quiz score" value={stats.averageQuizScorePercent === null ? '—' : `${stats.averageQuizScorePercent}%`} />
+          </>
+        ) : (
+          Array.from({ length: 4 }).map((_, i) => <SkeletonStatTile key={i} />)
+        )}
+      </div>
 
       {continuing && (
         <div className="mt-8">

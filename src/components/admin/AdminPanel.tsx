@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useSession } from '@/components/SessionProvider'
 import {
   getStaffUsers,
@@ -15,14 +16,14 @@ import {
   unblockIp,
   getStaffAuditLog,
   getStaffPendingCounts,
+  unwrapResult,
   roleLabel,
-  type StaffUser,
-  type BlockedIp,
-  type AuditLogEntry,
   type Role,
 } from '@/lib/authClient'
 import { SectionHeading, inputClass, rowInputClass, buttonClass, blockButtonClass } from '@/components/admin/shared'
 import Eyebrow from '@/components/Eyebrow'
+import { useToast } from '@/components/ToastProvider'
+import { Skeleton, SkeletonRow } from '@/components/Skeleton'
 
 type Tab = 'users' | 'ips' | 'log'
 
@@ -53,16 +54,19 @@ const TABS: { id: Tab; label: string }[] = [
 
 export default function AdminPanel() {
   const [tab, setTab] = useState<Tab>('users')
-  const [userCount, setUserCount] = useState<number | null>(null)
-  const [bannedCount, setBannedCount] = useState<number | null>(null)
-  const [ipCount, setIpCount] = useState<number | null>(null)
-  const [pendingTotal, setPendingTotal] = useState<number | null>(null)
 
-  useEffect(() => {
-    getStaffPendingCounts().then((result) => {
-      if (result.ok) setPendingTotal(result.data.roleRequests + result.data.resourceRequests + result.data.courseRequests)
-    })
-  }, [])
+  // Each of these three queries is also run independently inside its own
+  // tab's section component below — same query keys, so React Query
+  // dedupes them into one shared cache entry apiece instead of this
+  // needing an onXLoaded callback to lift the data up.
+  const { data: users } = useQuery({ queryKey: ['staffUsers'], queryFn: () => unwrapResult(getStaffUsers()) })
+  const { data: ips } = useQuery({ queryKey: ['staffBlockedIps'], queryFn: () => unwrapResult(getStaffBlockedIps()) })
+  const { data: pendingCounts } = useQuery({ queryKey: ['staffPendingCounts'], queryFn: () => unwrapResult(getStaffPendingCounts()) })
+
+  const userCount = users?.length ?? null
+  const bannedCount = users ? users.filter((u) => u.bannedAt).length : null
+  const ipCount = ips?.length ?? null
+  const pendingTotal = pendingCounts ? pendingCounts.roleRequests + pendingCounts.resourceRequests + pendingCounts.courseRequests : null
 
   return (
     <div>
@@ -92,15 +96,8 @@ export default function AdminPanel() {
       </div>
 
       <div className="mt-8">
-        {tab === 'users' && (
-          <UsersSection
-            onUsersLoaded={(users) => {
-              setUserCount(users.length)
-              setBannedCount(users.filter((u) => u.bannedAt).length)
-            }}
-          />
-        )}
-        {tab === 'ips' && <BlockedIpsSection onIpsLoaded={(ips) => setIpCount(ips.length)} />}
+        {tab === 'users' && <UsersSection />}
+        {tab === 'ips' && <BlockedIpsSection />}
         {tab === 'log' && <AuditLogSection />}
       </div>
     </div>
@@ -120,111 +117,101 @@ function StatTile({ label, value, accent }: { label: string; value: number | nul
 
 /* ==================== Users ==================== */
 
-function UsersSection({ onUsersLoaded }: { onUsersLoaded?: (users: StaffUser[]) => void }) {
+function UsersSection() {
   const { user: currentUser } = useSession()
-  const [users, setUsers] = useState<StaffUser[] | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [expandedIps, setExpandedIps] = useState<Record<number, string[]>>({})
-  // True from the moment any row mutation (role change / ban / unban /
-  // delete) fires until the resulting reload has actually landed. Deleting
-  // or banning a user removes their row and every row below it shifts up
-  // to fill the gap — a real, reported incident: a fast second click
-  // right after a delete landed on a *different* user's now-repositioned
-  // Delete button, deleting an unrelated account by accident. Disabling
-  // every row's mutating controls for the whole reflow window (not just
-  // the row that was acted on) closes that window instead of just
-  // narrowing it.
-  const [refreshing, setRefreshing] = useState(false)
+  const queryClient = useQueryClient()
+  const toast = useToast()
+  const { data: users, error } = useQuery({ queryKey: ['staffUsers'], queryFn: () => unwrapResult(getStaffUsers()) })
+  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set())
 
   const [newEmail, setNewEmail] = useState('')
   const [newName, setNewName] = useState('')
   const [newRole, setNewRole] = useState<Role>('student')
-  const [creating, setCreating] = useState(false)
-  const [createResult, setCreateResult] = useState<string | null>(null)
 
-  function load() {
-    return getStaffUsers().then((result) => {
-      if (result.ok) {
-        setUsers(result.data)
-        onUsersLoaded?.(result.data)
-      } else {
-        setError(result.error)
-      }
-    })
+  function invalidateUsers() {
+    return queryClient.invalidateQueries({ queryKey: ['staffUsers'] })
   }
 
-  useEffect(() => {
-    load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  const createMutation = useMutation({
+    mutationFn: () => unwrapResult(createStaffUser(newEmail, newName, newRole)),
+    onSuccess: () => {
+      setNewEmail('')
+      setNewName('')
+      invalidateUsers()
+    },
+  })
 
-  async function handleCreate(e: React.FormEvent) {
+  // One mutation instance per action type, shared across every row (not
+  // one per row) — see the `refreshing` derivation below. Deleting or
+  // banning a user removes their row and every row below it shifts up to
+  // fill the gap: a real, reported incident was a fast second click right
+  // after a delete landed on a *different* user's now-repositioned Delete
+  // button, deleting an unrelated account by accident. Disabling every
+  // row's mutating controls for the whole reflow window (not just the row
+  // that was acted on) closes that window instead of just narrowing it —
+  // sharing one mutation per action across all rows means `isPending` is
+  // already "is ANY row doing this," with no extra bookkeeping needed.
+  const roleMutation = useMutation({
+    mutationFn: ({ id, role }: { id: number; role: Role }) => unwrapResult(updateStaffUserRole(id, role)),
+    onSuccess: () => {
+      invalidateUsers()
+      toast.success('Role updated.')
+    },
+    onError: (error) => toast.error(error.message),
+  })
+  const banMutation = useMutation({
+    mutationFn: ({ id, reason }: { id: number; reason: string }) => unwrapResult(banStaffUser(id, reason)),
+    onSuccess: () => {
+      invalidateUsers()
+      toast.success('User banned.')
+    },
+    onError: (error) => toast.error(error.message),
+  })
+  const unbanMutation = useMutation({
+    mutationFn: (id: number) => unwrapResult(unbanStaffUser(id)),
+    onSuccess: () => {
+      invalidateUsers()
+      toast.success('User unbanned.')
+    },
+    onError: (error) => toast.error(error.message),
+  })
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => unwrapResult(deleteStaffUser(id)),
+    onSuccess: () => {
+      invalidateUsers()
+      toast.success('User deleted.')
+    },
+    onError: (error) => toast.error(error.message),
+  })
+  const refreshing = roleMutation.isPending || banMutation.isPending || unbanMutation.isPending || deleteMutation.isPending
+
+  const createResult = createMutation.isSuccess
+    ? (createMutation.data.setPasswordLink ? `Created. Set-password link: ${createMutation.data.setPasswordLink}` : 'Created. Set-password email sent.')
+    : createMutation.error?.message ?? null
+
+  function handleCreate(e: React.FormEvent) {
     e.preventDefault()
-    setCreating(true)
-    setCreateResult(null)
-    const result = await createStaffUser(newEmail, newName, newRole)
-    setCreating(false)
-    if (!result.ok) {
-      setCreateResult(result.error)
-      return
-    }
-    setCreateResult(result.data.setPasswordLink ? `Created. Set-password link: ${result.data.setPasswordLink}` : 'Created. Set-password email sent.')
-    setNewEmail('')
-    setNewName('')
-    load()
+    createMutation.mutate()
   }
 
-  async function handleRoleChange(id: number, role: Role) {
-    setRefreshing(true)
-    const result = await updateStaffUserRole(id, role)
-    if (!result.ok) {
-      setError(result.error)
-      await load()
-      setRefreshing(false)
-      return
-    }
-    setError(null)
-    await load()
-    setRefreshing(false)
-  }
-
-  async function handleBan(id: number) {
+  function handleBan(id: number) {
     const reason = window.prompt('Ban reason (shown to no one but staff):')
     if (reason === null) return
-    setRefreshing(true)
-    await banStaffUser(id, reason)
-    await load()
-    setRefreshing(false)
+    banMutation.mutate({ id, reason })
   }
 
-  async function handleUnban(id: number) {
-    setRefreshing(true)
-    await unbanStaffUser(id)
-    await load()
-    setRefreshing(false)
-  }
-
-  async function handleDelete(id: number, email: string) {
+  function handleDelete(id: number, email: string) {
     if (!window.confirm(`Permanently delete ${email}? This cannot be undone.`)) return
-    setRefreshing(true)
-    await deleteStaffUser(id)
-    await load()
-    setRefreshing(false)
+    deleteMutation.mutate(id)
   }
 
-  async function handleViewIps(id: number) {
-    if (expandedIps[id]) {
-      setExpandedIps((prev) => { const next = { ...prev }; delete next[id]; return next })
-      return
-    }
-    const result = await getStaffUserIps(id)
-    if (result.ok) setExpandedIps((prev) => ({ ...prev, [id]: result.data.ips }))
-  }
-
-  async function handleBlockIp(ip: string, userId: number) {
-    if (!window.confirm(`Block ${ip} at the Cloudflare edge?`)) return
-    await blockIp(ip, undefined, userId)
-    window.alert(`${ip} blocked.`)
+  function toggleIps(id: number) {
+    setExpandedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
   }
 
   return (
@@ -237,14 +224,14 @@ function UsersSection({ onUsersLoaded }: { onUsersLoaded?: (users: StaffUser[]) 
         <select value={newRole} onChange={(e) => setNewRole(e.target.value as Role)} className={inputClass}>
           {ROLES.map((r) => <option key={r} value={r}>{roleLabel(r)}</option>)}
         </select>
-        <button type="submit" disabled={creating} className={buttonClass}>{creating ? '…' : 'Create user'}</button>
+        <button type="submit" disabled={createMutation.isPending} className={buttonClass}>{createMutation.isPending ? '…' : 'Create user'}</button>
       </form>
       {createResult && <p className="mt-2 break-all text-xs text-[#90939A]">{createResult}</p>}
 
-      {error && <p className="mt-4 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
+      {error && <p className="mt-4 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error.message}</p>}
 
       <div className="mt-6 border-l border-t border-white/10">
-        {users === null && <p className="border-b border-r border-white/10 bg-[#17181B] p-4 text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>}
+        {users === undefined && <SkeletonRow count={3} />}
         {users?.map((u) => {
           const locked = u.isSuperAdmin && !currentUser?.isSuperAdmin
           return (
@@ -258,31 +245,19 @@ function UsersSection({ onUsersLoaded }: { onUsersLoaded?: (users: StaffUser[]) 
             </div>
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <select value={u.role} disabled={locked || refreshing} onChange={(e) => handleRoleChange(u.id, e.target.value as Role)} className={`${rowInputClass} disabled:opacity-50`}>
+              <select value={u.role} disabled={locked || refreshing} onChange={(e) => roleMutation.mutate({ id: u.id, role: e.target.value as Role })} className={`${rowInputClass} disabled:opacity-50`}>
                 {ROLES.map((r) => <option key={r} value={r}>{roleLabel(r)}</option>)}
               </select>
               {u.bannedAt
-                ? <button type="button" disabled={locked || refreshing} onClick={() => handleUnban(u.id)} className={buttonClass}>Unban</button>
+                ? <button type="button" disabled={locked || refreshing} onClick={() => unbanMutation.mutate(u.id)} className={buttonClass}>Unban</button>
                 : <button type="button" disabled={locked || refreshing} onClick={() => handleBan(u.id)} className={buttonClass}>Ban</button>}
               <button type="button" disabled={locked || refreshing} onClick={() => handleDelete(u.id, u.email)} className={buttonClass}>Delete</button>
-              <button type="button" onClick={() => handleViewIps(u.id)} className={buttonClass}>
-                {expandedIps[u.id] ? 'Hide IPs' : 'View IPs'}
+              <button type="button" onClick={() => toggleIps(u.id)} className={buttonClass}>
+                {expandedIds.has(u.id) ? 'Hide IPs' : 'View IPs'}
               </button>
             </div>
 
-            {expandedIps[u.id] && (
-              <div className="mt-3 flex flex-col gap-1.5">
-                {expandedIps[u.id].length === 0 && <span className="text-xs text-[#90939A]">No IPs on record.</span>}
-                {expandedIps[u.id].map((ip) => (
-                  <div key={ip} className="flex items-center gap-3 text-xs text-[#90939A]">
-                    <span className="font-mono">{ip}</span>
-                    <button type="button" onClick={() => handleBlockIp(ip, u.id)} className="text-[#F85149] underline underline-offset-2 hover:text-white">
-                      Block
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
+            {expandedIds.has(u.id) && <UserIpsList userId={u.id} />}
           </div>
           )
         })}
@@ -291,54 +266,77 @@ function UsersSection({ onUsersLoaded }: { onUsersLoaded?: (users: StaffUser[]) 
   )
 }
 
+// Its own query (['staffUserIps', userId]) so re-expanding a row already
+// viewed this session shows instantly from cache instead of refetching.
+function UserIpsList({ userId }: { userId: number }) {
+  const toast = useToast()
+  const { data } = useQuery({ queryKey: ['staffUserIps', userId], queryFn: () => unwrapResult(getStaffUserIps(userId)) })
+  const blockMutation = useMutation({
+    mutationFn: ({ ip }: { ip: string }) => unwrapResult(blockIp(ip, undefined, userId)),
+    onError: (error) => toast.error(error.message),
+  })
+
+  function handleBlockIp(ip: string) {
+    if (!window.confirm(`Block ${ip} at the Cloudflare edge?`)) return
+    blockMutation.mutate({ ip }, { onSuccess: () => toast.success(`${ip} blocked.`) })
+  }
+
+  if (!data) {
+    return <Skeleton className="mt-3 h-4 w-32" />
+  }
+
+  return (
+    <div className="mt-3 flex flex-col gap-1.5">
+      {data.ips.length === 0 && <span className="text-xs text-[#90939A]">No IPs on record.</span>}
+      {data.ips.map((ip) => (
+        <div key={ip} className="flex items-center gap-3 text-xs text-[#90939A]">
+          <span className="font-mono">{ip}</span>
+          <button type="button" onClick={() => handleBlockIp(ip)} className="text-[#F85149] underline underline-offset-2 hover:text-white">
+            Block
+          </button>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 /* ==================== Blocked IPs ==================== */
 
-function BlockedIpsSection({ onIpsLoaded }: { onIpsLoaded?: (ips: BlockedIp[]) => void }) {
-  const [ips, setIps] = useState<BlockedIp[] | null>(null)
-  const [error, setError] = useState<string | null>(null)
+function BlockedIpsSection() {
+  const queryClient = useQueryClient()
+  const toast = useToast()
+  const { data: ips, error } = useQuery({ queryKey: ['staffBlockedIps'], queryFn: () => unwrapResult(getStaffBlockedIps()) })
   const [newIp, setNewIp] = useState('')
   const [newNote, setNewNote] = useState('')
-  const [submitting, setSubmitting] = useState(false)
-  // See UsersSection's identical `refreshing` guard — Unblock removes a
-  // row and shifts the rest.
-  const [refreshing, setRefreshing] = useState(false)
 
-  function load() {
-    return getStaffBlockedIps().then((result) => {
-      if (result.ok) {
-        setIps(result.data)
-        onIpsLoaded?.(result.data)
-      } else {
-        setError(result.error)
-      }
-    })
+  function invalidateIps() {
+    return queryClient.invalidateQueries({ queryKey: ['staffBlockedIps'] })
   }
 
-  useEffect(() => {
-    load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  const addMutation = useMutation({
+    mutationFn: () => unwrapResult(blockIp(newIp, newNote || undefined)),
+    onSuccess: () => {
+      setNewIp('')
+      setNewNote('')
+      invalidateIps()
+      toast.success('IP blocked.')
+    },
+    onError: (error) => toast.error(error.message),
+  })
+  // Shared across every row, same reasoning as UsersSection's refreshing
+  // guard — Unblock removes a row and shifts the rest.
+  const removeMutation = useMutation({
+    mutationFn: (id: string) => unwrapResult(unblockIp(id)),
+    onSuccess: () => {
+      invalidateIps()
+      toast.success('IP unblocked.')
+    },
+    onError: (error) => toast.error(error.message),
+  })
 
-  async function handleAdd(e: React.FormEvent) {
+  function handleAdd(e: React.FormEvent) {
     e.preventDefault()
-    setSubmitting(true)
-    const result = await blockIp(newIp, newNote || undefined)
-    setSubmitting(false)
-    if (!result.ok) {
-      setError(result.error)
-      return
-    }
-    setNewIp('')
-    setNewNote('')
-    setError(null)
-    load()
-  }
-
-  async function handleRemove(id: string) {
-    setRefreshing(true)
-    await unblockIp(id)
-    await load()
-    setRefreshing(false)
+    addMutation.mutate()
   }
 
   return (
@@ -348,13 +346,13 @@ function BlockedIpsSection({ onIpsLoaded }: { onIpsLoaded?: (ips: BlockedIp[]) =
       <form onSubmit={handleAdd} className="mt-4 flex flex-wrap items-end gap-3">
         <input type="text" required placeholder="IP address" value={newIp} onChange={(e) => setNewIp(e.target.value)} className={inputClass} />
         <input type="text" placeholder="Note (optional)" value={newNote} onChange={(e) => setNewNote(e.target.value)} className={inputClass} />
-        <button type="submit" disabled={submitting} className={blockButtonClass}>{submitting ? '…' : 'Block'}</button>
+        <button type="submit" disabled={addMutation.isPending} className={blockButtonClass}>{addMutation.isPending ? '…' : 'Block'}</button>
       </form>
 
-      {error && <p className="mt-4 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
+      {error && <p className="mt-4 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error.message}</p>}
 
       <div className="mt-6 border-l border-t border-white/10">
-        {ips === null && !error && <p className="border-b border-r border-white/10 bg-[#17181B] p-4 text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>}
+        {ips === undefined && !error && <SkeletonRow count={3} />}
         {ips?.length === 0 && <p className="border-b border-r border-white/10 bg-[#17181B] p-4 text-sm text-[#90939A]">Nothing blocked.</p>}
         {ips?.map((r) => (
           <div key={r.id} className="flex flex-wrap items-center justify-between gap-3 border-b border-r border-white/10 bg-[#17181B] p-4">
@@ -362,7 +360,7 @@ function BlockedIpsSection({ onIpsLoaded }: { onIpsLoaded?: (ips: BlockedIp[]) =
               <span className="font-mono text-sm text-white">{r.ip}</span>
               {r.note && <span className="ml-3 text-xs text-[#90939A]">{r.note}</span>}
             </div>
-            <button type="button" disabled={refreshing} onClick={() => handleRemove(r.id)} className={buttonClass}>Unblock</button>
+            <button type="button" disabled={removeMutation.isPending} onClick={() => removeMutation.mutate(r.id)} className={buttonClass}>Unblock</button>
           </div>
         ))}
       </div>
@@ -379,24 +377,16 @@ function BlockedIpsSection({ onIpsLoaded }: { onIpsLoaded?: (ips: BlockedIp[]) =
 // (not just super admins) — there's nothing here anyone could use to
 // cover their tracks, so there's no reason to hide it.
 function AuditLogSection() {
-  const [entries, setEntries] = useState<AuditLogEntry[] | null>(null)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    getStaffAuditLog().then((result) => {
-      if (result.ok) setEntries(result.data)
-      else setError(result.error)
-    })
-  }, [])
+  const { data: entries, error } = useQuery({ queryKey: ['staffAuditLog'], queryFn: () => unwrapResult(getStaffAuditLog()) })
 
   return (
     <div>
       <SectionHeading>Activity log</SectionHeading>
 
-      {error && <p className="mt-4 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
+      {error && <p className="mt-4 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error.message}</p>}
 
       <div className="mt-6 border-l border-t border-white/10">
-        {entries === null && !error && <p className="border-b border-r border-white/10 bg-[#17181B] p-4 text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>}
+        {entries === undefined && !error && <SkeletonRow count={3} />}
         {entries?.length === 0 && <p className="border-b border-r border-white/10 bg-[#17181B] p-4 text-sm text-[#90939A]">Nothing logged yet.</p>}
         {entries?.map((e) => (
           <div key={e.id} className="border-b border-r border-white/10 bg-[#17181B] p-4">

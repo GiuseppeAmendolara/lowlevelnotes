@@ -3,9 +3,12 @@
 import { use, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import ActionButton from '@/components/ActionButton'
 import Eyebrow from '@/components/Eyebrow'
 import { useSession } from '@/components/SessionProvider'
+import { useToast } from '@/components/ToastProvider'
+import { Skeleton } from '@/components/Skeleton'
 import {
   getMyCourse,
   updateCourse,
@@ -24,6 +27,7 @@ import {
   removeCourseAuthor,
   setCourseGroups,
   getMyGroups,
+  unwrapResult,
   getAssetSrc,
   type InstructorCourseDetail,
   type InstructorModule,
@@ -32,7 +36,6 @@ import {
   type LessonFields,
   type CourseDifficulty,
   type CourseVisibility,
-  type StudentGroup,
 } from '@/lib/authClient'
 
 // Same style constants as AdminPanel.tsx / the instructor courses list —
@@ -86,12 +89,18 @@ type Selection = { moduleId: number; lessonId: number | null } | null
 
 export default function InstructorCourseBuilderPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
+  const courseId = Number(id)
   const router = useRouter()
   const { user, loading: sessionLoading } = useSession()
-
-  const [course, setCourse] = useState<InstructorCourseDetail | null>(null)
-  const [error, setError] = useState<string | null>(null)
   const [selected, setSelected] = useState<Selection>(null)
+
+  const canBuild = !!user && (user.role === 'instructor' || user.role === 'staff')
+  const courseQuery = useQuery({
+    queryKey: ['myCourse', courseId],
+    queryFn: () => unwrapResult(getMyCourse(courseId)),
+    enabled: canBuild,
+  })
+  const course = courseQuery.data
 
   useEffect(() => {
     if (sessionLoading) return
@@ -104,28 +113,11 @@ export default function InstructorCourseBuilderPage({ params }: { params: Promis
     }
   }, [sessionLoading, user, router])
 
-  function load() {
-    return getMyCourse(Number(id)).then((result) => {
-      if (result.ok) setCourse(result.data)
-      else setError(result.error)
-    })
-  }
-
-  useEffect(() => {
-    if (user && (user.role === 'instructor' || user.role === 'staff')) load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, id])
-
-  if (sessionLoading || !user || (user.role !== 'instructor' && user.role !== 'staff')) {
-    return <p className="pt-1 text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
-  }
-
-  if (error) {
-    return <p className="text-sm text-[#F85149]">{error}</p>
-  }
-
-  if (!course) {
-    return <p className="pt-1 text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
+  if (sessionLoading || !user || !canBuild || !course) {
+    if (courseQuery.error) {
+      return <p className="text-sm text-[#F85149]">{courseQuery.error.message}</p>
+    }
+    return <BuilderSkeleton />
   }
 
   const lessonCount = course.modules.reduce((n, m) => n + m.lessons.length, 0)
@@ -170,22 +162,19 @@ export default function InstructorCourseBuilderPage({ params }: { params: Promis
                 mod={mod}
                 selected={selected}
                 onSelect={setSelected}
-                onReload={load}
               />
             ))}
           </div>
-          <AddModuleForm courseId={course.id} onCreated={load} />
+          <AddModuleForm courseId={course.id} />
         </div>
 
         <div className="min-w-0 py-6 md:pl-8">
           {showingLessonEditor && selectedModule ? (
             <LessonEditor
+              courseId={course.id}
               moduleId={selectedModule.id}
               lesson={selectedLesson}
-              onSaved={() => {
-                setSelected(null)
-                load()
-              }}
+              onSaved={() => setSelected(null)}
               onCancel={() => setSelected(null)}
             />
           ) : (
@@ -196,18 +185,46 @@ export default function InstructorCourseBuilderPage({ params }: { params: Promis
                 <StatTile label="Completed" value={course.completedCount} />
               </div>
 
-              <CourseIconUpload course={course} onUploaded={load} />
-              <CourseDetailsForm course={course} onSaved={load} />
-              <CourseAuthorsSection course={course} onChanged={load} />
-              <CourseVisibilitySection course={course} onChanged={load} />
+              <CourseIconUpload course={course} />
+              <CourseDetailsForm course={course} />
+              <CourseAuthorsSection course={course} />
+              <CourseVisibilitySection course={course} />
 
               {course.status === 'draft' && course.rejectionReason && (
                 <p className="mt-4 text-sm text-[#F85149]">Rejected: {course.rejectionReason}</p>
               )}
 
-              <SubmitForReviewControl course={course} lessonCount={lessonCount} onSubmitted={load} />
+              <SubmitForReviewControl course={course} lessonCount={lessonCount} />
             </div>
           )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function BuilderSkeleton() {
+  return (
+    <div>
+      <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-5">
+        <div>
+          <Skeleton className="h-3 w-24" />
+          <Skeleton className="mt-3 h-7 w-56" />
+        </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-[280px_1fr]">
+        <div className="flex flex-col gap-3 py-6 md:border-r md:border-white/10 md:pr-6">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-4 w-28" />
+          <Skeleton className="h-4 w-36" />
+        </div>
+        <div className="py-6 md:pl-8">
+          <div className="grid grid-cols-3 gap-px border border-white/10 bg-white/10">
+            <Skeleton className="h-16 bg-[#17181B]" />
+            <Skeleton className="h-16 bg-[#17181B]" />
+            <Skeleton className="h-16 bg-[#17181B]" />
+          </div>
+          <Skeleton className="mt-6 h-32" />
         </div>
       </div>
     </div>
@@ -223,25 +240,24 @@ function StatTile({ label, value }: { label: string; value: number }) {
   )
 }
 
-function CourseIconUpload({ course, onUploaded }: { course: InstructorCourseDetail; onUploaded: () => void }) {
+function CourseIconUpload({ course }: { course: InstructorCourseDetail }) {
+  const queryClient = useQueryClient()
+  const toast = useToast()
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [uploading, setUploading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
-  async function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+  const uploadMutation = useMutation({
+    mutationFn: (file: File) => unwrapResult(uploadCourseIcon(course.id, file)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['myCourse', course.id] })
+      toast.success('Icon updated.')
+    },
+    onError: (error) => toast.error(error.message),
+  })
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-
-    setUploading(true)
-    setError(null)
-    const result = await uploadCourseIcon(course.id, file)
-    setUploading(false)
-
-    if (!result.ok) {
-      setError(result.error)
-      return
-    }
-    onUploaded()
+    uploadMutation.mutate(file)
   }
 
   return (
@@ -257,12 +273,11 @@ function CourseIconUpload({ course, onUploaded }: { course: InstructorCourseDeta
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          disabled={uploading}
+          disabled={uploadMutation.isPending}
           className={buttonClass}
         >
-          {uploading ? 'Uploading…' : 'Change icon'}
+          {uploadMutation.isPending ? 'Uploading…' : 'Change icon'}
         </button>
-        {error && <p className="mt-2 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
       </div>
     </div>
   )
@@ -274,33 +289,37 @@ const DIFFICULTY_OPTIONS: { value: CourseDifficulty; label: string }[] = [
   { value: 'advanced', label: 'Advanced' },
 ]
 
-function CourseDetailsForm({ course, onSaved }: { course: InstructorCourseDetail; onSaved: () => void }) {
+function CourseDetailsForm({ course }: { course: InstructorCourseDetail }) {
+  const queryClient = useQueryClient()
+  const toast = useToast()
   const [title, setTitle] = useState(course.title)
   const [description, setDescription] = useState(course.description ?? '')
   const [category, setCategory] = useState(course.category ?? '')
   const [difficulty, setDifficulty] = useState<CourseDifficulty | ''>(course.difficulty ?? '')
   const [iconGlyph, setIconGlyph] = useState(course.iconGlyph ?? '')
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
-  async function handleSubmit(e: React.FormEvent) {
+  const saveMutation = useMutation({
+    mutationFn: () =>
+      unwrapResult(
+        updateCourse(course.id, {
+          title,
+          description: description || undefined,
+          category: category || undefined,
+          difficulty: difficulty || undefined,
+          visibility: course.visibility,
+          iconGlyph: iconGlyph || undefined,
+        })
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['myCourse', course.id] })
+      toast.success('Course details saved.')
+    },
+    onError: (error) => toast.error(error.message),
+  })
+
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setSaving(true)
-    setError(null)
-    const result = await updateCourse(course.id, {
-      title,
-      description: description || undefined,
-      category: category || undefined,
-      difficulty: difficulty || undefined,
-      visibility: course.visibility,
-      iconGlyph: iconGlyph || undefined,
-    })
-    setSaving(false)
-    if (!result.ok) {
-      setError(result.error)
-      return
-    }
-    onSaved()
+    saveMutation.mutate()
   }
 
   return (
@@ -318,34 +337,41 @@ function CourseDetailsForm({ course, onSaved }: { course: InstructorCourseDetail
         <span className="text-xs text-white/40">Icon badge (shown when no icon image is uploaded, e.g. &quot;C#&quot; or &quot;/24&quot;)</span>
         <input value={iconGlyph} onChange={(e) => setIconGlyph(e.target.value)} maxLength={8} placeholder="Icon badge, e.g. C#" className={inputClass} />
       </label>
-      <button type="submit" disabled={saving} className={`self-start ${buttonClass}`}>{saving ? '…' : 'Save course details'}</button>
-      {error && <p className="text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
+      <button type="submit" disabled={saveMutation.isPending} className={`self-start ${buttonClass}`}>{saveMutation.isPending ? '…' : 'Save course details'}</button>
     </form>
   )
 }
 
-function CourseAuthorsSection({ course, onChanged }: { course: InstructorCourseDetail; onChanged: () => void }) {
+function CourseAuthorsSection({ course }: { course: InstructorCourseDetail }) {
+  const queryClient = useQueryClient()
+  const toast = useToast()
   const [email, setEmail] = useState('')
-  const [adding, setAdding] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
-  async function handleAdd(e: React.FormEvent) {
-    e.preventDefault()
-    setAdding(true)
-    setError(null)
-    const result = await addCourseAuthor(course.id, email)
-    setAdding(false)
-    if (!result.ok) {
-      setError(result.error)
-      return
-    }
-    setEmail('')
-    onChanged()
+  function invalidate() {
+    return queryClient.invalidateQueries({ queryKey: ['myCourse', course.id] })
   }
 
-  async function handleRemove(userId: number) {
-    const result = await removeCourseAuthor(course.id, userId)
-    if (result.ok) onChanged()
+  const addMutation = useMutation({
+    mutationFn: () => unwrapResult(addCourseAuthor(course.id, email)),
+    onSuccess: () => {
+      setEmail('')
+      invalidate()
+      toast.success('Author added.')
+    },
+    onError: (error) => toast.error(error.message),
+  })
+  const removeMutation = useMutation({
+    mutationFn: (userId: number) => unwrapResult(removeCourseAuthor(course.id, userId)),
+    onSuccess: () => {
+      invalidate()
+      toast.success('Author removed.')
+    },
+    onError: (error) => toast.error(error.message),
+  })
+
+  function handleAdd(e: React.FormEvent) {
+    e.preventDefault()
+    addMutation.mutate()
   }
 
   return (
@@ -356,7 +382,7 @@ function CourseAuthorsSection({ course, onChanged }: { course: InstructorCourseD
           <div key={author.id} className="flex items-center justify-between gap-3 border border-white/10 bg-[#17181B] px-4 py-2 text-sm text-white">
             <span>{author.displayName}{author.id === course.createdBy && ' (owner)'}</span>
             {author.id !== course.createdBy && (
-              <button type="button" onClick={() => handleRemove(author.id)} className="text-xs text-white/50 underline underline-offset-2 hover:text-white">
+              <button type="button" onClick={() => removeMutation.mutate(author.id)} className="text-xs text-white/50 underline underline-offset-2 hover:text-white">
                 Remove
               </button>
             )}
@@ -372,55 +398,51 @@ function CourseAuthorsSection({ course, onChanged }: { course: InstructorCourseD
           placeholder="Add a co-author by email"
           className={inputClass}
         />
-        <button type="submit" disabled={adding} className={buttonClass}>{adding ? '…' : 'Add'}</button>
+        <button type="submit" disabled={addMutation.isPending} className={buttonClass}>{addMutation.isPending ? '…' : 'Add'}</button>
       </form>
       <p className="mt-1 text-xs text-white/40">Must already be an instructor or staff member on the site.</p>
-      {error && <p className="mt-2 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
     </div>
   )
 }
 
-function CourseVisibilitySection({ course, onChanged }: { course: InstructorCourseDetail; onChanged: () => void }) {
-  const [groups, setGroups] = useState<StudentGroup[] | null>(null)
+function CourseVisibilitySection({ course }: { course: InstructorCourseDetail }) {
+  const queryClient = useQueryClient()
+  const toast = useToast()
+  // Same key as /account/build/groups — shares that page's cache instead
+  // of firing a second request for the same roster.
+  const { data: groups } = useQuery({ queryKey: ['myGroups'], queryFn: () => unwrapResult(getMyGroups()) })
   const [selectedGroupIds, setSelectedGroupIds] = useState<Set<number>>(new Set(course.groupIds))
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    getMyGroups().then((result) => {
-      if (result.ok) setGroups(result.data)
-    })
-  }, [])
-
-  async function handleVisibilityChange(visibility: CourseVisibility) {
-    setSaving(true)
-    setError(null)
-    const result = await updateCourse(course.id, {
-      title: course.title,
-      description: course.description || undefined,
-      category: course.category || undefined,
-      difficulty: course.difficulty || undefined,
-      visibility,
-    })
-    setSaving(false)
-    if (!result.ok) {
-      setError(result.error)
-      return
-    }
-    onChanged()
+  function invalidate() {
+    return queryClient.invalidateQueries({ queryKey: ['myCourse', course.id] })
   }
 
-  async function handleSaveGroups() {
-    setSaving(true)
-    setError(null)
-    const result = await setCourseGroups(course.id, [...selectedGroupIds])
-    setSaving(false)
-    if (!result.ok) {
-      setError(result.error)
-      return
-    }
-    onChanged()
-  }
+  const visibilityMutation = useMutation({
+    mutationFn: (visibility: CourseVisibility) =>
+      unwrapResult(
+        updateCourse(course.id, {
+          title: course.title,
+          description: course.description || undefined,
+          category: course.category || undefined,
+          difficulty: course.difficulty || undefined,
+          visibility,
+        })
+      ),
+    onSuccess: () => {
+      invalidate()
+      toast.success('Visibility updated.')
+    },
+    onError: (error) => toast.error(error.message),
+  })
+  const groupsMutation = useMutation({
+    mutationFn: () => unwrapResult(setCourseGroups(course.id, [...selectedGroupIds])),
+    onSuccess: () => {
+      invalidate()
+      toast.success('Group access saved.')
+    },
+    onError: (error) => toast.error(error.message),
+  })
+  const saving = visibilityMutation.isPending || groupsMutation.isPending
 
   function toggleGroup(id: number) {
     setSelectedGroupIds((prev) => {
@@ -437,7 +459,7 @@ function CourseVisibilitySection({ course, onChanged }: { course: InstructorCour
       <div className="mt-3 flex gap-2">
         <button
           type="button"
-          onClick={() => handleVisibilityChange('public')}
+          onClick={() => visibilityMutation.mutate('public')}
           disabled={saving}
           className={course.visibility === 'public' ? buttonClass : inputClass}
         >
@@ -445,7 +467,7 @@ function CourseVisibilitySection({ course, onChanged }: { course: InstructorCour
         </button>
         <button
           type="button"
-          onClick={() => handleVisibilityChange('restricted')}
+          onClick={() => visibilityMutation.mutate('restricted')}
           disabled={saving}
           className={course.visibility === 'restricted' ? buttonClass : inputClass}
         >
@@ -457,7 +479,7 @@ function CourseVisibilitySection({ course, onChanged }: { course: InstructorCour
         <div className="mt-4">
           <p className="text-xs text-white/40">Only students in the checked groups can see or enroll in this course.</p>
           <div className="mt-2 flex flex-col gap-2">
-            {groups === null && <p className="text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading groups…</p>}
+            {groups === undefined && <Skeleton className="h-5 w-40" />}
             {groups?.length === 0 && (
               <p className="text-sm text-[#90939A]">
                 No groups yet — <Link href="/account/build/groups" className="text-[#FF7A33] underline underline-offset-2">create one</Link>.
@@ -475,13 +497,12 @@ function CourseVisibilitySection({ course, onChanged }: { course: InstructorCour
             ))}
           </div>
           {groups && groups.length > 0 && (
-            <button type="button" onClick={handleSaveGroups} disabled={saving} className={`mt-3 ${buttonClass}`}>
+            <button type="button" onClick={() => groupsMutation.mutate()} disabled={saving} className={`mt-3 ${buttonClass}`}>
               {saving ? '…' : 'Save group access'}
             </button>
           )}
         </div>
       )}
-      {error && <p className="mt-2 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
     </div>
   )
 }
@@ -489,26 +510,20 @@ function CourseVisibilitySection({ course, onChanged }: { course: InstructorCour
 function SubmitForReviewControl({
   course,
   lessonCount,
-  onSubmitted,
 }: {
   course: InstructorCourseDetail
   lessonCount: number
-  onSubmitted: () => void
 }) {
-  const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  async function handleSubmit() {
-    setSubmitting(true)
-    setError(null)
-    const result = await submitCourseForReview(course.id)
-    setSubmitting(false)
-    if (!result.ok) {
-      setError(result.error)
-      return
-    }
-    onSubmitted()
-  }
+  const queryClient = useQueryClient()
+  const toast = useToast()
+  const submitMutation = useMutation({
+    mutationFn: () => unwrapResult(submitCourseForReview(course.id)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['myCourse', course.id] })
+      toast.success('Submitted for review.')
+    },
+    onError: (error) => toast.error(error.message),
+  })
 
   if (course.status === 'published') {
     return <p className="mt-6 text-sm text-[#3FB950]">✓ Published — live on the site.</p>
@@ -522,39 +537,38 @@ function SubmitForReviewControl({
 
   return (
     <div className="mt-6">
-      <ActionButton onClick={handleSubmit} loading={submitting}>Submit for review</ActionButton>
-      {error && <p className="mt-2 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
+      <ActionButton onClick={() => submitMutation.mutate()} loading={submitMutation.isPending}>Submit for review</ActionButton>
     </div>
   )
 }
 
-function AddModuleForm({ courseId, onCreated }: { courseId: number; onCreated: () => void }) {
+function AddModuleForm({ courseId }: { courseId: number }) {
+  const queryClient = useQueryClient()
+  const toast = useToast()
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
-  const [creating, setCreating] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
-  async function handleSubmit(e: React.FormEvent) {
+  const createMutation = useMutation({
+    mutationFn: () => unwrapResult(createModule(courseId, { title, description: description || undefined })),
+    onSuccess: () => {
+      setTitle('')
+      setDescription('')
+      queryClient.invalidateQueries({ queryKey: ['myCourse', courseId] })
+      toast.success('Module added.')
+    },
+    onError: (error) => toast.error(error.message),
+  })
+
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setCreating(true)
-    setError(null)
-    const result = await createModule(courseId, { title, description: description || undefined })
-    setCreating(false)
-    if (!result.ok) {
-      setError(result.error)
-      return
-    }
-    setTitle('')
-    setDescription('')
-    onCreated()
+    createMutation.mutate()
   }
 
   return (
     <form onSubmit={handleSubmit} className="mt-4 flex flex-wrap items-end gap-3">
       <input value={title} onChange={(e) => setTitle(e.target.value)} required placeholder="Module title" className={inputClass} />
       <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description (optional)" className={inputClass} />
-      <button type="submit" disabled={creating} className={buttonClass}>{creating ? '…' : '+ Add module'}</button>
-      {error && <p className="text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
+      <button type="submit" disabled={createMutation.isPending} className={buttonClass}>{createMutation.isPending ? '…' : '+ Add module'}</button>
     </form>
   )
 }
@@ -563,38 +577,61 @@ function ModuleRow({
   mod,
   selected,
   onSelect,
-  onReload,
 }: {
   mod: InstructorModule
   selected: Selection
   onSelect: (s: Selection) => void
-  onReload: () => void
 }) {
+  const queryClient = useQueryClient()
+  const toast = useToast()
   const [editing, setEditing] = useState(false)
   const [title, setTitle] = useState(mod.title)
   const [description, setDescription] = useState(mod.description ?? '')
-  const [saving, setSaving] = useState(false)
 
-  async function handleSaveModule(e: React.FormEvent) {
+  function invalidate() {
+    return queryClient.invalidateQueries({ queryKey: ['myCourse', mod.courseId] })
+  }
+
+  const saveMutation = useMutation({
+    mutationFn: () => unwrapResult(updateModule(mod.id, { title, description: description || undefined })),
+    onSuccess: () => {
+      setEditing(false)
+      invalidate()
+      toast.success('Module saved.')
+    },
+    onError: (error) => toast.error(error.message),
+  })
+  const deleteModuleMutation = useMutation({
+    mutationFn: () => unwrapResult(deleteModule(mod.id)),
+    onSuccess: () => {
+      invalidate()
+      toast.success('Module deleted.')
+    },
+    onError: (error) => toast.error(error.message),
+  })
+  const deleteLessonMutation = useMutation({
+    mutationFn: (lessonId: number) => unwrapResult(deleteLesson(lessonId)),
+    onSuccess: () => {
+      invalidate()
+      toast.success('Lesson deleted.')
+    },
+    onError: (error) => toast.error(error.message),
+  })
+
+  function handleSaveModule(e: React.FormEvent) {
     e.preventDefault()
-    setSaving(true)
-    await updateModule(mod.id, { title, description: description || undefined })
-    setSaving(false)
-    setEditing(false)
-    onReload()
+    saveMutation.mutate()
   }
 
-  async function handleDeleteModule() {
+  function handleDeleteModule() {
     if (!window.confirm(`Delete "${mod.title}" and all its lessons? This can't be undone.`)) return
-    await deleteModule(mod.id)
-    onReload()
+    deleteModuleMutation.mutate()
   }
 
-  async function handleDeleteLesson(lessonId: number) {
+  function handleDeleteLesson(lessonId: number) {
     if (!window.confirm('Delete this lesson? This can\'t be undone.')) return
     if (selected?.moduleId === mod.id && selected.lessonId === lessonId) onSelect(null)
-    await deleteLesson(lessonId)
-    onReload()
+    deleteLessonMutation.mutate(lessonId)
   }
 
   return (
@@ -604,7 +641,7 @@ function ModuleRow({
           <input value={title} onChange={(e) => setTitle(e.target.value)} required className={rowInputClass} />
           <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description" className={rowInputClass} />
           <div className="flex gap-2">
-            <button type="submit" disabled={saving} className={buttonClass}>{saving ? '…' : 'Save'}</button>
+            <button type="submit" disabled={saveMutation.isPending} className={buttonClass}>{saveMutation.isPending ? '…' : 'Save'}</button>
             <button type="button" onClick={() => setEditing(false)} className={buttonClass}>Cancel</button>
           </div>
         </form>
@@ -662,16 +699,20 @@ type AnswerDraft = { body: string; correct: boolean }
 type QuestionDraft = { prompt: string; answers: AnswerDraft[] }
 
 function LessonEditor({
+  courseId,
   moduleId,
   lesson,
   onSaved,
   onCancel,
 }: {
+  courseId: number
   moduleId: number
   lesson?: InstructorLesson
   onSaved: () => void
   onCancel?: () => void
 }) {
+  const queryClient = useQueryClient()
+  const toast = useToast()
   const isEditing = Boolean(lesson)
 
   const [title, setTitle] = useState(lesson?.title ?? '')
@@ -688,45 +729,47 @@ function LessonEditor({
     })) ?? []
   )
 
+  const needsContentFetch = isEditing && lesson?.type === 'article' && Boolean(lesson.contentPath)
+  const contentQuery = useQuery({
+    queryKey: ['lessonContent', lesson?.contentPath],
+    queryFn: () => unwrapResult(getLessonContent(lesson!.contentPath!)),
+    enabled: needsContentFetch,
+  })
   const [markdown, setMarkdown] = useState('')
-  const [markdownLoaded, setMarkdownLoaded] = useState(!(isEditing && lesson?.type === 'article' && lesson.contentPath))
+  // Seeds the draft once per contentPath rather than on every fresh query
+  // response — a background revalidation landing mid-edit must never
+  // silently overwrite text being typed, same reasoning as the profile
+  // bio field.
+  const seededContentPath = useRef<string | null>(null)
+  useEffect(() => {
+    if (contentQuery.data !== undefined && seededContentPath.current !== lesson?.contentPath) {
+      setMarkdown(contentQuery.data)
+      seededContentPath.current = lesson?.contentPath ?? null
+    }
+  }, [contentQuery.data, lesson?.contentPath])
+  const markdownLoaded = !needsContentFetch || contentQuery.data !== undefined
+
   const [preview, setPreview] = useState<string | null>(null)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [uploadingImage, setUploadingImage] = useState(false)
   const markdownRef = useRef<HTMLTextAreaElement>(null)
 
-  useEffect(() => {
-    if (isEditing && lesson?.type === 'article' && lesson.contentPath) {
-      getLessonContent(lesson.contentPath).then((result) => {
-        if (result.ok) setMarkdown(result.data)
-        setMarkdownLoaded(true)
-      })
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  const imageMutation = useMutation({
+    mutationFn: (file: File) => unwrapResult(uploadLessonImage(moduleId, file)),
+    onSuccess: (data) => {
+      // Insert at the cursor rather than always appending, so uploading an
+      // image mid-paragraph doesn't force a rewrite of the surrounding text.
+      const markup = `![](${data.filename})`
+      const textarea = markdownRef.current
+      const cursor = textarea?.selectionStart ?? markdown.length
+      setMarkdown((prev) => prev.slice(0, cursor) + markup + prev.slice(cursor))
+    },
+    onError: (error) => toast.error(error.message),
+  })
 
-  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     e.target.value = ''
     if (!file) return
-
-    setUploadingImage(true)
-    setError(null)
-    const result = await uploadLessonImage(moduleId, file)
-    setUploadingImage(false)
-
-    if (!result.ok) {
-      setError(result.error)
-      return
-    }
-
-    // Insert at the cursor rather than always appending, so uploading an
-    // image mid-paragraph doesn't force a rewrite of the surrounding text.
-    const markup = `![](${result.data.filename})`
-    const textarea = markdownRef.current
-    const cursor = textarea?.selectionStart ?? markdown.length
-    setMarkdown(markdown.slice(0, cursor) + markup + markdown.slice(cursor))
+    imageMutation.mutate(file)
   }
 
   async function handlePreview() {
@@ -775,49 +818,36 @@ function LessonEditor({
     (questions.length > 0 &&
       questions.every((q) => q.prompt.trim() && q.answers.length >= 2 && q.answers.every((a) => a.body.trim()) && q.answers.filter((a) => a.correct).length === 1))
 
-  async function handleSave() {
-    setSaving(true)
-    setError(null)
-
-    const fields: LessonFields = {
-      title,
-      type,
-      ...(type === 'video' ? { videoUrl } : {}),
-      ...(type === 'exercise' ? { prompt, language: language || undefined, starterCode: starterCode || undefined, solutionNotes: solutionNotes || undefined } : {}),
-      ...(type === 'quiz' ? { questions: questions.map((q) => ({ prompt: q.prompt, answers: q.answers.map((a) => ({ body: a.body, correct: a.correct })) })) } : {}),
-    }
-
-    let lessonId: number
-    if (isEditing) {
-      const result = await updateLesson(lesson!.id, fields)
-      if (!result.ok) {
-        setSaving(false)
-        setError(result.error)
-        return
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const fields: LessonFields = {
+        title,
+        type,
+        ...(type === 'video' ? { videoUrl } : {}),
+        ...(type === 'exercise' ? { prompt, language: language || undefined, starterCode: starterCode || undefined, solutionNotes: solutionNotes || undefined } : {}),
+        ...(type === 'quiz' ? { questions: questions.map((q) => ({ prompt: q.prompt, answers: q.answers.map((a) => ({ body: a.body, correct: a.correct })) })) } : {}),
       }
-      lessonId = lesson!.id
-    } else {
-      const result = await createLesson(moduleId, fields)
-      if (!result.ok) {
-        setSaving(false)
-        setError(result.error)
-        return
-      }
-      lessonId = result.data.id
-    }
 
-    if (type === 'article') {
-      const contentResult = await saveLessonContent(lessonId, markdown)
-      if (!contentResult.ok) {
-        setSaving(false)
-        setError(contentResult.error)
-        return
+      let lessonId: number
+      if (isEditing) {
+        await unwrapResult(updateLesson(lesson!.id, fields))
+        lessonId = lesson!.id
+      } else {
+        const created = await unwrapResult(createLesson(moduleId, fields))
+        lessonId = created.id
       }
-    }
 
-    setSaving(false)
-    onSaved()
-  }
+      if (type === 'article') {
+        await unwrapResult(saveLessonContent(lessonId, markdown))
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['myCourse', courseId] })
+      toast.success(isEditing ? 'Lesson saved.' : 'Lesson created.')
+      onSaved()
+    },
+    onError: (error) => toast.error(error.message),
+  })
 
   return (
     <div className="flex flex-col gap-3">
@@ -837,7 +867,7 @@ function LessonEditor({
       {type === 'article' && (
         <div>
           {!markdownLoaded ? (
-            <p className="text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
+            <Skeleton className="h-[420px] w-full" />
           ) : (
             <>
               <textarea
@@ -850,9 +880,9 @@ function LessonEditor({
               />
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <button type="button" onClick={handlePreview} className={buttonClass}>Preview</button>
-                <label className={`cursor-pointer ${buttonClass} ${uploadingImage ? 'pointer-events-none opacity-50' : ''}`}>
-                  {uploadingImage ? 'Uploading…' : '+ Insert image'}
-                  <input type="file" accept="image/png,image/jpeg,image/gif,image/svg+xml" onChange={handleImageUpload} disabled={uploadingImage} className="hidden" />
+                <label className={`cursor-pointer ${buttonClass} ${imageMutation.isPending ? 'pointer-events-none opacity-50' : ''}`}>
+                  {imageMutation.isPending ? 'Uploading…' : '+ Insert image'}
+                  <input type="file" accept="image/png,image/jpeg,image/gif,image/svg+xml" onChange={handleImageUpload} disabled={imageMutation.isPending} className="hidden" />
                 </label>
               </div>
               {preview && <div className={`mt-4 border border-white/10 bg-[#17181B] p-6 ${PROSE_LESSON_CLASS}`} dangerouslySetInnerHTML={{ __html: preview }} />}
@@ -917,12 +947,11 @@ function LessonEditor({
       )}
 
       <div className="flex gap-2">
-        <button type="button" disabled={saving || !quizValid} onClick={handleSave} className={buttonClass}>
-          {saving ? '…' : isEditing ? 'Save lesson' : 'Create lesson'}
+        <button type="button" disabled={saveMutation.isPending || !quizValid} onClick={() => saveMutation.mutate()} className={buttonClass}>
+          {saveMutation.isPending ? '…' : isEditing ? 'Save lesson' : 'Create lesson'}
         </button>
         {onCancel && <button type="button" onClick={onCancel} className={buttonClass}>Cancel</button>}
       </div>
-      {error && <p className="text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
     </div>
   )
 }

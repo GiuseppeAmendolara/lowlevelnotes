@@ -3,12 +3,14 @@
 import { use, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useSession } from '@/components/SessionProvider'
+import { useToast } from '@/components/ToastProvider'
 import ActionButton from '@/components/ActionButton'
 import CourseTreeRail from '@/components/CourseTreeRail'
 import { ArticleBody, VideoBody, ExerciseBody } from '@/components/lesson/LessonContentViews'
-import AuthMessage from '@/components/auth/AuthMessage'
 import AuthSubmitButton from '@/components/auth/AuthSubmitButton'
+import { Skeleton } from '@/components/Skeleton'
 import {
   getCourse,
   getCourseLessons,
@@ -17,9 +19,9 @@ import {
   completeLesson,
   enrollCourse,
   attemptQuiz,
-  type Course,
+  unwrapResult,
+  ApiError,
   type Lesson,
-  type LessonDetail,
   type Quiz,
   type QuizAttemptResult,
 } from '@/lib/authClient'
@@ -42,16 +44,42 @@ export default function LessonPage({ params }: { params: Promise<{ course: strin
   const { course: courseSlug, lesson: lessonSlug } = use(params)
   const router = useRouter()
   const { user, loading: sessionLoading } = useSession()
+  const queryClient = useQueryClient()
+  const toast = useToast()
 
-  const [course, setCourse] = useState<Course | null>(null)
-  const [lessons, setLessons] = useState<Lesson[] | null>(null)
-  const [lesson, setLesson] = useState<LessonDetail | null>(null)
-  const [isEnrolled, setIsEnrolled] = useState(false)
-  const [isCompleted, setIsCompleted] = useState(false)
-  const [completedLessonIds, setCompletedLessonIds] = useState<Set<number>>(new Set())
-  const [error, setError] = useState<{ message: string; notFound: boolean } | null>(null)
-  const [enrolling, setEnrolling] = useState(false)
-  const [enrollError, setEnrollError] = useState<string | null>(null)
+  // Same query keys the course detail page uses, so arriving here from
+  // there (or going back to it) reuses the cache instead of refetching.
+  const courseQuery = useQuery({
+    queryKey: ['course', courseSlug],
+    queryFn: () => unwrapResult(getCourse(courseSlug)),
+    enabled: !!user,
+  })
+  const lessonsQuery = useQuery({
+    queryKey: ['course', courseSlug, 'lessons'],
+    queryFn: () => unwrapResult(getCourseLessons(courseSlug)),
+    enabled: !!user,
+  })
+  const summary = lessonsQuery.data?.find((l) => l.slug === lessonSlug)
+  const lessonQuery = useQuery({
+    queryKey: ['lesson', summary?.id],
+    queryFn: () => unwrapResult(getLesson(summary!.id)),
+    enabled: !!summary,
+  })
+  const progressQuery = useQuery({
+    queryKey: ['progress'],
+    queryFn: () => unwrapResult(getMyProgress()),
+    enabled: !!user,
+    staleTime: 0,
+  })
+
+  const enrollMutation = useMutation({
+    mutationFn: () => unwrapResult(enrollCourse(courseSlug)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['progress'] })
+      toast.success('Enrolled.')
+    },
+    onError: (error) => toast.error(error.message),
+  })
 
   useEffect(() => {
     if (!sessionLoading && !user) {
@@ -59,96 +87,32 @@ export default function LessonPage({ params }: { params: Promise<{ course: strin
     }
   }, [sessionLoading, user, router])
 
-  useEffect(() => {
-    if (!user) return
-
-    let cancelled = false
-    ;(async () => {
-      const [courseResult, lessonsResult, progressResult] = await Promise.all([
-        getCourse(courseSlug),
-        getCourseLessons(courseSlug),
-        getMyProgress(),
-      ])
-
-      if (!courseResult.ok) {
-        if (!cancelled) setError({ message: courseResult.error, notFound: courseResult.status === 404 })
-        return
-      }
-      if (!lessonsResult.ok) {
-        if (!cancelled) setError({ message: lessonsResult.error, notFound: lessonsResult.status === 404 })
-        return
-      }
-
-      const summary = lessonsResult.data.find((l) => l.slug === lessonSlug)
-      if (!summary) {
-        if (!cancelled) setError({ message: 'Lesson not found', notFound: true })
-        return
-      }
-
-      const lessonResult = await getLesson(summary.id)
-      if (!lessonResult.ok) {
-        if (!cancelled) setError({ message: lessonResult.error, notFound: lessonResult.status === 404 })
-        return
-      }
-
-      if (!cancelled) {
-        setCourse(courseResult.data)
-        setLessons(lessonsResult.data)
-        setLesson(lessonResult.data)
-
-        if (progressResult.ok) {
-          setIsEnrolled(progressResult.data.enrollments.some((e) => e.courseSlug === courseSlug))
-          setIsCompleted(
-            progressResult.data.lessonProgress.some((p) => p.lessonId === summary.id && p.status === 'completed')
-          )
-          setCompletedLessonIds(
-            new Set(
-              progressResult.data.lessonProgress
-                .filter((p) => p.courseSlug === courseSlug && p.status === 'completed')
-                .map((p) => p.lessonId)
-            )
-          )
-        }
-      }
-    })()
-
-    return () => {
-      cancelled = true
-    }
-  }, [user, courseSlug, lessonSlug])
-
-  async function handleEnroll() {
-    setEnrolling(true)
-    setEnrollError(null)
-    const result = await enrollCourse(courseSlug)
-    setEnrolling(false)
-
-    if (!result.ok) {
-      setEnrollError(result.error)
-      return
-    }
-
-    setIsEnrolled(true)
-  }
-
   if (sessionLoading || !user) {
     return (
       <main className="min-h-screen bg-[#0B0B0D]">
-        <section className="mx-auto max-w-3xl px-6 pb-10 pt-20 sm:pt-28">
-          <p className="text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
+        <section className="mx-auto max-w-6xl px-6 pb-10 pt-20 sm:pt-28">
+          <LessonSkeleton />
         </section>
       </main>
     )
   }
 
-  if (error) {
+  // A lesson slug with no matching entry in a successfully-loaded lessons
+  // list is a client-detected 404 (no API call for it ever 404s), same
+  // "not found" treatment as an actual API 404 from any of the queries.
+  const clientNotFound = lessonsQuery.data && !summary
+  const apiError = courseQuery.error ?? lessonsQuery.error ?? lessonQuery.error
+  const notFound = clientNotFound || (apiError instanceof ApiError && apiError.status === 404)
+  const errorMessage = clientNotFound ? 'Lesson not found' : apiError?.message
+
+  if (errorMessage) {
     return (
       <main className="min-h-screen bg-[#0B0B0D]">
-        <section className="mx-auto max-w-3xl px-6 pb-10 pt-20 sm:pt-28">
+        <section className="mx-auto max-w-6xl px-6 pb-10 pt-20 sm:pt-28">
           <h1 className="text-2xl font-bold tracking-[-0.04em] text-white">
-            {error.notFound ? 'Lesson not found' : 'Something went wrong'}
+            {notFound ? 'Lesson not found' : 'Something went wrong'}
           </h1>
-          <p className="mt-3 text-sm text-[#90939A]">{error.message}</p>
+          <p className="mt-3 text-sm text-[#90939A]">{errorMessage}</p>
           <Link href={`/courses/${courseSlug}`} className="mt-6 inline-block text-sm text-[#FF7A33] underline underline-offset-2">
             ← Back to course
           </Link>
@@ -157,11 +121,15 @@ export default function LessonPage({ params }: { params: Promise<{ course: strin
     )
   }
 
+  const course = courseQuery.data
+  const lessons = lessonsQuery.data
+  const lesson = lessonQuery.data
+
   if (!course || !lesson || !lessons) {
     return (
       <main className="min-h-screen bg-[#0B0B0D]">
-        <section className="mx-auto max-w-3xl px-6 pb-10 pt-20 sm:pt-28">
-          <p className="text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
+        <section className="mx-auto max-w-6xl px-6 pb-10 pt-20 sm:pt-28">
+          <LessonSkeleton />
         </section>
       </main>
     )
@@ -171,15 +139,17 @@ export default function LessonPage({ params }: { params: Promise<{ course: strin
   const currentIndex = ordered.findIndex((l) => l.slug === lessonSlug)
   const nextLesson = currentIndex >= 0 ? ordered[currentIndex + 1] : undefined
 
-  const lessonId = lesson.id
-  function markCompleted() {
-    setIsCompleted(true)
-    setCompletedLessonIds((prev) => new Set(prev).add(lessonId))
-  }
+  const isEnrolled = progressQuery.data?.enrollments.some((e) => e.courseSlug === courseSlug) ?? false
+  const isCompleted = progressQuery.data?.lessonProgress.some((p) => p.lessonId === lesson.id && p.status === 'completed') ?? false
+  const completedLessonIds = new Set(
+    (progressQuery.data?.lessonProgress ?? [])
+      .filter((p) => p.courseSlug === courseSlug && p.status === 'completed')
+      .map((p) => p.lessonId)
+  )
 
   return (
     <main className="min-h-screen bg-[#0B0B0D]">
-      <section className="mx-auto max-w-5xl px-6 pb-24 pt-20 sm:pt-28">
+      <section className="mx-auto max-w-6xl px-6 pb-24 pt-20 sm:pt-28">
         <Link href={`/courses/${courseSlug}`} className="text-xs uppercase tracking-[0.12em] text-white/40 transition-colors hover:text-white">
           ← {course.title}
         </Link>
@@ -200,7 +170,7 @@ export default function LessonPage({ params }: { params: Promise<{ course: strin
 
             <div className="mt-8">
               {!isEnrolled ? (
-                <LockedLesson type={lesson.type} onEnroll={handleEnroll} enrolling={enrolling} error={enrollError} />
+                <LockedLesson type={lesson.type} onEnroll={() => enrollMutation.mutate()} enrolling={enrollMutation.isPending} />
               ) : (
                 <div className="animate-fade-in-up motion-reduce:animate-none">
                   {lesson.type === 'article' && <ArticleBody contentPath={lesson.contentPath} />}
@@ -211,7 +181,6 @@ export default function LessonPage({ params }: { params: Promise<{ course: strin
                       lessonId={lesson.id}
                       quiz={lesson.quiz}
                       isCompleted={isCompleted}
-                      onCompleted={markCompleted}
                     />
                   )}
 
@@ -219,7 +188,6 @@ export default function LessonPage({ params }: { params: Promise<{ course: strin
                     <CompletionControl
                       lessonId={lesson.id}
                       isCompleted={isCompleted}
-                      onCompleted={markCompleted}
                     />
                   )}
 
@@ -237,28 +205,20 @@ export default function LessonPage({ params }: { params: Promise<{ course: strin
 function CompletionControl({
   lessonId,
   isCompleted,
-  onCompleted,
 }: {
   lessonId: number
   isCompleted: boolean
-  onCompleted: () => void
 }) {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  async function handleComplete() {
-    setLoading(true)
-    setError(null)
-    const result = await completeLesson(lessonId)
-    setLoading(false)
-
-    if (!result.ok) {
-      setError(result.error)
-      return
-    }
-
-    onCompleted()
-  }
+  const queryClient = useQueryClient()
+  const toast = useToast()
+  const completeMutation = useMutation({
+    mutationFn: () => unwrapResult(completeLesson(lessonId)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['progress'] })
+      toast.success('Lesson completed.')
+    },
+    onError: (error) => toast.error(error.message),
+  })
 
   if (isCompleted) {
     return (
@@ -268,10 +228,9 @@ function CompletionControl({
 
   return (
     <div className="mt-10 border-t border-white/10 pt-6">
-      <ActionButton onClick={handleComplete} loading={loading}>
+      <ActionButton onClick={() => completeMutation.mutate()} loading={completeMutation.isPending}>
         Mark complete
       </ActionButton>
-      {error && <p className="mt-2 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
     </div>
   )
 }
@@ -287,12 +246,10 @@ function LockedLesson({
   type,
   onEnroll,
   enrolling,
-  error,
 }: {
   type: Lesson['type']
   onEnroll: () => void
   enrolling: boolean
-  error: string | null
 }) {
   return (
     <div className="border border-white/10 bg-[#17181B] p-6">
@@ -304,7 +261,6 @@ function LockedLesson({
         <ActionButton onClick={onEnroll} loading={enrolling}>
           Enroll
         </ActionButton>
-        {error && <p className="mt-2 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
       </div>
     </div>
   )
@@ -333,7 +289,7 @@ function LessonNav({ courseSlug, nextLesson }: { courseSlug: string; nextLesson:
 }
 
 // Any successful attempt (any score) marks the lesson completed
-// server-side, so this owns calling onCompleted itself rather than
+// server-side, so this owns invalidating progress itself rather than
 // relying on the generic CompletionControl, which the page excludes for
 // quiz lessons entirely. Retakes are always allowed server-side (no
 // "already attempted" gate), so the form stays interactive after
@@ -342,43 +298,37 @@ function QuizBody({
   lessonId,
   quiz,
   isCompleted,
-  onCompleted,
 }: {
   lessonId: number
   quiz: Quiz
   isCompleted: boolean
-  onCompleted: () => void
 }) {
+  const queryClient = useQueryClient()
+  const toast = useToast()
   const [answers, setAnswers] = useState<Record<number, number>>({})
-  const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<QuizAttemptResult | null>(null)
+
+  const attemptMutation = useMutation({
+    mutationFn: (payload: { questionId: number; answerId: number }[]) => unwrapResult(attemptQuiz(lessonId, payload)),
+    onSuccess: (data) => {
+      setResult(data)
+      queryClient.invalidateQueries({ queryKey: ['progress'] })
+    },
+    onError: (error) => toast.error(error.message),
+  })
 
   const resultByQuestion = new Map(result?.results.map((r) => [r.questionId, r]))
   const allAnswered = quiz.questions.every((q) => answers[q.id] !== undefined)
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setSubmitting(true)
-    setError(null)
-
     const payload = quiz.questions.map((q) => ({ questionId: q.id, answerId: answers[q.id] }))
-    const attemptResult = await attemptQuiz(lessonId, payload)
-    setSubmitting(false)
-
-    if (!attemptResult.ok) {
-      setError(attemptResult.error)
-      return
-    }
-
-    setResult(attemptResult.data)
-    onCompleted()
+    attemptMutation.mutate(payload)
   }
 
   function handleRetake() {
     setResult(null)
     setAnswers({})
-    setError(null)
   }
 
   return (
@@ -445,7 +395,7 @@ function QuizBody({
                         name={`question-${question.id}`}
                         value={answer.id}
                         checked={selected}
-                        disabled={Boolean(questionResult) || submitting}
+                        disabled={Boolean(questionResult) || attemptMutation.isPending}
                         onChange={() => setAnswers((prev) => ({ ...prev, [question.id]: answer.id }))}
                         className="sr-only"
                       />
@@ -463,14 +413,24 @@ function QuizBody({
         })}
 
         {!result && (
-          <div>
-            <AuthSubmitButton loading={submitting} disabled={!allAnswered}>
-              Submit quiz
-            </AuthSubmitButton>
-            {error && <AuthMessage message={error} />}
-          </div>
+          <AuthSubmitButton loading={attemptMutation.isPending} disabled={!allAnswered}>
+            Submit quiz
+          </AuthSubmitButton>
         )}
       </form>
+    </div>
+  )
+}
+
+function LessonSkeleton() {
+  return (
+    <div className="grid grid-cols-1 gap-10 md:grid-cols-[280px_1fr]">
+      <Skeleton className="h-48" />
+      <div className="min-w-0">
+        <Skeleton className="h-3 w-24" />
+        <Skeleton className="mt-2 h-8 w-64 max-w-full" />
+        <Skeleton className="mt-8 h-40" />
+      </div>
     </div>
   )
 }

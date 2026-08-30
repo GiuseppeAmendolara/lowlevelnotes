@@ -3,13 +3,14 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useMutation } from '@tanstack/react-query'
 import AuthPageShell from '@/components/auth/AuthPageShell'
 import AuthTextField from '@/components/auth/AuthTextField'
 import AuthSubmitButton from '@/components/auth/AuthSubmitButton'
 import AuthMessage from '@/components/auth/AuthMessage'
 import TurnstileWidget, { type TurnstileHandle } from '@/components/auth/TurnstileWidget'
 import { useSession } from '@/components/SessionProvider'
-import { login } from '@/lib/authClient'
+import { login, unwrapResult } from '@/lib/authClient'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -19,8 +20,20 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [submitting, setSubmitting] = useState(false)
+
+  const loginMutation = useMutation({
+    mutationFn: () => unwrapResult(login(email, password, turnstileToken!)),
+    // Tokens are single-use regardless of outcome — fetch a fresh one
+    // before the next attempt.
+    onSettled: () => {
+      turnstileRef.current?.reset()
+      setTurnstileToken(null)
+    },
+    onSuccess: async () => {
+      await refresh()
+      router.push('/account')
+    },
+  })
 
   useEffect(() => {
     if (!sessionLoading && user) {
@@ -28,25 +41,10 @@ export default function LoginPage() {
     }
   }, [sessionLoading, user, router])
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!turnstileToken) return
-    setError(null)
-    setSubmitting(true)
-
-    const result = await login(email, password, turnstileToken)
-    setSubmitting(false)
-
-    turnstileRef.current?.reset()
-    setTurnstileToken(null)
-
-    if (!result.ok) {
-      setError(result.error)
-      return
-    }
-
-    await refresh()
-    router.push('/account')
+    loginMutation.mutate()
   }
 
   return (
@@ -57,9 +55,9 @@ export default function LoginPage() {
 
         <TurnstileWidget ref={turnstileRef} action="login" onToken={setTurnstileToken} />
 
-        {error && <AuthMessage message={error} />}
+        {loginMutation.error && <AuthMessage message={loginMutation.error.message} />}
 
-        <AuthSubmitButton loading={submitting} disabled={!turnstileToken}>Login</AuthSubmitButton>
+        <AuthSubmitButton loading={loginMutation.isPending} disabled={!turnstileToken}>Login</AuthSubmitButton>
       </form>
 
       <p className="mt-6 text-sm text-[#90939A]">

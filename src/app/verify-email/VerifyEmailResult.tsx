@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useQuery } from '@tanstack/react-query'
 import AuthMessage from '@/components/auth/AuthMessage'
-import { verifyEmail } from '@/lib/authClient'
+import { verifyEmail, unwrapResult } from '@/lib/authClient'
 
 // Client-side, not server-side: api.lowlevelnotes.com's WAF blocks
 // generic scripted HTTP clients (Node's fetch, curl) on most paths —
@@ -11,36 +11,27 @@ import { verifyEmail } from '@/lib/authClient'
 // (Vercel's Node runtime hits the same block). A real browser's fetch
 // doesn't, matching how every other auth page already talks to the API.
 export default function VerifyEmailResult({ token }: { token: string }) {
-  const [state, setState] = useState<{ loading: boolean; ok: boolean; message: string }>({
-    loading: true,
-    ok: false,
-    message: '',
+  // Modeled as a query (fires once on mount, keyed by token) rather than
+  // a manual useEffect — gets React Query's own unmounted-component
+  // safety for free instead of a hand-rolled `cancelled` flag. retry is
+  // explicitly off: an invalid/already-used token isn't a transient
+  // failure, so the default retry-with-backoff would just delay the
+  // error message for no benefit.
+  const query = useQuery({
+    queryKey: ['verifyEmail', token],
+    queryFn: () => unwrapResult(verifyEmail(token)),
+    retry: false,
   })
 
-  useEffect(() => {
-    let cancelled = false
-
-    verifyEmail(token).then((result) => {
-      if (cancelled) return
-      setState({
-        loading: false,
-        ok: result.ok,
-        message: result.ok ? result.data.message : result.error,
-      })
-    })
-
-    return () => {
-      cancelled = true
-    }
-  }, [token])
-
-  if (state.loading) {
+  if (query.isPending) {
     return <p className="text-sm text-[#90939A]">Verifying…</p>
   }
 
+  const message = query.isSuccess ? query.data.message : query.error?.message ?? ''
+
   return (
     <>
-      <AuthMessage message={state.message} tone={state.ok ? 'success' : 'error'} />
+      <AuthMessage message={message} tone={query.isSuccess ? 'success' : 'error'} />
       <p className="mt-6 text-sm text-[#90939A]">
         <Link href="/login" className="text-white/70 underline underline-offset-2 transition-colors hover:text-white">
           Go to login

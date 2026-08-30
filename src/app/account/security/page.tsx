@@ -2,22 +2,23 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useMutation } from '@tanstack/react-query'
 import AuthTextField from '@/components/auth/AuthTextField'
 import AuthSubmitButton from '@/components/auth/AuthSubmitButton'
 import AuthMessage from '@/components/auth/AuthMessage'
 import { useSession } from '@/components/SessionProvider'
-import { changePassword, deleteMyAccount } from '@/lib/authClient'
+import { useToast } from '@/components/ToastProvider'
+import { changePassword, deleteMyAccount, unwrapResult } from '@/lib/authClient'
 import Eyebrow from '@/components/Eyebrow'
+import { Skeleton } from '@/components/Skeleton'
 
 export default function AccountSecurityPage() {
   const router = useRouter()
   const { user, loading: sessionLoading, refresh } = useSession()
+  const toast = useToast()
 
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
-  const [submitting, setSubmitting] = useState(false)
   // Suppresses the redirect-to-/login guard below during account
   // deletion — otherwise refresh()'s setUser(null) and this effect's own
   // router.replace('/login') race handleAccountDeleted's router.push('/'),
@@ -26,29 +27,24 @@ export default function AccountSecurityPage() {
   // navigating away before it ever clears session state.)
   const loggingOutRef = useRef(false)
 
+  const changePasswordMutation = useMutation({
+    mutationFn: () => unwrapResult(changePassword(currentPassword, newPassword)),
+    onSuccess: () => {
+      setCurrentPassword('')
+      setNewPassword('')
+      toast.success('Password changed.')
+    },
+  })
+
   useEffect(() => {
     if (!sessionLoading && !user && !loggingOutRef.current) {
       router.replace('/login')
     }
   }, [sessionLoading, user, router])
 
-  async function handleChangePassword(e: React.FormEvent) {
+  function handleChangePassword(e: React.FormEvent) {
     e.preventDefault()
-    setError(null)
-    setSuccess(null)
-    setSubmitting(true)
-
-    const result = await changePassword(currentPassword, newPassword)
-    setSubmitting(false)
-
-    if (!result.ok) {
-      setError(result.error)
-      return
-    }
-
-    setCurrentPassword('')
-    setNewPassword('')
-    setSuccess('Password changed.')
+    changePasswordMutation.mutate()
   }
 
   // deleteMyAccount already clears the session cookie server-side on
@@ -62,7 +58,13 @@ export default function AccountSecurityPage() {
   }
 
   if (sessionLoading || !user) {
-    return <p className="pt-1 text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
+    return (
+      <div>
+        <Skeleton className="h-3 w-16" />
+        <Skeleton className="mt-2 h-9 w-64" />
+        <Skeleton className="mt-8 h-16 max-w-md" />
+      </div>
+    )
   }
 
   return (
@@ -76,9 +78,8 @@ export default function AccountSecurityPage() {
           setCurrentPassword={setCurrentPassword}
           newPassword={newPassword}
           setNewPassword={setNewPassword}
-          error={error}
-          success={success}
-          submitting={submitting}
+          error={changePasswordMutation.error?.message ?? null}
+          submitting={changePasswordMutation.isPending}
           onSubmit={handleChangePassword}
         />
       </div>
@@ -98,7 +99,6 @@ function PasswordSection({
   newPassword,
   setNewPassword,
   error,
-  success,
   submitting,
   onSubmit,
 }: {
@@ -107,7 +107,6 @@ function PasswordSection({
   newPassword: string
   setNewPassword: (value: string) => void
   error: string | null
-  success: string | null
   submitting: boolean
   onSubmit: (e: React.FormEvent) => void
 }) {
@@ -134,7 +133,6 @@ function PasswordSection({
           <AuthTextField label="New password" type="password" value={newPassword} onChange={setNewPassword} autoComplete="new-password" required />
 
           {error && <AuthMessage message={error} />}
-          {success && <AuthMessage message={success} tone="success" />}
 
           <AuthSubmitButton loading={submitting}>Change password</AuthSubmitButton>
         </form>
@@ -153,23 +151,15 @@ function PasswordSection({
 function DangerZone({ onDeleted }: { onDeleted: () => void }) {
   const [open, setOpen] = useState(false)
   const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [submitting, setSubmitting] = useState(false)
 
-  async function handleDelete(e: React.FormEvent) {
+  const deleteMutation = useMutation({
+    mutationFn: () => unwrapResult(deleteMyAccount(password)),
+    onSuccess: onDeleted,
+  })
+
+  function handleDelete(e: React.FormEvent) {
     e.preventDefault()
-    setError(null)
-    setSubmitting(true)
-
-    const result = await deleteMyAccount(password)
-    setSubmitting(false)
-
-    if (!result.ok) {
-      setError(result.error)
-      return
-    }
-
-    onDeleted()
+    deleteMutation.mutate()
   }
 
   return (
@@ -194,14 +184,14 @@ function DangerZone({ onDeleted }: { onDeleted: () => void }) {
           </p>
           <AuthTextField label="Confirm your password" type="password" value={password} onChange={setPassword} autoComplete="current-password" required />
 
-          {error && <AuthMessage message={error} />}
+          {deleteMutation.error && <AuthMessage message={deleteMutation.error.message} />}
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={deleteMutation.isPending}
             className="inline-flex w-full items-center justify-center gap-3 border border-[#F85149]/40 bg-[#F85149]/10 px-5 py-3.5 text-sm font-semibold text-[#F85149] transition-colors transition-transform duration-150 hover:bg-[#F85149]/20 active:scale-[0.98] motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F85149] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {submitting ? '…' : 'Permanently delete my account'}
+            {deleteMutation.isPending ? '…' : 'Permanently delete my account'}
           </button>
         </form>
       )}

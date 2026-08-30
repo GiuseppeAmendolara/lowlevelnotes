@@ -23,7 +23,29 @@ export type AuthUser = {
   isSuperAdmin: boolean
 }
 
-type Result<T> = { ok: true; data: T } | { ok: false; error: string; status: number }
+export type Result<T> = { ok: true; data: T } | { ok: false; error: string; status: number }
+
+// Carries the HTTP status through the throw, so a queryFn/mutationFn
+// caller can still tell a 404 apart from any other failure the way the
+// old .then(result => ...) call sites used to via result.status.
+export class ApiError extends Error {
+  status: number
+  constructor(message: string, status: number) {
+    super(message)
+    this.status = status
+  }
+}
+
+// Bridges this file's Result<T> convention (never throws, always resolves)
+// with TanStack Query's contract (a queryFn/mutationFn must throw to
+// signal an error — a resolved promise is always treated as success).
+// Wrap any of the functions below in a query/mutation with this instead
+// of teaching every call site to throw.
+export async function unwrapResult<T>(promise: Promise<Result<T>>): Promise<T> {
+  const result = await promise
+  if (!result.ok) throw new ApiError(result.error, result.status)
+  return result.data
+}
 
 async function authFetch<T>(path: string, init?: RequestInit): Promise<Result<T>> {
   let res: Response
@@ -826,6 +848,7 @@ export type StaffPendingCounts = {
   roleRequests: number
   resourceRequests: number
   courseRequests: number
+  totalUsers: number
 }
 
 export function getStaffPendingCounts() {

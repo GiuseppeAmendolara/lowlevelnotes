@@ -142,7 +142,10 @@ const TurnstileWidget = forwardRef<TurnstileHandle, Props>(function TurnstileWid
         onLoad={() => setScriptLoaded(true)}
         onError={() => setStalled(true)}
       />
-      <div ref={containerRef} className={className} />
+      {/* min-h reserves the challenge's rendered height (the "flexible"
+          size's normal, non-interactive height) before the widget script
+          has even loaded, so it doesn't pop the form taller once it does. */}
+      <div ref={containerRef} className={`min-h-[65px] ${className ?? ''}`} />
       {stalled && !rendered && (
         <p className="mt-2 text-xs text-[#F85149]">
           Verification didn&apos;t load.{' '}

@@ -3,12 +3,16 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import Eyebrow from '@/components/Eyebrow'
 import { useSession } from '@/components/SessionProvider'
+import { useToast } from '@/components/ToastProvider'
+import { Skeleton, SkeletonRow } from '@/components/Skeleton'
 import {
   getMyCourses,
   createCourse,
   deleteCourse,
+  unwrapResult,
   type InstructorCourse,
 } from '@/lib/authClient'
 
@@ -34,14 +38,41 @@ const STATUS_CLASS: Record<InstructorCourse['status'], string> = {
 export default function InstructorCoursesPage() {
   const router = useRouter()
   const { user, loading: sessionLoading } = useSession()
+  const queryClient = useQueryClient()
+  const toast = useToast()
+  const canBuild = !!user && (user.role === 'instructor' || user.role === 'staff')
 
-  const [courses, setCourses] = useState<InstructorCourse[] | null>(null)
+  const { data: courses } = useQuery({
+    queryKey: ['myCourses'],
+    queryFn: () => unwrapResult(getMyCourses()),
+    enabled: canBuild,
+  })
+
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [category, setCategory] = useState('')
-  const [creating, setCreating] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<number | null>(null)
+
+  const createMutation = useMutation({
+    mutationFn: () => unwrapResult(createCourse({ title, description: description || undefined, category: category || undefined })),
+    onSuccess: () => {
+      setTitle('')
+      setDescription('')
+      setCategory('')
+      queryClient.invalidateQueries({ queryKey: ['myCourses'] })
+      toast.success('Course created.')
+    },
+    onError: (error) => toast.error(error.message),
+  })
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => unwrapResult(deleteCourse(id)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['myCourses'] })
+      toast.success('Course deleted.')
+    },
+    onError: (error) => toast.error(error.message),
+    onSettled: () => setDeletingId(null),
+  })
 
   useEffect(() => {
     if (sessionLoading) return
@@ -54,58 +85,30 @@ export default function InstructorCoursesPage() {
     }
   }, [sessionLoading, user, router])
 
-  function load() {
-    return getMyCourses().then((result) => {
-      if (result.ok) setCourses(result.data)
-    })
-  }
-
-  useEffect(() => {
-    if (user && (user.role === 'instructor' || user.role === 'staff')) load()
-  }, [user])
-
-  async function handleCreate(e: React.FormEvent) {
+  function handleCreate(e: React.FormEvent) {
     e.preventDefault()
-    setCreating(true)
-    setError(null)
-
-    const result = await createCourse({ title, description: description || undefined, category: category || undefined })
-    setCreating(false)
-
-    if (!result.ok) {
-      setError(result.error)
-      return
-    }
-
-    setTitle('')
-    setDescription('')
-    setCategory('')
-    load()
+    createMutation.mutate()
   }
 
   // Drafts only, matching the Worker's own restriction — once a course is
   // submitted for review or published it has real reviewer/student
   // investment, so removing it becomes a staff-only action instead of
   // instructor self-service.
-  async function handleDelete(e: React.MouseEvent, id: number, title: string) {
+  function handleDelete(e: React.MouseEvent, id: number, title: string) {
     e.preventDefault()
     e.stopPropagation()
     if (!window.confirm(`Delete "${title}"? This can't be undone.`)) return
-
     setDeletingId(id)
-    setError(null)
-    const result = await deleteCourse(id)
-    setDeletingId(null)
-
-    if (!result.ok) {
-      setError(result.error)
-      return
-    }
-    setCourses((prev) => prev?.filter((c) => c.id !== id) ?? prev)
+    deleteMutation.mutate(id)
   }
 
-  if (sessionLoading || !user || (user.role !== 'instructor' && user.role !== 'staff')) {
-    return <p className="pt-1 text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
+  if (sessionLoading || !canBuild) {
+    return (
+      <div>
+        <Skeleton className="h-3 w-20" />
+        <Skeleton className="mt-2 h-9 w-56" />
+      </div>
+    )
   }
 
   return (
@@ -122,12 +125,10 @@ export default function InstructorCoursesPage() {
         <input type="text" required placeholder="Course title" value={title} onChange={(e) => setTitle(e.target.value)} className={inputClass} />
         <input type="text" placeholder="Description (optional)" value={description} onChange={(e) => setDescription(e.target.value)} className={inputClass} />
         <input type="text" placeholder="Category (optional)" value={category} onChange={(e) => setCategory(e.target.value)} className={inputClass} />
-        <button type="submit" disabled={creating} className={buttonClass}>{creating ? '…' : 'New course'}</button>
+        <button type="submit" disabled={createMutation.isPending} className={buttonClass}>{createMutation.isPending ? '…' : 'New course'}</button>
       </form>
-      {error && <p className="mt-2 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
-
       <div className="mt-6 border-l border-t border-white/10">
-        {courses === null && <p className="border-b border-r border-white/10 bg-[#17181B] p-4 text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>}
+        {courses === undefined && <SkeletonRow count={3} />}
         {courses?.length === 0 && <p className="border-b border-r border-white/10 bg-[#17181B] p-4 text-sm text-[#90939A]">No courses yet — create one above.</p>}
         {courses?.map((c) => (
           <Link

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import AuthTextField from '@/components/auth/AuthTextField'
 import AuthTextArea from '@/components/auth/AuthTextArea'
 import AuthSelect from '@/components/auth/AuthSelect'
@@ -9,13 +10,14 @@ import AuthSubmitButton from '@/components/auth/AuthSubmitButton'
 import AuthMessage from '@/components/auth/AuthMessage'
 import Eyebrow from '@/components/Eyebrow'
 import { useSession } from '@/components/SessionProvider'
+import { useToast } from '@/components/ToastProvider'
+import { Skeleton, SkeletonRow } from '@/components/Skeleton'
 import {
   getMyRoleRequests,
   submitRoleRequest,
   getMyResourceRequests,
   submitResourceRequest,
-  type RoleRequest,
-  type ResourceRequest,
+  unwrapResult,
 } from '@/lib/authClient'
 
 const RESOURCE_TYPES = [
@@ -53,7 +55,7 @@ export default function ContributePage() {
     return (
       <div>
         <ContributeHeader heading="Contribute" />
-        <p className="mt-6 text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
+        <Skeleton className="mt-6 h-32 max-w-md" />
       </div>
     )
   }
@@ -64,40 +66,32 @@ export default function ContributePage() {
 }
 
 function RoleRequestPanel() {
-  const [requests, setRequests] = useState<RoleRequest[] | null>(null)
+  const queryClient = useQueryClient()
+  const toast = useToast()
+  const { data: requests } = useQuery({
+    queryKey: ['myRoleRequests'],
+    queryFn: () => unwrapResult(getMyRoleRequests()),
+  })
+
   const [requestedRole, setRequestedRole] = useState<'contributor' | 'instructor'>('contributor')
   const [message, setMessage] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [submitting, setSubmitting] = useState(false)
-  const [done, setDone] = useState(false)
 
-  useEffect(() => {
-    getMyRoleRequests().then((result) => {
-      if (result.ok) setRequests(result.data)
-    })
-  }, [])
+  const submitMutation = useMutation({
+    mutationFn: () => unwrapResult(submitRoleRequest(requestedRole, message)),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['myRoleRequests'] }),
+    onError: (error) => toast.error(error.message),
+  })
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setError(null)
-    setSubmitting(true)
-
-    const result = await submitRoleRequest(requestedRole, message)
-    setSubmitting(false)
-
-    if (!result.ok) {
-      setError(result.error)
-      return
-    }
-
-    setDone(true)
+    submitMutation.mutate()
   }
 
-  if (requests === null) {
+  if (requests === undefined) {
     return (
       <div>
         <ContributeHeader heading="Contribute" />
-        <p className="mt-6 text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
+        <Skeleton className="mt-6 h-32 max-w-md" />
       </div>
     )
   }
@@ -119,7 +113,9 @@ function RoleRequestPanel() {
     )
   }
 
-  if (done) {
+  // Shown right after a successful submit, until the invalidated query
+  // above refetches and this branch is superseded by the "pending" one.
+  if (submitMutation.isSuccess) {
     return (
       <div>
         <ContributeHeader heading="Request sent" />
@@ -157,16 +153,19 @@ function RoleRequestPanel() {
         />
         <AuthTextArea label="Why do you want access?" value={message} onChange={setMessage} required />
 
-        {error && <AuthMessage message={error} />}
-
-        <AuthSubmitButton loading={submitting}>Submit request</AuthSubmitButton>
+        <AuthSubmitButton loading={submitMutation.isPending}>Submit request</AuthSubmitButton>
       </form>
     </div>
   )
 }
 
 function ResourceRequestPanel() {
-  const [requests, setRequests] = useState<ResourceRequest[] | null>(null)
+  const queryClient = useQueryClient()
+  const toast = useToast()
+  const { data: requests } = useQuery({
+    queryKey: ['myResourceRequests'],
+    queryFn: () => unwrapResult(getMyResourceRequests()),
+  })
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -175,55 +174,44 @@ function ResourceRequestPanel() {
   const [mode, setMode] = useState<'link' | 'file'>('link')
   const [url, setUrl] = useState('')
   const [file, setFile] = useState<File | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
-  const [submitting, setSubmitting] = useState(false)
 
-  function loadRequests() {
-    getMyResourceRequests().then((result) => {
-      if (result.ok) setRequests(result.data)
-    })
-  }
+  const submitMutation = useMutation({
+    mutationFn: () =>
+      unwrapResult(
+        submitResourceRequest({
+          title,
+          description,
+          type,
+          category,
+          url: mode === 'link' ? url.trim() : undefined,
+          file: mode === 'file' && file ? file : undefined,
+        })
+      ),
+    onSuccess: () => {
+      setTitle('')
+      setDescription('')
+      setCategory('')
+      setUrl('')
+      setFile(null)
+      queryClient.invalidateQueries({ queryKey: ['myResourceRequests'] })
+      toast.success('Submitted for review.')
+    },
+    onError: (error) => toast.error(error.message),
+  })
 
-  useEffect(loadRequests, [])
-
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setError(null)
-    setSuccess(null)
 
     if (mode === 'link' && !url.trim()) {
-      setError('Provide a link.')
+      toast.error('Provide a link.')
       return
     }
     if (mode === 'file' && !file) {
-      setError('Choose a file.')
+      toast.error('Choose a file.')
       return
     }
 
-    setSubmitting(true)
-    const result = await submitResourceRequest({
-      title,
-      description,
-      type,
-      category,
-      url: mode === 'link' ? url.trim() : undefined,
-      file: mode === 'file' && file ? file : undefined,
-    })
-    setSubmitting(false)
-
-    if (!result.ok) {
-      setError(result.error)
-      return
-    }
-
-    setTitle('')
-    setDescription('')
-    setCategory('')
-    setUrl('')
-    setFile(null)
-    setSuccess('Submitted for review.')
-    loadRequests()
+    submitMutation.mutate()
   }
 
   return (
@@ -260,17 +248,12 @@ function ResourceRequestPanel() {
           </label>
         )}
 
-        {error && <AuthMessage message={error} />}
-        {success && <AuthMessage message={success} tone="success" />}
-
-        <AuthSubmitButton loading={submitting}>Submit</AuthSubmitButton>
+        <AuthSubmitButton loading={submitMutation.isPending}>Submit</AuthSubmitButton>
       </form>
 
       <Eyebrow as="h2" className="mt-12">Your submissions</Eyebrow>
       <div className="mt-4 border-l border-t border-white/10">
-        {requests === null && (
-          <p className="border-b border-r border-white/10 bg-[#17181B] p-4 text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
-        )}
+        {requests === undefined && <SkeletonRow count={2} />}
         {requests?.length === 0 && (
           <p className="border-b border-r border-white/10 bg-[#17181B] p-4 text-sm text-[#90939A]">Nothing submitted yet.</p>
         )}

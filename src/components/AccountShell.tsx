@@ -2,9 +2,17 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useSession } from '@/components/SessionProvider'
-import { getStaffPendingCounts, logout, type StaffPendingCounts } from '@/lib/authClient'
+import { useToast } from '@/components/ToastProvider'
+import { getStaffPendingCounts, logout, unwrapResult, type StaffPendingCounts } from '@/lib/authClient'
+
+// How often a staff session polls for new users/requests while a
+// dashboard page is open, to surface them as a toast without needing a
+// manual refresh. 30s balances "feels live" against hammering the
+// endpoint — this is a plain count query, not a push subscription.
+const STAFF_POLL_MS = 30000
 
 type NavItem = { href: string; label: string; badge?: number | null }
 
@@ -19,15 +27,38 @@ export default function AccountShell({ children }: { children: React.ReactNode }
   const pathname = usePathname()
   const router = useRouter()
   const { user, loading, refresh } = useSession()
-  const [pendingCounts, setPendingCounts] = useState<StaffPendingCounts | null>(null)
+  const toast = useToast()
+  // Same ['staffPendingCounts'] key as /account/approvals — this sidebar
+  // badge and that page's own counts now share one cached fetch instead
+  // of each independently hitting the endpoint. refetchInterval keeps it
+  // polling in the background for as long as a staff member has any
+  // /account page open, which is what makes the toasts below live rather
+  // than only updating on the next manual navigation.
+  const { data: pendingCounts } = useQuery({
+    queryKey: ['staffPendingCounts'],
+    queryFn: () => unwrapResult(getStaffPendingCounts()),
+    enabled: user?.role === 'staff',
+    refetchInterval: user?.role === 'staff' ? STAFF_POLL_MS : false,
+  })
 
+  // Toasts on an increase in any count since the last time this ran —
+  // seeded (not toasted) on the very first load, so opening the
+  // dashboard with 3 pending requests doesn't fire 3 "new" toasts for
+  // things that were already sitting there. Compares against a ref
+  // rather than component state so a background poll's setState doesn't
+  // itself retrigger this effect before the comparison happens.
+  const previousCounts = useRef<StaffPendingCounts | null>(null)
   useEffect(() => {
-    if (user?.role !== 'staff') return
+    if (!pendingCounts) return
+    const prev = previousCounts.current
+    previousCounts.current = pendingCounts
 
-    getStaffPendingCounts().then((result) => {
-      if (result.ok) setPendingCounts(result.data)
-    })
-  }, [user])
+    if (!prev) return
+    if (pendingCounts.roleRequests > prev.roleRequests) toast.info('New role request.')
+    if (pendingCounts.resourceRequests > prev.resourceRequests) toast.info('New resource request.')
+    if (pendingCounts.courseRequests > prev.courseRequests) toast.info('New course submitted for review.')
+    if (pendingCounts.totalUsers > prev.totalUsers) toast.info('New user registered.')
+  }, [pendingCounts, toast])
 
   const pendingTotal = pendingCounts
     ? pendingCounts.roleRequests + pendingCounts.resourceRequests + pendingCounts.courseRequests

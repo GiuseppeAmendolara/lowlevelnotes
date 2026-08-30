@@ -37,13 +37,13 @@ export default async function ChangelogPage() {
 
   return (
     <main className="min-h-screen bg-[#0B0B0D]">
-      <section className="mx-auto max-w-3xl px-6 pb-10 pt-20 sm:pt-28">
+      <section className="mx-auto max-w-6xl px-6 pb-10 pt-20 sm:pt-28">
         <Eyebrow>Version history</Eyebrow>
         <h1 className="mt-4 text-4xl font-bold tracking-[-0.05em] text-white sm:text-5xl">Changelog</h1>
         <p className="mt-4 max-w-xl leading-7 text-[#90939A]">Every release, in order—from the first notes to whatever&apos;s shipping today.</p>
       </section>
 
-      <section className="mx-auto grid max-w-3xl grid-cols-1 gap-10 px-6 pb-24 sm:grid-cols-[140px_1fr]">
+      <section className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-6 pb-24 sm:grid-cols-[140px_1fr]">
         {years.length > 1 && <ChangelogJumpNav years={years} />}
 
         <div className="relative order-1 min-w-0 sm:order-2">

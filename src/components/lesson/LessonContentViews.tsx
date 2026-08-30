@@ -2,7 +2,20 @@
 
 import { useEffect, useState } from 'react'
 import SolutionReveal from '@/components/SolutionReveal'
+import { Skeleton } from '@/components/Skeleton'
 import { getLessonContent } from '@/lib/authClient'
+
+function ProseSkeleton() {
+  return (
+    <div className="flex flex-col gap-3">
+      <Skeleton className="h-4 w-full" />
+      <Skeleton className="h-4 w-11/12" />
+      <Skeleton className="h-4 w-4/5" />
+      <Skeleton className="mt-3 h-4 w-full" />
+      <Skeleton className="h-4 w-3/5" />
+    </div>
+  )
+}
 
 // content_path's directory, e.g. "drafts/Data/postgresql.md" -> "drafts/Data"
 // — used to resolve relative image references in the markdown. Avoids
@@ -74,7 +87,7 @@ export function ArticleBody({ contentPath }: { contentPath: string | null }) {
   }
 
   if (!html) {
-    return <p className="text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
+    return <ProseSkeleton />
   }
 
   return (
@@ -124,7 +137,7 @@ export function RenderedCode({ code, lang }: { code: string; lang: string }) {
   }, [code, lang])
 
   if (!html) {
-    return <div className="border border-white/10 bg-[#0B0B0D] p-5 text-xs text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</div>
+    return <div className="border border-white/10 bg-[#0B0B0D] p-5"><ProseSkeleton /></div>
   }
 
   return (

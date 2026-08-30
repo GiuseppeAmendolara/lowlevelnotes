@@ -65,3 +65,12 @@ body {
   background: var(--accent);
   color: var(--background-deep);
 }
+
+/* Browsers give <button>/<select> a plain arrow cursor by default (only
+   <a href> gets a hand cursor natively), so every clickable button/select
+   site-wide silently read as non-interactive on hover. One rule instead
+   of adding cursor-pointer to every button's className individually. */
+button:not(:disabled),
+select:not(:disabled) {
+  cursor: pointer;
+}

@@ -3,13 +3,14 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useMutation } from '@tanstack/react-query'
 import AuthPageShell from '@/components/auth/AuthPageShell'
 import AuthTextField from '@/components/auth/AuthTextField'
 import AuthSubmitButton from '@/components/auth/AuthSubmitButton'
 import AuthMessage from '@/components/auth/AuthMessage'
 import TurnstileWidget, { type TurnstileHandle } from '@/components/auth/TurnstileWidget'
 import { useSession } from '@/components/SessionProvider'
-import { register } from '@/lib/authClient'
+import { register, unwrapResult } from '@/lib/authClient'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -20,9 +21,16 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [submitting, setSubmitting] = useState(false)
-  const [done, setDone] = useState(false)
+
+  const registerMutation = useMutation({
+    mutationFn: () => unwrapResult(register(email, password, displayName, turnstileToken!)),
+    // Tokens are single-use regardless of outcome — fetch a fresh one
+    // before the next attempt.
+    onSettled: () => {
+      turnstileRef.current?.reset()
+      setTurnstileToken(null)
+    },
+  })
 
   useEffect(() => {
     if (!sessionLoading && user) {
@@ -30,32 +38,16 @@ export default function RegisterPage() {
     }
   }, [sessionLoading, user, router])
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!turnstileToken) return
-    setError(null)
-    setSubmitting(true)
-
-    const result = await register(email, password, displayName, turnstileToken)
-    setSubmitting(false)
-
-    // Tokens are single-use regardless of outcome — fetch a fresh one
-    // before the next attempt.
-    turnstileRef.current?.reset()
-    setTurnstileToken(null)
-
-    if (!result.ok) {
-      setError(result.error)
-      return
-    }
-
-    // Registration never auto-logs in — the account still needs email
-    // verification, so this stays on the same page with a confirmation
-    // rather than redirecting somewhere a fresh account can't use yet.
-    setDone(true)
+    registerMutation.mutate()
   }
 
-  if (done) {
+  // Registration never auto-logs in — the account still needs email
+  // verification, so this stays on the same page with a confirmation
+  // rather than redirecting somewhere a fresh account can't use yet.
+  if (registerMutation.isSuccess) {
     return (
       <AuthPageShell eyebrow="Almost there" heading="Check your email" maxWidth="max-w-md">
         <AuthMessage message="Check your email to verify your account, then login." tone="success" />
@@ -71,15 +63,15 @@ export default function RegisterPage() {
   return (
     <AuthPageShell eyebrow="Create an account" heading="Register" maxWidth="max-w-md">
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <AuthTextField label="Display name" value={displayName} onChange={setDisplayName} autoComplete="name" required />
+        <AuthTextField label="Display name" value={displayName} onChange={setDisplayName} autoComplete="name" required placeholder="John Doe" />
         <AuthTextField label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" required placeholder="john@example.com" />
         <AuthTextField label="Password" type="password" value={password} onChange={setPassword} autoComplete="new-password" required placeholder="0xS0m3S3cur3P455w0rd" />
 
         <TurnstileWidget ref={turnstileRef} action="register" onToken={setTurnstileToken} />
 
-        {error && <AuthMessage message={error} />}
+        {registerMutation.error && <AuthMessage message={registerMutation.error.message} />}
 
-        <AuthSubmitButton loading={submitting} disabled={!turnstileToken}>Register</AuthSubmitButton>
+        <AuthSubmitButton loading={registerMutation.isPending} disabled={!turnstileToken}>Register</AuthSubmitButton>
       </form>
 
       <p className="mt-6 text-sm text-[#90939A]">

@@ -2,53 +2,49 @@
 
 import { useRef, useState } from 'react'
 import Link from 'next/link'
+import { useMutation } from '@tanstack/react-query'
 import AuthPageShell from '@/components/auth/AuthPageShell'
 import AuthTextField from '@/components/auth/AuthTextField'
 import AuthSubmitButton from '@/components/auth/AuthSubmitButton'
 import AuthMessage from '@/components/auth/AuthMessage'
 import TurnstileWidget, { type TurnstileHandle } from '@/components/auth/TurnstileWidget'
-import { forgotPassword } from '@/lib/authClient'
+import { forgotPassword, ApiError } from '@/lib/authClient'
 
 export default function ForgotPasswordPage() {
   const turnstileRef = useRef<TurnstileHandle>(null)
 
   const [email, setEmail] = useState('')
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
-  const [submitting, setSubmitting] = useState(false)
-  const [rateLimited, setRateLimited] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [done, setDone] = useState(false)
 
-  async function handleSubmit(e: React.FormEvent) {
+  const submitMutation = useMutation({
+    mutationFn: async () => {
+      const result = await forgotPassword(email, turnstileToken!)
+      // The API returns the identical message whether or not the account
+      // exists, by design (see Phase 3) — this must not undermine that by
+      // branching on it. A 429 is a rate-limit signal, not an
+      // account-existence signal, and neither is a 403 (a failed
+      // Turnstile check) — those two are the only outcomes treated as
+      // real errors; any other failure intentionally reads the same as
+      // success, same as the API's own non-enumeration design.
+      if (!result.ok && result.status === 429) throw new ApiError('rate_limited', 429)
+      if (!result.ok && result.status === 403) throw new ApiError(result.error, 403)
+    },
+    onSettled: () => {
+      turnstileRef.current?.reset()
+      setTurnstileToken(null)
+    },
+  })
+
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!turnstileToken) return
-    setError(null)
-    setSubmitting(true)
-
-    const result = await forgotPassword(email, turnstileToken)
-    setSubmitting(false)
-
-    turnstileRef.current?.reset()
-    setTurnstileToken(null)
-
-    // The API returns the identical message whether or not the account
-    // exists, by design (see Phase 3) — the frontend must not undermine
-    // that by branching on it. A 429 is shown separately since it's a
-    // rate-limit signal, not an account-existence signal. A 403 here is a
-    // failed Turnstile check, not an enumeration signal either.
-    if (!result.ok && result.status === 429) {
-      setRateLimited(true)
-      return
-    }
-    if (!result.ok && result.status === 403) {
-      setError(result.error)
-      return
-    }
-
-    setDone(true)
+    submitMutation.mutate()
   }
 
-  if (done) {
+  const rateLimited = submitMutation.error instanceof ApiError && submitMutation.error.status === 429
+  const error = submitMutation.error && !rateLimited ? submitMutation.error.message : null
+
+  if (submitMutation.isSuccess) {
     return (
       <AuthPageShell eyebrow="Password recovery" heading="Check your email" maxWidth="max-w-md">
         <AuthMessage message="If that email is registered, a password reset link has been sent." tone="success" />
@@ -71,7 +67,7 @@ export default function ForgotPasswordPage() {
         {rateLimited && <AuthMessage message="Too many requests. Try again later." />}
         {error && <AuthMessage message={error} />}
 
-        <AuthSubmitButton loading={submitting} disabled={!turnstileToken}>Send reset link</AuthSubmitButton>
+        <AuthSubmitButton loading={submitMutation.isPending} disabled={!turnstileToken}>Send reset link</AuthSubmitButton>
       </form>
 
       <p className="mt-6 text-sm text-[#90939A]">

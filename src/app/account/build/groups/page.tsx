@@ -2,8 +2,11 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import Eyebrow from '@/components/Eyebrow'
 import { useSession } from '@/components/SessionProvider'
+import { useToast } from '@/components/ToastProvider'
+import { Skeleton } from '@/components/Skeleton'
 import {
   getMyGroups,
   createGroup,
@@ -11,8 +14,7 @@ import {
   getGroupMembers,
   addGroupMember,
   removeGroupMember,
-  type StudentGroup,
-  type GroupMember,
+  unwrapResult,
 } from '@/lib/authClient'
 
 // Same style constants as the rest of the instructor surface — duplicated
@@ -24,12 +26,36 @@ const buttonClass = "border border-[#FF7A33]/50 px-3 py-1.5 text-xs font-medium 
 export default function GroupsPage() {
   const router = useRouter()
   const { user, loading: sessionLoading } = useSession()
+  const queryClient = useQueryClient()
+  const toast = useToast()
+  const canBuild = !!user && (user.role === 'instructor' || user.role === 'staff')
 
-  const [groups, setGroups] = useState<StudentGroup[] | null>(null)
+  const { data: groups } = useQuery({
+    queryKey: ['myGroups'],
+    queryFn: () => unwrapResult(getMyGroups()),
+    enabled: canBuild,
+  })
+
   const [name, setName] = useState('')
-  const [creating, setCreating] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [expandedId, setExpandedId] = useState<number | null>(null)
+
+  const createMutation = useMutation({
+    mutationFn: () => unwrapResult(createGroup(name)),
+    onSuccess: () => {
+      setName('')
+      queryClient.invalidateQueries({ queryKey: ['myGroups'] })
+      toast.success('Group created.')
+    },
+    onError: (error) => toast.error(error.message),
+  })
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => unwrapResult(deleteGroup(id)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['myGroups'] })
+      toast.success('Group deleted.')
+    },
+    onError: (error) => toast.error(error.message),
+  })
 
   useEffect(() => {
     if (sessionLoading) return
@@ -42,38 +68,23 @@ export default function GroupsPage() {
     }
   }, [sessionLoading, user, router])
 
-  function load() {
-    return getMyGroups().then((result) => {
-      if (result.ok) setGroups(result.data)
-    })
-  }
-
-  useEffect(() => {
-    if (user && (user.role === 'instructor' || user.role === 'staff')) load()
-  }, [user])
-
-  async function handleCreate(e: React.FormEvent) {
+  function handleCreate(e: React.FormEvent) {
     e.preventDefault()
-    setCreating(true)
-    setError(null)
-    const result = await createGroup(name)
-    setCreating(false)
-    if (!result.ok) {
-      setError(result.error)
-      return
-    }
-    setName('')
-    load()
+    createMutation.mutate()
   }
 
-  async function handleDelete(id: number) {
+  function handleDelete(id: number) {
     if (!window.confirm('Delete this group? Any courses restricted to it will lose that access.')) return
-    const result = await deleteGroup(id)
-    if (result.ok) load()
+    deleteMutation.mutate(id)
   }
 
-  if (sessionLoading || !user || (user.role !== 'instructor' && user.role !== 'staff')) {
-    return <p className="pt-1 text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
+  if (sessionLoading || !canBuild) {
+    return (
+      <div>
+        <Skeleton className="h-3 w-20" />
+        <Skeleton className="mt-2 h-9 w-56" />
+      </div>
+    )
   }
 
   return (
@@ -86,12 +97,16 @@ export default function GroupsPage() {
 
       <form onSubmit={handleCreate} className="mt-8 flex flex-wrap items-center gap-2">
         <input value={name} onChange={(e) => setName(e.target.value)} required placeholder="Group name" className={inputClass} />
-        <button type="submit" disabled={creating} className={buttonClass}>{creating ? '…' : 'Create group'}</button>
+        <button type="submit" disabled={createMutation.isPending} className={buttonClass}>{createMutation.isPending ? '…' : 'Create group'}</button>
       </form>
-      {error && <p className="mt-2 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
 
       <div className="mt-6 flex flex-col gap-3">
-        {groups === null && <p className="text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>}
+        {groups === undefined && (
+          <>
+            <Skeleton className="h-16 border border-white/10" />
+            <Skeleton className="h-16 border border-white/10" />
+          </>
+        )}
         {groups?.length === 0 && <p className="text-sm text-[#90939A]">No groups yet — create one above.</p>}
         {groups?.map((group) => (
           <div key={group.id} className="border border-white/10 bg-[#17181B] p-4">
@@ -117,7 +132,7 @@ export default function GroupsPage() {
                 </button>
               </div>
             </div>
-            {expandedId === group.id && <GroupRoster groupId={group.id} onChanged={load} />}
+            {expandedId === group.id && <GroupRoster groupId={group.id} />}
           </div>
         ))}
       </div>
@@ -125,55 +140,51 @@ export default function GroupsPage() {
   )
 }
 
-function GroupRoster({ groupId, onChanged }: { groupId: number; onChanged: () => void }) {
-  const [members, setMembers] = useState<GroupMember[] | null>(null)
+function GroupRoster({ groupId }: { groupId: number }) {
+  const queryClient = useQueryClient()
+  const toast = useToast()
   const [email, setEmail] = useState('')
-  const [adding, setAdding] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
-  function load() {
-    return getGroupMembers(groupId).then((result) => {
-      if (result.ok) setMembers(result.data)
-    })
+  const { data: members } = useQuery({
+    queryKey: ['groupMembers', groupId],
+    queryFn: () => unwrapResult(getGroupMembers(groupId)),
+  })
+
+  // Membership changes also shift the parent list's memberCount, so both
+  // keys need to go stale together.
+  function invalidateBoth() {
+    queryClient.invalidateQueries({ queryKey: ['groupMembers', groupId] })
+    queryClient.invalidateQueries({ queryKey: ['myGroups'] })
   }
 
-  useEffect(() => {
-    load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [groupId])
+  const addMutation = useMutation({
+    mutationFn: () => unwrapResult(addGroupMember(groupId, email)),
+    onSuccess: () => {
+      setEmail('')
+      invalidateBoth()
+    },
+    onError: (error) => toast.error(error.message),
+  })
+  const removeMutation = useMutation({
+    mutationFn: (userId: number) => unwrapResult(removeGroupMember(groupId, userId)),
+    onSuccess: invalidateBoth,
+    onError: (error) => toast.error(error.message),
+  })
 
-  async function handleAdd(e: React.FormEvent) {
+  function handleAdd(e: React.FormEvent) {
     e.preventDefault()
-    setAdding(true)
-    setError(null)
-    const result = await addGroupMember(groupId, email)
-    setAdding(false)
-    if (!result.ok) {
-      setError(result.error)
-      return
-    }
-    setEmail('')
-    load()
-    onChanged()
-  }
-
-  async function handleRemove(userId: number) {
-    const result = await removeGroupMember(groupId, userId)
-    if (result.ok) {
-      load()
-      onChanged()
-    }
+    addMutation.mutate()
   }
 
   return (
     <div className="mt-4 border-t border-white/10 pt-4">
       <div className="flex flex-col gap-2">
-        {members === null && <p className="text-xs text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>}
+        {members === undefined && <Skeleton className="h-9" />}
         {members?.length === 0 && <p className="text-xs text-[#90939A]">No students yet.</p>}
         {members?.map((member) => (
           <div key={member.id} className="flex items-center justify-between gap-3 border border-white/10 bg-[#0B0B0D] px-3 py-2 text-sm text-white">
             <span>{member.displayName} <span className="text-white/40">({member.email})</span></span>
-            <button type="button" onClick={() => handleRemove(member.id)} className="text-xs text-white/50 underline underline-offset-2 hover:text-white">
+            <button type="button" onClick={() => removeMutation.mutate(member.id)} className="text-xs text-white/50 underline underline-offset-2 hover:text-white">
               Remove
             </button>
           </div>
@@ -188,9 +199,8 @@ function GroupRoster({ groupId, onChanged }: { groupId: number; onChanged: () =>
           placeholder="Add a student by email"
           className={inputClass}
         />
-        <button type="submit" disabled={adding} className={buttonClass}>{adding ? '…' : 'Add'}</button>
+        <button type="submit" disabled={addMutation.isPending} className={buttonClass}>{addMutation.isPending ? '…' : 'Add'}</button>
       </form>
-      {error && <p className="mt-2 text-xs text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
     </div>
   )
 }
