@@ -27,7 +27,6 @@ export default function HomeCourseCard({ course, index }: { course: Course; inde
       <span className="text-xs font-medium uppercase tracking-[0.14em] text-[#FF7A33]"><span className="text-[#C95E1A]">#</span>{course.category}</span>
       <h3 className="mt-4 text-xl font-semibold tracking-[-0.03em] text-white">{course.title}</h3>
       <p className="mt-3 text-sm leading-6 text-[#90939A]">{course.description}</p>
-      <div className="mt-6 text-sm text-white/40">View course →</div>
     </Link>
   )
 }

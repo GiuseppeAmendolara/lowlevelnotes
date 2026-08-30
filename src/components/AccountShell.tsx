@@ -1,10 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useSession } from '@/components/SessionProvider'
-import { getStaffPendingCounts, type StaffPendingCounts } from '@/lib/authClient'
+import { getStaffPendingCounts, logout, type StaffPendingCounts } from '@/lib/authClient'
 
 type NavItem = { href: string; label: string; badge?: number | null }
 
@@ -17,7 +17,8 @@ type NavItem = { href: string; label: string; badge?: number | null }
 // standalone <main>.
 export default function AccountShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const { user, loading } = useSession()
+  const router = useRouter()
+  const { user, loading, refresh } = useSession()
   const [pendingCounts, setPendingCounts] = useState<StaffPendingCounts | null>(null)
 
   useEffect(() => {
@@ -31,6 +32,18 @@ export default function AccountShell({ children }: { children: React.ReactNode }
   const pendingTotal = pendingCounts
     ? pendingCounts.roleRequests + pendingCounts.resourceRequests + pendingCounts.courseRequests
     : 0
+
+  // Navigates away before clearing session state, not after — every
+  // /account page has its own "redirect to /login if logged out" effect,
+  // and nulling `user` while one of them is still mounted races that
+  // effect against this navigation (whichever settles last silently
+  // wins). Leaving the page while `user` is still (stale) truthy means
+  // none of them ever observe the logged-out state, so nothing fires.
+  async function handleLogout() {
+    await logout()
+    router.push('/')
+    await refresh()
+  }
 
   const items: NavItem[] = user
     ? [
@@ -75,6 +88,13 @@ export default function AccountShell({ children }: { children: React.ReactNode }
                   </Link>
                 )
               })}
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="flex items-center gap-2 border-l-2 border-transparent px-3 py-2 text-left text-sm text-[#90939A] transition-colors hover:text-[#F85149] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF7A33] md:mt-4 md:border-t md:border-white/10 md:pt-4"
+              >
+                Log out
+              </button>
             </div>
           )}
         </nav>

@@ -1,30 +1,25 @@
 import { getAssetSrc } from '@/lib/authClient'
 
-// In-house glyph marks, keyed by course slug — monospace tokens rather
-// than illustrated logos, since the whole site's type system is already
-// JetBrains Mono. Keeps every course visually consistent and sidesteps
-// trademark restrictions on the real C#/C++/PostgreSQL marks. A course
-// with no entry here (and no instructor-uploaded iconUrl) falls back to
-// the plain accent dot.
-const COURSE_GLYPHS: Record<string, string> = {
-  'c-programming': 'C#',
-  'c-style-c': 'C++',
-  'programming-foundations': '{}',
-  postgresql: '=#',
-}
-
 const SIZE_CLASSES = {
   sm: 'h-8 w-8 text-xs',
   lg: 'h-12 w-12 text-base',
 } as const
 
+// Priority: an uploaded icon image, then a course's own iconGlyph (a short,
+// author-chosen token like "C#" or "/24" — set through the instructor
+// course builder, stored in courses.icon_glyph, not hardcoded here), then
+// a plain first-letter badge derived from the title. Nothing in this
+// component is tied to a specific course slug, so a brand-new course
+// looks finished immediately, with no frontend change required.
 export function CourseIcon({
-  slug,
+  title,
   iconUrl,
+  iconGlyph,
   size = 'sm',
 }: {
-  slug: string
+  title: string
   iconUrl?: string | null
+  iconGlyph?: string | null
   size?: keyof typeof SIZE_CLASSES
 }) {
   const dims = SIZE_CLASSES[size]
@@ -36,17 +31,19 @@ export function CourseIcon({
     )
   }
 
-  const glyph = COURSE_GLYPHS[slug]
-  if (glyph) {
+  const badgeClass = `flex ${dims} shrink-0 items-center justify-center border border-white/10 bg-[#0B0B0D] font-semibold text-[#FF7A33]`
+
+  if (iconGlyph) {
     return (
-      <span
-        aria-hidden="true"
-        className={`flex ${dims} shrink-0 items-center justify-center border border-white/10 bg-[#0B0B0D] font-semibold text-[#FF7A33]`}
-      >
-        {glyph}
+      <span aria-hidden="true" className={badgeClass}>
+        {iconGlyph}
       </span>
     )
   }
 
-  return <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full bg-[#FF7A33]" />
+  return (
+    <span aria-hidden="true" className={badgeClass}>
+      {title.trim().slice(0, 1).toUpperCase()}
+    </span>
+  )
 }

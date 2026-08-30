@@ -1210,10 +1210,18 @@ across the site was migrated to this component — don't hand-roll a new one.
 `/transparency` (the page showing the `status.svg`/`history.svg`/`stats.svg`/
 `courses.svg` badges) was removed from the site entirely, 2026-08-30 — it
 read as scattered, low-value marketing chrome once reviewed against the
-redesign. The Worker endpoints that generate those SVGs are untouched and
-still live (they're embeddable badges independent of any Next.js page,
-e.g. for the GitHub README) — only the page that displayed them inline is
-gone. `SvgBadge.tsx` (its only consumer) was deleted with it. The home page
+redesign. The Worker endpoints that generate those SVGs are still live
+(they're embeddable badges independent of any Next.js page, e.g. for the
+GitHub README) — only the page that displayed them inline is gone.
+`SvgBadge.tsx` (its only consumer) was deleted with it. Since these badges
+render outside the site (no access to `globals.css`), their colors/font
+are hand-copied constants at the top of `worker/routes/badges.js`
+(`COLORS`, `FONT`) rather than CSS variables — updated 2026-08-30 to match
+this section's palette (`#17181B` surface instead of the old `#0D0D0D`,
+`#FF7A33` accent instead of `#FF8A3D`, `#90939A` muted instead of
+`#A1A1AA`, JetBrains Mono) and the `// Label` eyebrow convention in place
+of their old solid-square section markers. Keep `COLORS`/`FONT` in sync by
+hand if the palette in this file ever changes again. The home page
 now surfaces the same underlying numbers itself instead, via a new public
 `GET /v1/stats/summary` endpoint (`getSiteStatsSummaryV1` in
 `worker/routes/badges.js`) — same counts as `stats.svg`/`courses.svg`, JSON

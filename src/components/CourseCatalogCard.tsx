@@ -44,7 +44,7 @@ export default function CourseCatalogCard({ course, index }: { course: Course; i
               <p className="text-xs uppercase tracking-[0.1em] text-white/40">{DIFFICULTY_LABEL[course.difficulty]}</p>
             )}
           </div>
-          <CourseIcon slug={course.slug} iconUrl={course.iconUrl} />
+          <CourseIcon title={course.title} iconUrl={course.iconUrl} iconGlyph={course.iconGlyph} />
         </div>
         <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">{course.title}</h2>
         {course.description && (

@@ -204,6 +204,7 @@ export type Course = {
   category: string | null
   position: number
   iconUrl: string | null
+  iconGlyph: string | null
   difficulty: CourseDifficulty | null
   authors: CourseAuthor[]
 }
@@ -613,6 +614,7 @@ export type InstructorCourse = {
   rejectionReason: string | null
   position: number
   iconUrl: string | null
+  iconGlyph: string | null
   difficulty: CourseDifficulty | null
   visibility: CourseVisibility
   createdBy: number
@@ -667,12 +669,16 @@ export function getMyCourse(id: number) {
 
 export function updateCourse(
   id: number,
-  fields: { title: string; description?: string; category?: string; difficulty?: CourseDifficulty; visibility?: CourseVisibility }
+  fields: { title: string; description?: string; category?: string; difficulty?: CourseDifficulty; visibility?: CourseVisibility; iconGlyph?: string }
 ) {
   return authFetch<{ message: string }>(`/v1/instructor/courses/${id}`, {
     method: 'PUT',
     body: JSON.stringify(fields),
   })
+}
+
+export function deleteCourse(id: number) {
+  return authFetch<{ message: string }>(`/v1/instructor/courses/${id}`, { method: 'DELETE' })
 }
 
 export function uploadCourseIcon(courseId: number, file: File) {

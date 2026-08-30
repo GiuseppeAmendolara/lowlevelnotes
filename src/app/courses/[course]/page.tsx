@@ -172,7 +172,7 @@ export default function CoursePage({ params }: { params: Promise<{ course: strin
         <div className="mt-6 grid grid-cols-1 gap-10 md:grid-cols-[1fr_280px]">
           <div>
             <div className="flex items-center gap-4">
-              <CourseIcon slug={course.slug} iconUrl={course.iconUrl} size="lg" />
+              <CourseIcon title={course.title} iconUrl={course.iconUrl} iconGlyph={course.iconGlyph} size="lg" />
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                 {course.category && (
                   <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#FF7A33]"><span className="text-[#C95E1A]">#</span>{course.category}</p>

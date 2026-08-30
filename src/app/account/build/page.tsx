@@ -8,6 +8,7 @@ import { useSession } from '@/components/SessionProvider'
 import {
   getMyCourses,
   createCourse,
+  deleteCourse,
   type InstructorCourse,
 } from '@/lib/authClient'
 
@@ -40,6 +41,7 @@ export default function InstructorCoursesPage() {
   const [category, setCategory] = useState('')
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<number | null>(null)
 
   useEffect(() => {
     if (sessionLoading) return
@@ -81,6 +83,27 @@ export default function InstructorCoursesPage() {
     load()
   }
 
+  // Drafts only, matching the Worker's own restriction — once a course is
+  // submitted for review or published it has real reviewer/student
+  // investment, so removing it becomes a staff-only action instead of
+  // instructor self-service.
+  async function handleDelete(e: React.MouseEvent, id: number, title: string) {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!window.confirm(`Delete "${title}"? This can't be undone.`)) return
+
+    setDeletingId(id)
+    setError(null)
+    const result = await deleteCourse(id)
+    setDeletingId(null)
+
+    if (!result.ok) {
+      setError(result.error)
+      return
+    }
+    setCourses((prev) => prev?.filter((c) => c.id !== id) ?? prev)
+  }
+
   if (sessionLoading || !user || (user.role !== 'instructor' && user.role !== 'staff')) {
     return <p className="pt-1 text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
   }
@@ -114,7 +137,19 @@ export default function InstructorCoursesPage() {
           >
             <div className="flex flex-wrap items-center justify-between gap-3">
               <span className="text-sm font-medium text-white">{c.title}</span>
-              <span className={`text-xs uppercase tracking-[0.1em] ${STATUS_CLASS[c.status]}`}>{STATUS_LABEL[c.status]}</span>
+              <span className="flex items-center gap-3">
+                <span className={`text-xs uppercase tracking-[0.1em] ${STATUS_CLASS[c.status]}`}>{STATUS_LABEL[c.status]}</span>
+                {c.status === 'draft' && (
+                  <button
+                    type="button"
+                    onClick={(e) => handleDelete(e, c.id, c.title)}
+                    disabled={deletingId === c.id}
+                    className="text-xs text-white/40 underline underline-offset-2 transition-colors hover:text-[#F85149] disabled:opacity-50"
+                  >
+                    {deletingId === c.id ? 'Deleting…' : 'Delete'}
+                  </button>
+                )}
+              </span>
             </div>
             {c.description && <p className="mt-2 text-sm text-[#90939A]">{c.description}</p>}
             {c.status === 'draft' && c.rejectionReason && (

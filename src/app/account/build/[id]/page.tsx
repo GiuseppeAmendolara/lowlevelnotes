@@ -279,6 +279,7 @@ function CourseDetailsForm({ course, onSaved }: { course: InstructorCourseDetail
   const [description, setDescription] = useState(course.description ?? '')
   const [category, setCategory] = useState(course.category ?? '')
   const [difficulty, setDifficulty] = useState<CourseDifficulty | ''>(course.difficulty ?? '')
+  const [iconGlyph, setIconGlyph] = useState(course.iconGlyph ?? '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -292,6 +293,7 @@ function CourseDetailsForm({ course, onSaved }: { course: InstructorCourseDetail
       category: category || undefined,
       difficulty: difficulty || undefined,
       visibility: course.visibility,
+      iconGlyph: iconGlyph || undefined,
     })
     setSaving(false)
     if (!result.ok) {
@@ -312,6 +314,10 @@ function CourseDetailsForm({ course, onSaved }: { course: InstructorCourseDetail
           <option key={d.value} value={d.value}>{d.label}</option>
         ))}
       </select>
+      <label className="flex flex-col gap-1">
+        <span className="text-xs text-white/40">Icon badge (shown when no icon image is uploaded, e.g. &quot;C#&quot; or &quot;/24&quot;)</span>
+        <input value={iconGlyph} onChange={(e) => setIconGlyph(e.target.value)} maxLength={8} placeholder="Icon badge, e.g. C#" className={inputClass} />
+      </label>
       <button type="submit" disabled={saving} className={`self-start ${buttonClass}`}>{saving ? '…' : 'Save course details'}</button>
       {error && <p className="text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
     </form>

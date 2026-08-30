@@ -6,7 +6,7 @@ import AuthTextField from '@/components/auth/AuthTextField'
 import AuthSubmitButton from '@/components/auth/AuthSubmitButton'
 import AuthMessage from '@/components/auth/AuthMessage'
 import { useSession } from '@/components/SessionProvider'
-import { changePassword, deleteMyAccount, logout } from '@/lib/authClient'
+import { changePassword, deleteMyAccount } from '@/lib/authClient'
 import Eyebrow from '@/components/Eyebrow'
 
 export default function AccountSecurityPage() {
@@ -18,10 +18,12 @@ export default function AccountSecurityPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
-  // Suppresses the redirect-to-/login guard below during a deliberate
-  // logout — otherwise refresh()'s setUser(null) and this effect's own
-  // router.replace('/login') race the logout handler's router.push('/'),
-  // and whichever navigation settles last silently wins.
+  // Suppresses the redirect-to-/login guard below during account
+  // deletion — otherwise refresh()'s setUser(null) and this effect's own
+  // router.replace('/login') race handleAccountDeleted's router.push('/'),
+  // and whichever navigation settles last silently wins. (Logging out
+  // itself lives in AccountShell now, which sidesteps this race by
+  // navigating away before it ever clears session state.)
   const loggingOutRef = useRef(false)
 
   useEffect(() => {
@@ -49,17 +51,10 @@ export default function AccountSecurityPage() {
     setSuccess('Password changed.')
   }
 
-  async function handleLogout() {
-    loggingOutRef.current = true
-    await logout()
-    await refresh()
-    router.push('/')
-  }
-
   // deleteMyAccount already clears the session cookie server-side on
   // success, so this only needs to sync client state and navigate away —
-  // same loggingOutRef guard as handleLogout, for the same reason (avoid
-  // racing the redirect-to-/login effect above).
+  // guarded by loggingOutRef for the same reason described above (avoid
+  // racing the redirect-to-/login effect).
   async function handleAccountDeleted() {
     loggingOutRef.current = true
     await refresh()
@@ -87,14 +82,6 @@ export default function AccountSecurityPage() {
           onSubmit={handleChangePassword}
         />
       </div>
-
-      <button
-        type="button"
-        onClick={handleLogout}
-        className="mt-10 text-xs uppercase tracking-[0.12em] text-white/40 underline underline-offset-2 transition-colors hover:text-[#F85149] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-      >
-        Log out
-      </button>
 
       <div className="mt-10 max-w-md border border-[#F85149]/30 bg-[#17181B]">
         <DangerZone onDeleted={handleAccountDeleted} />

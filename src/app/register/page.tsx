@@ -72,8 +72,8 @@ export default function RegisterPage() {
     <AuthPageShell eyebrow="Create an account" heading="Register" maxWidth="max-w-md">
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <AuthTextField label="Display name" value={displayName} onChange={setDisplayName} autoComplete="name" required />
-        <AuthTextField label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" required />
-        <AuthTextField label="Password" type="password" value={password} onChange={setPassword} autoComplete="new-password" required />
+        <AuthTextField label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" required placeholder="john@example.com" />
+        <AuthTextField label="Password" type="password" value={password} onChange={setPassword} autoComplete="new-password" required placeholder="0xS0m3S3cur3P455w0rd" />
 
         <TurnstileWidget ref={turnstileRef} action="register" onToken={setTurnstileToken} />
 
