@@ -81,13 +81,17 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
     saveBioMutation.mutate()
   }
 
+  // Whether this is your own profile depends on `user`, which isn't known
+  // yet during this branch — defaulting to the dashboard shell here
+  // (rather than the plain centered one below) means a cold load of your
+  // own profile never has a moment where the sidebar hasn't mounted yet.
+  // AccountShell already renders its own nav-loading state correctly
+  // when `user` isn't there yet, so this composes for free.
   if (sessionLoading || !user) {
     return (
-      <main className="min-h-screen bg-[#0B0B0D]">
-        <section className="mx-auto max-w-6xl px-6 pb-10 pt-20 sm:pt-28">
-          <ProfileSkeleton />
-        </section>
-      </main>
+      <AccountShell>
+        <ProfileSkeleton />
+      </AccountShell>
     )
   }
 
