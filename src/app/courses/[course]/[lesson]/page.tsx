@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useSession } from '@/components/SessionProvider'
 import ActionButton from '@/components/ActionButton'
+import CourseTreeRail from '@/components/CourseTreeRail'
 import { ArticleBody, VideoBody, ExerciseBody } from '@/components/lesson/LessonContentViews'
 import AuthMessage from '@/components/auth/AuthMessage'
 import AuthSubmitButton from '@/components/auth/AuthSubmitButton'
@@ -22,6 +23,7 @@ import {
   type Quiz,
   type QuizAttemptResult,
 } from '@/lib/authClient'
+import Eyebrow from '@/components/Eyebrow'
 
 const TYPE_LABEL: Record<Lesson['type'], string> = {
   article: 'Article',
@@ -46,6 +48,7 @@ export default function LessonPage({ params }: { params: Promise<{ course: strin
   const [lesson, setLesson] = useState<LessonDetail | null>(null)
   const [isEnrolled, setIsEnrolled] = useState(false)
   const [isCompleted, setIsCompleted] = useState(false)
+  const [completedLessonIds, setCompletedLessonIds] = useState<Set<number>>(new Set())
   const [error, setError] = useState<{ message: string; notFound: boolean } | null>(null)
   const [enrolling, setEnrolling] = useState(false)
   const [enrollError, setEnrollError] = useState<string | null>(null)
@@ -98,6 +101,13 @@ export default function LessonPage({ params }: { params: Promise<{ course: strin
           setIsCompleted(
             progressResult.data.lessonProgress.some((p) => p.lessonId === summary.id && p.status === 'completed')
           )
+          setCompletedLessonIds(
+            new Set(
+              progressResult.data.lessonProgress
+                .filter((p) => p.courseSlug === courseSlug && p.status === 'completed')
+                .map((p) => p.lessonId)
+            )
+          )
         }
       }
     })()
@@ -123,9 +133,9 @@ export default function LessonPage({ params }: { params: Promise<{ course: strin
 
   if (sessionLoading || !user) {
     return (
-      <main className="min-h-screen bg-[#171717]">
+      <main className="min-h-screen bg-[#0B0B0D]">
         <section className="mx-auto max-w-3xl px-6 pb-10 pt-20 sm:pt-28">
-          <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>
+          <p className="text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
         </section>
       </main>
     )
@@ -133,13 +143,13 @@ export default function LessonPage({ params }: { params: Promise<{ course: strin
 
   if (error) {
     return (
-      <main className="min-h-screen bg-[#171717]">
+      <main className="min-h-screen bg-[#0B0B0D]">
         <section className="mx-auto max-w-3xl px-6 pb-10 pt-20 sm:pt-28">
           <h1 className="text-2xl font-bold tracking-[-0.04em] text-white">
             {error.notFound ? 'Lesson not found' : 'Something went wrong'}
           </h1>
-          <p className="mt-3 text-sm text-[#A1A1AA]">{error.message}</p>
-          <Link href={`/courses/${courseSlug}`} className="mt-6 inline-block text-sm text-[#FF8A3D] underline underline-offset-2">
+          <p className="mt-3 text-sm text-[#90939A]">{error.message}</p>
+          <Link href={`/courses/${courseSlug}`} className="mt-6 inline-block text-sm text-[#FF7A33] underline underline-offset-2">
             ← Back to course
           </Link>
         </section>
@@ -149,9 +159,9 @@ export default function LessonPage({ params }: { params: Promise<{ course: strin
 
   if (!course || !lesson || !lessons) {
     return (
-      <main className="min-h-screen bg-[#171717]">
+      <main className="min-h-screen bg-[#0B0B0D]">
         <section className="mx-auto max-w-3xl px-6 pb-10 pt-20 sm:pt-28">
-          <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>
+          <p className="text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
         </section>
       </main>
     )
@@ -161,44 +171,64 @@ export default function LessonPage({ params }: { params: Promise<{ course: strin
   const currentIndex = ordered.findIndex((l) => l.slug === lessonSlug)
   const nextLesson = currentIndex >= 0 ? ordered[currentIndex + 1] : undefined
 
+  const lessonId = lesson.id
+  function markCompleted() {
+    setIsCompleted(true)
+    setCompletedLessonIds((prev) => new Set(prev).add(lessonId))
+  }
+
   return (
-    <main className="min-h-screen bg-[#171717]">
-      <section className="mx-auto max-w-3xl px-6 pb-10 pt-20 sm:pt-28">
+    <main className="min-h-screen bg-[#0B0B0D]">
+      <section className="mx-auto max-w-5xl px-6 pb-24 pt-20 sm:pt-28">
         <Link href={`/courses/${courseSlug}`} className="text-xs uppercase tracking-[0.12em] text-white/40 transition-colors hover:text-white">
           ← {course.title}
         </Link>
-        <p className="mt-4 text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">{lesson.moduleTitle}</p>
-        <h1 className="mt-2 text-3xl font-bold tracking-[-0.05em] text-white sm:text-4xl">{lesson.title}</h1>
-      </section>
 
-      <section className="mx-auto max-w-3xl px-6 pb-24">
-        {!isEnrolled ? (
-          <LockedLesson type={lesson.type} onEnroll={handleEnroll} enrolling={enrolling} error={enrollError} />
-        ) : (
-          <div className="animate-fade-in-up motion-reduce:animate-none">
-            {lesson.type === 'article' && <ArticleBody contentPath={lesson.contentPath} />}
-            {lesson.type === 'video' && <VideoBody videoUrl={lesson.videoUrl} />}
-            {lesson.type === 'exercise' && lesson.exercise && <ExerciseBody exercise={lesson.exercise} />}
-            {lesson.type === 'quiz' && lesson.quiz && (
-              <QuizBody
-                lessonId={lesson.id}
-                quiz={lesson.quiz}
-                isCompleted={isCompleted}
-                onCompleted={() => setIsCompleted(true)}
-              />
-            )}
-
-            {lesson.type !== 'quiz' && (
-              <CompletionControl
-                lessonId={lesson.id}
-                isCompleted={isCompleted}
-                onCompleted={() => setIsCompleted(true)}
-              />
-            )}
-
-            <LessonNav courseSlug={courseSlug} nextLesson={nextLesson} />
+        <div className="mt-6 grid grid-cols-1 gap-10 md:grid-cols-[280px_1fr]">
+          <div className="order-2 md:sticky md:top-24 md:order-1 md:self-start">
+            <CourseTreeRail
+              courseSlug={courseSlug}
+              lessons={lessons}
+              completedLessonIds={completedLessonIds}
+              currentLessonSlug={lessonSlug}
+            />
           </div>
-        )}
+
+          <div className="order-1 min-w-0 md:order-2">
+            <Eyebrow>{lesson.moduleTitle}</Eyebrow>
+            <h1 className="mt-2 text-3xl font-bold tracking-[-0.05em] text-white sm:text-4xl">{lesson.title}</h1>
+
+            <div className="mt-8">
+              {!isEnrolled ? (
+                <LockedLesson type={lesson.type} onEnroll={handleEnroll} enrolling={enrolling} error={enrollError} />
+              ) : (
+                <div className="animate-fade-in-up motion-reduce:animate-none">
+                  {lesson.type === 'article' && <ArticleBody contentPath={lesson.contentPath} />}
+                  {lesson.type === 'video' && <VideoBody videoUrl={lesson.videoUrl} />}
+                  {lesson.type === 'exercise' && lesson.exercise && <ExerciseBody exercise={lesson.exercise} />}
+                  {lesson.type === 'quiz' && lesson.quiz && (
+                    <QuizBody
+                      lessonId={lesson.id}
+                      quiz={lesson.quiz}
+                      isCompleted={isCompleted}
+                      onCompleted={markCompleted}
+                    />
+                  )}
+
+                  {lesson.type !== 'quiz' && (
+                    <CompletionControl
+                      lessonId={lesson.id}
+                      isCompleted={isCompleted}
+                      onCompleted={markCompleted}
+                    />
+                  )}
+
+                  <LessonNav courseSlug={courseSlug} nextLesson={nextLesson} />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </section>
     </main>
   )
@@ -265,9 +295,9 @@ function LockedLesson({
   error: string | null
 }) {
   return (
-    <div className="border border-white/10 bg-[#0D0D0D] p-6">
+    <div className="border border-white/10 bg-[#17181B] p-6">
       <p className="text-xs uppercase tracking-[0.1em] text-white/40">{TYPE_LABEL[type]}</p>
-      <p className="mt-3 text-sm leading-6 text-[#A1A1AA]">
+      <p className="mt-3 text-sm leading-6 text-[#90939A]">
         Enroll in this course to view this lesson and track your progress.
       </p>
       <div className="mt-5">
@@ -286,14 +316,14 @@ function LessonNav({ courseSlug, nextLesson }: { courseSlug: string; nextLesson:
       {nextLesson ? (
         <Link
           href={`/courses/${courseSlug}/${nextLesson.slug}`}
-          className="inline-flex items-center gap-2 text-sm font-medium text-white transition-colors hover:text-[#FF8A3D]"
+          className="inline-flex items-center gap-2 text-sm font-medium text-white transition-colors hover:text-[#FF7A33]"
         >
           Next lesson: {nextLesson.title} →
         </Link>
       ) : (
         <Link
           href={`/courses/${courseSlug}`}
-          className="inline-flex items-center gap-2 text-sm font-medium text-white transition-colors hover:text-[#FF8A3D]"
+          className="inline-flex items-center gap-2 text-sm font-medium text-white transition-colors hover:text-[#FF7A33]"
         >
           ← Back to course
         </Link>
@@ -358,11 +388,11 @@ function QuizBody({
       )}
 
       {result && (
-        <div className="mb-6 border border-white/10 bg-[#0D0D0D] p-6">
+        <div className="mb-6 border border-white/10 bg-[#17181B] p-6">
           <p className="text-2xl font-bold tracking-[-0.03em] text-white">
             {result.score}/{result.total}
           </p>
-          <p className="mt-1 text-sm text-[#A1A1AA]">
+          <p className="mt-1 text-sm text-[#90939A]">
             {result.score === result.total ? 'Perfect score.' : 'Review the highlighted answers below.'}
           </p>
           <div className="mt-4">
@@ -378,7 +408,7 @@ function QuizBody({
           const questionResult = resultByQuestion.get(question.id)
 
           return (
-            <fieldset key={question.id} className="border border-white/10 bg-[#0D0D0D] p-6">
+            <fieldset key={question.id} className="border border-white/10 bg-[#17181B] p-6">
               <legend className="mb-4 text-sm leading-6 text-white">
                 {qi + 1}. {question.prompt}
               </legend>
@@ -389,7 +419,7 @@ function QuizBody({
                   const isSelectedWrong = Boolean(questionResult) && selected && !questionResult?.correct
 
                   let optionClass = 'border-white/15 hover:border-white/40'
-                  let indicatorClass = selected ? 'border-[#FF8A3D] bg-[#FF8A3D]' : 'border-white/30'
+                  let indicatorClass = selected ? 'border-[#FF7A33] bg-[#FF7A33]' : 'border-white/30'
                   if (questionResult) {
                     if (isCorrectAnswer) {
                       optionClass = 'border-[#3FB950] bg-[#3FB950]/10'
@@ -402,7 +432,7 @@ function QuizBody({
                       indicatorClass = 'border-white/20'
                     }
                   } else if (selected) {
-                    optionClass = 'border-[#FF8A3D] bg-[#FF8A3D]/10'
+                    optionClass = 'border-[#FF7A33] bg-[#FF7A33]/10'
                   }
 
                   return (

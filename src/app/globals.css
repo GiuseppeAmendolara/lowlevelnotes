@@ -1,12 +1,20 @@
 @import "tailwindcss";
 
 :root {
-  --background: #171717;
+  --background: #0b0b0d;
+  /* Text-on-accent (button labels, ::selection) only — card/panel
+     surfaces use --surface instead, which is deliberately lighter than
+     --background now, not darker, so panels read as raised rather than
+     receding into the page. */
   --background-deep: #0d0d0d;
+  --surface: #17181b;
   --foreground: #ffffff;
-  --muted: #a1a1aa;
-  --accent: #ff8a3d;
-  --accent-hover: #ffa15c;
+  --muted: #90939a;
+  --accent: #ff7a33;
+  --accent-hover: #ff9459;
+  /* A darker, deliberately muted cut of --accent — used where the full
+     bright accent would be too loud (the "//" in a comment-style eyebrow,
+     secondary tags) instead of reaching for an unrelated hue. */
   --accent-deep: #c95e1a;
   --accent-dark: #3a2113;
   --success: #3fb950;
@@ -42,7 +50,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #171717;
+    --background: #0b0b0d;
     --foreground: #ffffff;
   }
 }

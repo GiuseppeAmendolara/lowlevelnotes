@@ -59,7 +59,7 @@ export default function RegisterPage() {
     return (
       <AuthPageShell eyebrow="Almost there" heading="Check your email" maxWidth="max-w-md">
         <AuthMessage message="Check your email to verify your account, then login." tone="success" />
-        <p className="mt-6 text-sm text-[#A1A1AA]">
+        <p className="mt-6 text-sm text-[#90939A]">
           <Link href="/login" className="text-white/70 underline underline-offset-2 transition-colors hover:text-white">
             Go to login
           </Link>
@@ -82,7 +82,7 @@ export default function RegisterPage() {
         <AuthSubmitButton loading={submitting} disabled={!turnstileToken}>Register</AuthSubmitButton>
       </form>
 
-      <p className="mt-6 text-sm text-[#A1A1AA]">
+      <p className="mt-6 text-sm text-[#90939A]">
         Already have an account?{' '}
         <Link href="/login" className="text-white/70 underline underline-offset-2 transition-colors hover:text-white">
           Login

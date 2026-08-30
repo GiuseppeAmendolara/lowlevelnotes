@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import AuthPageShell from '@/components/auth/AuthPageShell'
+import Eyebrow from '@/components/Eyebrow'
 import { useSession } from '@/components/SessionProvider'
 import {
   getMyCourses,
@@ -15,8 +16,8 @@ import {
 // matching this app's existing low-abstraction convention (each admin/
 // instructor page owns its own small set of these rather than importing
 // a shared style module for three class strings).
-const inputClass = "border border-white/15 bg-[#0D0D0D] px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none"
-const buttonClass = "border border-[#FF8A3D]/50 px-3 py-1.5 text-xs font-medium text-[#FF8A3D] transition-colors transition-transform duration-150 hover:border-[#FF8A3D] hover:bg-[#FF8A3D]/10 active:scale-[0.98] motion-reduce:transition-none disabled:opacity-50 disabled:active:scale-100"
+const inputClass = "border border-white/15 bg-[#17181B] px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none"
+const buttonClass = "border border-[#FF7A33]/50 px-3 py-1.5 text-xs font-medium text-[#FF7A33] transition-colors transition-transform duration-150 hover:border-[#FF7A33] hover:bg-[#FF7A33]/10 active:scale-[0.98] motion-reduce:transition-none disabled:opacity-50 disabled:active:scale-100"
 
 const STATUS_LABEL: Record<InstructorCourse['status'], string> = {
   draft: 'Draft',
@@ -26,7 +27,7 @@ const STATUS_LABEL: Record<InstructorCourse['status'], string> = {
 
 const STATUS_CLASS: Record<InstructorCourse['status'], string> = {
   draft: 'text-white/40',
-  pending_review: 'text-[#FF8A3D]',
+  pending_review: 'text-[#FF7A33]',
   published: 'text-[#3FB950]',
 }
 
@@ -84,18 +85,18 @@ export default function InstructorCoursesPage() {
   if (sessionLoading || !user || (user.role !== 'instructor' && user.role !== 'staff')) {
     return (
       <AuthPageShell eyebrow="Instructor" heading="Your courses" backHref="/account">
-        <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>
+        <p className="text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
       </AuthPageShell>
     )
   }
 
   return (
-    <main className="min-h-screen bg-[#171717]">
+    <main className="min-h-screen bg-[#0B0B0D]">
       <section className="mx-auto max-w-3xl px-6 pb-10 pt-20 sm:pt-28">
         <Link href="/account" className="text-xs uppercase tracking-[0.12em] text-white/40 transition-colors hover:text-white">
           ← Account
         </Link>
-        <p className="mt-4 text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">Instructor</p>
+        <Eyebrow className="mt-4">Instructor</Eyebrow>
         <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
           <h1 className="text-4xl font-bold tracking-[-0.05em] text-white sm:text-5xl">Your courses</h1>
           <Link href="/courses/builder/groups" className="text-sm text-white/70 underline underline-offset-2 transition-colors hover:text-white">
@@ -114,19 +115,19 @@ export default function InstructorCoursesPage() {
         {error && <p className="mt-2 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
 
         <div className="mt-6 border-l border-t border-white/10">
-          {courses === null && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>}
-          {courses?.length === 0 && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA]">No courses yet — create one above.</p>}
+          {courses === null && <p className="border-b border-r border-white/10 bg-[#17181B] p-4 text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>}
+          {courses?.length === 0 && <p className="border-b border-r border-white/10 bg-[#17181B] p-4 text-sm text-[#90939A]">No courses yet — create one above.</p>}
           {courses?.map((c) => (
             <Link
               key={c.id}
               href={`/courses/builder/${c.id}`}
-              className="block border-b border-r border-white/10 bg-[#0D0D0D] p-4 transition-colors hover:bg-[#171717]"
+              className="block border-b border-r border-white/10 bg-[#17181B] p-4 transition-colors hover:bg-[#0B0B0D]"
             >
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <span className="text-sm font-medium text-white">{c.title}</span>
                 <span className={`text-xs uppercase tracking-[0.1em] ${STATUS_CLASS[c.status]}`}>{STATUS_LABEL[c.status]}</span>
               </div>
-              {c.description && <p className="mt-2 text-sm text-[#A1A1AA]">{c.description}</p>}
+              {c.description && <p className="mt-2 text-sm text-[#90939A]">{c.description}</p>}
               {c.status === 'draft' && c.rejectionReason && (
                 <p className="mt-2 text-xs text-[#F85149]">Rejected: {c.rejectionReason}</p>
               )}

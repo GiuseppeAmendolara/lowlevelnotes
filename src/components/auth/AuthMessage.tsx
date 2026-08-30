@@ -13,7 +13,7 @@ export default function AuthMessage({ message, tone = 'error' }: Props) {
   const dotColor = tone === 'error' ? 'bg-[#F85149]' : 'bg-[#3FB950]'
 
   return (
-    <div className={`mt-4 flex animate-fade-in-up items-center gap-2 border border-white/10 bg-[#0D0D0D] px-4 py-3 text-xs motion-reduce:animate-none ${textColor}`}>
+    <div className={`mt-4 flex animate-fade-in-up items-center gap-2 border border-white/10 bg-[#17181B] px-4 py-3 text-xs motion-reduce:animate-none ${textColor}`}>
       <span className={`h-2 w-2 shrink-0 ${dotColor}`} aria-hidden="true" />
       {message}
     </div>

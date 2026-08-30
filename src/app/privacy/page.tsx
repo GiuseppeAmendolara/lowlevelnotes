@@ -1,14 +1,16 @@
+import Eyebrow from '@/components/Eyebrow'
+
 export default function PrivacyPage() {
   return (
-    <main className="min-h-screen bg-[#171717]">
+    <main className="min-h-screen bg-[#0B0B0D]">
       <section className="mx-auto max-w-3xl px-6 pb-24 pt-20 sm:pt-28">
-        <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">Full disclosure</p>
+        <Eyebrow>Full disclosure</Eyebrow>
         <h1 className="mt-4 text-4xl font-bold tracking-[-0.05em] text-white sm:text-5xl">Privacy</h1>
-        <p className="mt-4 max-w-xl leading-7 text-[#A1A1AA]">
+        <p className="mt-4 max-w-xl leading-7 text-[#90939A]">
           What data we collect and why, based on what the code actually does.
         </p>
 
-        <div className="prose-lesson mt-12 animate-fade-in-up motion-reduce:animate-none [&_a]:text-[#FF8A3D] [&_a]:underline [&_a]:underline-offset-2 [&_h2]:mt-10 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:tracking-[-0.03em] [&_h2]:text-white [&_li]:leading-7 [&_p]:mt-4 [&_p]:leading-7 [&_p]:text-[#A1A1AA] [&_ul]:mt-4 [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-6 text-sm">
+        <div className="prose-lesson mt-12 animate-fade-in-up motion-reduce:animate-none [&_a]:text-[#FF7A33] [&_a]:underline [&_a]:underline-offset-2 [&_h2]:mt-10 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:tracking-[-0.03em] [&_h2]:text-white [&_li]:leading-7 [&_p]:mt-4 [&_p]:leading-7 [&_p]:text-[#90939A] [&_ul]:mt-4 [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-6 text-sm">
           <h2>What we collect, and why</h2>
           <p>Everything below is collected because a specific feature needs it, nothing is gathered speculatively.</p>
           <ul>

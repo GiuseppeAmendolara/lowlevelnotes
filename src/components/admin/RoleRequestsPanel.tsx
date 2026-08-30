@@ -51,15 +51,15 @@ export default function RoleRequestsPanel() {
       <StatusFilter status={status} options={STATUS_OPTIONS} onChange={setStatus} />
 
       <div className="mt-4 border-l border-t border-white/10">
-        {requests === null && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>}
-        {requests?.length === 0 && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA]">Nothing here.</p>}
+        {requests === null && <p className="border-b border-r border-white/10 bg-[#17181B] p-4 text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>}
+        {requests?.length === 0 && <p className="border-b border-r border-white/10 bg-[#17181B] p-4 text-sm text-[#90939A]">Nothing here.</p>}
         {requests?.map((r) => (
-          <div key={r.id} className="border-b border-r border-white/10 bg-[#0D0D0D] p-4">
+          <div key={r.id} className="border-b border-r border-white/10 bg-[#17181B] p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <span className="text-sm font-medium text-white">{r.requesterDisplayName}</span>
-                <span className="ml-2 text-xs text-[#A1A1AA]">{r.requesterEmail}</span>
-                <span className="ml-2 text-xs uppercase tracking-[0.1em] text-[#FF8A3D]">→ {r.requestedRole}</span>
+                <span className="ml-2 text-xs text-[#90939A]">{r.requesterEmail}</span>
+                <span className="ml-2 text-xs uppercase tracking-[0.1em] text-[#FF7A33]">→ {r.requestedRole}</span>
               </div>
               {r.status === 'pending' && (
                 <div className="flex gap-2">
@@ -68,7 +68,7 @@ export default function RoleRequestsPanel() {
                 </div>
               )}
             </div>
-            {r.message && <p className="mt-2 text-sm text-[#A1A1AA]">{r.message}</p>}
+            {r.message && <p className="mt-2 text-sm text-[#90939A]">{r.message}</p>}
             {r.status === 'rejected' && r.rejectionReason && (
               <p className="mt-2 text-xs text-[#F85149]">Rejected: {r.rejectionReason}</p>
             )}

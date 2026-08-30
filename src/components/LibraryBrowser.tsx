@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react'
 import type { Resource, Person } from '@/lib/api'
 import { useReveal, revealClass, revealState } from '@/lib/useReveal'
+import Eyebrow from '@/components/Eyebrow'
 
 const typeLabels: Record<Resource['type'], string> = {
   pdf: 'PDF',
@@ -10,6 +11,18 @@ const typeLabels: Record<Resource['type'], string> = {
   videos: 'Videos',
   git: 'Git',
   tool: 'Tool',
+}
+
+// A distinct color per resource type — lets a scan of the list sort by
+// type at a glance instead of reading five identical uppercase labels.
+// Deliberately not cyan for anything (see Eyebrow.tsx): pdf reaches for
+// the darker accent-deep cut instead of an unrelated hue.
+const typeColors: Record<Resource['type'], string> = {
+  pdf: '#C95E1A',
+  website: '#FF7A33',
+  git: '#3FB950',
+  tool: '#D29922',
+  videos: '#B993FF',
 }
 
 // Normalized item shape the filters/list work over — a thin pass
@@ -97,14 +110,19 @@ export default function LibraryBrowser({ resources, people }: Props) {
     [items, query, category, type]
   )
 
-  const categories = useMemo(
-    () => Array.from(new Set(availableForCategory.map((i) => i.category))).sort(),
-    [availableForCategory]
-  )
-  const types = useMemo(
-    () => Array.from(new Set(availableForType.map((i) => i.type))).sort(),
-    [availableForType]
-  )
+  // Counts alongside each facet value — not just which values are still
+  // reachable, but how large each one is, so the rail shows real weight
+  // instead of an unordered, unscoped list of names.
+  const categoryCounts = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const item of availableForCategory) counts.set(item.category, (counts.get(item.category) ?? 0) + 1)
+    return [...counts.entries()].sort((a, b) => b[1] - a[1])
+  }, [availableForCategory])
+  const typeCounts = useMemo(() => {
+    const counts = new Map<Resource['type'], number>()
+    for (const item of availableForType) counts.set(item.type, (counts.get(item.type) ?? 0) + 1)
+    return [...counts.entries()].sort((a, b) => b[1] - a[1])
+  }, [availableForType])
   const authors = useMemo(() => {
     const ids = Array.from(new Set(availableForAuthor.map((i) => i.authorId).filter((id): id is number => id !== null)))
     return ids
@@ -159,68 +177,93 @@ export default function LibraryBrowser({ resources, people }: Props) {
   )
 
   return (
-    <div>
-      <div className="flex flex-col gap-3 border-b border-white/10 pb-8 sm:flex-row sm:flex-wrap">
+    <div className="grid grid-cols-1 gap-8 md:grid-cols-[220px_1fr]">
+      <aside className="md:sticky md:top-24 md:self-start">
+        <div className="border border-white/10 bg-[#17181B]">
+          <Eyebrow className="border-b border-white/10 px-4 py-3">Category</Eyebrow>
+          <FacetRow label="All categories" count={items.length} active={category === ''} onClick={() => handleCategoryChange('')} />
+          {categoryCounts.map(([c, count]) => (
+            <FacetRow key={c} label={c} count={count} active={category === c} onClick={() => handleCategoryChange(c)} />
+          ))}
+        </div>
+
+        <div className="mt-6 border border-white/10 bg-[#17181B]">
+          <Eyebrow className="border-b border-white/10 px-4 py-3">Type</Eyebrow>
+          <FacetRow label="All types" count={items.length} active={type === ''} onClick={() => handleTypeChange('')} />
+          {typeCounts.map(([t, count]) => (
+            <FacetRow key={t} label={typeLabels[t]} color={typeColors[t]} count={count} active={type === t} onClick={() => handleTypeChange(t)} />
+          ))}
+        </div>
+
+        {authors.length > 0 && (
+          <div className="mt-6">
+            <label className="block">
+              <span className="text-xs font-medium uppercase tracking-[0.18em] text-[#FF7A33]">Author</span>
+              <select
+                value={authorId}
+                onChange={(e) => handleAuthorChange(e.target.value)}
+                className="mt-2 w-full border border-white/15 bg-[#17181B] px-3 py-2 text-sm text-white focus:border-white/40 focus:outline-none"
+              >
+                <option value="">All authors</option>
+                {authors.map((person) => (
+                  <option key={person.id} value={person.id}>{person.name.trim()}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+        )}
+      </aside>
+
+      <div className="min-w-0">
         <input
           type="text"
           value={search}
           onChange={(e) => handleSearchChange(e.target.value)}
           placeholder="Search the library..."
-          className="min-w-0 flex-1 border border-white/15 bg-[#0D0D0D] px-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none"
+          className="w-full border border-white/15 bg-[#17181B] px-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none"
         />
-        <select
-          value={category}
-          onChange={(e) => handleCategoryChange(e.target.value)}
-          className="border border-white/15 bg-[#0D0D0D] px-3 py-2.5 text-sm text-white focus:border-white/40 focus:outline-none"
-        >
-          <option value="">All categories</option>
-          {categories.map((c) => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-        </select>
-        <select
-          value={type}
-          onChange={(e) => handleTypeChange(e.target.value)}
-          className="border border-white/15 bg-[#0D0D0D] px-3 py-2.5 text-sm text-white focus:border-white/40 focus:outline-none"
-        >
-          <option value="">All types</option>
-          {types.map((t) => (
-            <option key={t} value={t}>{typeLabels[t]}</option>
-          ))}
-        </select>
-        <select
-          value={authorId}
-          onChange={(e) => handleAuthorChange(e.target.value)}
-          className="border border-white/15 bg-[#0D0D0D] px-3 py-2.5 text-sm text-white focus:border-white/40 focus:outline-none"
-        >
-          <option value="">All authors</option>
-          {authors.map((person) => (
-            <option key={person.id} value={person.id}>{person.name.trim()}</option>
-          ))}
-        </select>
-      </div>
 
-      <p className="mt-6 text-xs uppercase tracking-[0.14em] text-[#A1A1AA]">
-        {filtered.length} of {items.length} entries
-      </p>
+        <p className="mt-6 text-xs uppercase tracking-[0.14em] text-[#90939A]">
+          {filtered.length} of {items.length} entries
+        </p>
 
-      <div className="mt-4 border-l border-t border-white/10">
-        {filtered.map((item, i) => (
-          <LibraryItemRow
-            key={item.id}
-            item={item}
-            author={item.authorId !== null ? peopleById.get(item.authorId) : undefined}
-            index={i}
-          />
-        ))}
+        <div className="mt-4 border-l border-t border-white/10">
+          {filtered.map((item, i) => (
+            <LibraryItemRow
+              key={item.id}
+              item={item}
+              author={item.authorId !== null ? peopleById.get(item.authorId) : undefined}
+              index={i}
+            />
+          ))}
 
-        {filtered.length === 0 && (
-          <div className="border-b border-r border-white/10 bg-[#0D0D0D] p-6 text-sm text-[#A1A1AA]">
-            No entries match those filters.
-          </div>
-        )}
+          {filtered.length === 0 && (
+            <div className="border-b border-r border-white/10 bg-[#17181B] p-6 text-sm text-[#90939A]">
+              No entries match those filters.
+            </div>
+          )}
+        </div>
       </div>
     </div>
+  )
+}
+
+// A single facet row — replaces a <select><option> pair with something
+// that shows both current state and relative size at a glance, the way a
+// dropdown never can without opening it.
+function FacetRow({ label, count, active, onClick, color }: { label: string; count: number; active: boolean; onClick: () => void; color?: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex w-full items-center gap-2 border-l-2 px-4 py-2 text-left text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#FF7A33] ${
+        active ? 'border-[#FF7A33] bg-white/5 text-white' : 'border-transparent text-[#90939A] hover:text-white'
+      }`}
+    >
+      {color && <span aria-hidden="true" className="h-2 w-2 shrink-0" style={{ background: color }} />}
+      <span className="min-w-0 flex-1 truncate">{label}</span>
+      <span className="shrink-0 text-xs text-white/40">{count}</span>
+    </button>
   )
 }
 
@@ -236,12 +279,17 @@ function LibraryItemRow({ item, author, index }: { item: Item; author: Person | 
     <article
       ref={ref}
       style={{ transitionDelay: `${Math.min(index, 6) * 40}ms` }}
-      className={`border-b border-r border-white/10 bg-[#0D0D0D] p-6 hover:bg-[#151515] ${revealClass} ${revealState(visible)}`}
+      className={`border-b border-r border-white/10 bg-[#17181B] p-6 hover:bg-[#151515] ${revealClass} ${revealState(visible)}`}
     >
-      <div className="flex flex-wrap items-center gap-3 text-xs">
-        <span className="text-[#FF8A3D]">{item.category}</span>
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        <span className="text-[#FF7A33]">{item.category}</span>
         <span className="text-white/20">·</span>
-        <span className="uppercase tracking-[0.1em] text-[#A1A1AA]">{typeLabels[item.type]}</span>
+        <span
+          className="px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em]"
+          style={{ color: typeColors[item.type], background: `${typeColors[item.type]}1a` }}
+        >
+          {typeLabels[item.type]}
+        </span>
       </div>
 
       <a
@@ -249,13 +297,13 @@ function LibraryItemRow({ item, author, index }: { item: Item; author: Person | 
         target="_blank"
         rel="noopener noreferrer"
         onClick={() => trackView(item)}
-        className="mt-3 inline-block text-lg font-semibold text-white transition-colors hover:text-[#FF8A3D]"
+        className="mt-3 inline-block text-lg font-semibold text-white transition-colors hover:text-[#FF7A33]"
       >
         {item.title.trim()}
       </a>
 
       {item.description && (
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-[#A1A1AA]">{item.description.trim()}</p>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-[#90939A]">{item.description.trim()}</p>
       )}
 
       {(author || item.views !== null) && (

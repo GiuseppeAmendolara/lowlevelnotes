@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
 import { useSession } from '@/components/SessionProvider'
 import {
   getStaffUsers,
@@ -15,6 +14,7 @@ import {
   blockIp,
   unblockIp,
   getStaffAuditLog,
+  getStaffPendingCounts,
   roleLabel,
   type StaffUser,
   type BlockedIp,
@@ -22,6 +22,9 @@ import {
   type Role,
 } from '@/lib/authClient'
 import { SectionHeading, inputClass, rowInputClass, buttonClass, blockButtonClass } from '@/components/admin/shared'
+import Eyebrow from '@/components/Eyebrow'
+
+type Tab = 'users' | 'ips' | 'log'
 
 const ACTION_LABELS: Record<string, string> = {
   role_change: 'Role change',
@@ -42,32 +45,82 @@ const ACTION_LABELS: Record<string, string> = {
 
 const ROLES: Role[] = ['student', 'contributor', 'instructor', 'staff']
 
-export default function AdminPanel() {
-  return (
-    <main className="min-h-screen bg-[#171717]">
-      <section className="mx-auto max-w-5xl px-6 pb-10 pt-20 sm:pt-28">
-        <Link href="/account" className="text-xs uppercase tracking-[0.12em] text-white/40 transition-colors hover:text-white">
-          ← Account
-        </Link>
-        <p className="mt-4 text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">Staff</p>
-        <h1 className="mt-4 text-4xl font-bold tracking-[-0.05em] text-white sm:text-5xl">Staff</h1>
-        <Link href="/account/approvals" className="mt-4 inline-block text-sm text-white/70 underline underline-offset-2 transition-colors hover:text-white">
-          Review role, resource, and course requests →
-        </Link>
-      </section>
+const TABS: { id: Tab; label: string }[] = [
+  { id: 'users', label: 'Users' },
+  { id: 'ips', label: 'Blocked IPs' },
+  { id: 'log', label: 'Activity log' },
+]
 
-      <section className="mx-auto flex max-w-5xl flex-col gap-16 px-6 pb-24">
-        <UsersSection />
-        <BlockedIpsSection />
-        <AuditLogSection />
-      </section>
-    </main>
+export default function AdminPanel() {
+  const [tab, setTab] = useState<Tab>('users')
+  const [userCount, setUserCount] = useState<number | null>(null)
+  const [bannedCount, setBannedCount] = useState<number | null>(null)
+  const [ipCount, setIpCount] = useState<number | null>(null)
+  const [pendingTotal, setPendingTotal] = useState<number | null>(null)
+
+  useEffect(() => {
+    getStaffPendingCounts().then((result) => {
+      if (result.ok) setPendingTotal(result.data.roleRequests + result.data.resourceRequests + result.data.courseRequests)
+    })
+  }, [])
+
+  return (
+    <div>
+      <Eyebrow>Staff</Eyebrow>
+      <h1 className="mt-2 text-4xl font-bold tracking-[-0.05em] text-white">Staff</h1>
+
+      <div className="mt-8 grid grid-cols-2 gap-px border border-white/10 bg-white/10 sm:grid-cols-4">
+        <StatTile label="Total users" value={userCount} />
+        <StatTile label="Banned" value={bannedCount} />
+        <StatTile label="Blocked IPs" value={ipCount} />
+        <StatTile label="Pending approvals" value={pendingTotal} accent={Boolean(pendingTotal)} />
+      </div>
+
+      <div className="mt-10 flex gap-2 border-b border-white/10">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => setTab(t.id)}
+            className={`-mb-px border-b-2 px-1 py-3 text-xs font-medium uppercase tracking-[0.1em] transition-colors ${
+              tab === t.id ? 'border-[#FF7A33] text-white' : 'border-transparent text-[#90939A] hover:text-white'
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-8">
+        {tab === 'users' && (
+          <UsersSection
+            onUsersLoaded={(users) => {
+              setUserCount(users.length)
+              setBannedCount(users.filter((u) => u.bannedAt).length)
+            }}
+          />
+        )}
+        {tab === 'ips' && <BlockedIpsSection onIpsLoaded={(ips) => setIpCount(ips.length)} />}
+        {tab === 'log' && <AuditLogSection />}
+      </div>
+    </div>
+  )
+}
+
+function StatTile({ label, value, accent }: { label: string; value: number | null; accent?: boolean }) {
+  return (
+    <div className="bg-[#17181B] p-4">
+      <p className={`text-2xl font-bold tabular-nums tracking-[-0.03em] ${accent ? 'text-[#FF7A33]' : 'text-white'}`}>
+        {value === null ? '—' : value}
+      </p>
+      <p className="mt-1 text-xs text-[#90939A]">{label}</p>
+    </div>
   )
 }
 
 /* ==================== Users ==================== */
 
-function UsersSection() {
+function UsersSection({ onUsersLoaded }: { onUsersLoaded?: (users: StaffUser[]) => void }) {
   const { user: currentUser } = useSession()
   const [users, setUsers] = useState<StaffUser[] | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -91,13 +144,18 @@ function UsersSection() {
 
   function load() {
     return getStaffUsers().then((result) => {
-      if (result.ok) setUsers(result.data)
-      else setError(result.error)
+      if (result.ok) {
+        setUsers(result.data)
+        onUsersLoaded?.(result.data)
+      } else {
+        setError(result.error)
+      }
     })
   }
 
   useEffect(() => {
     load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function handleCreate(e: React.FormEvent) {
@@ -181,20 +239,20 @@ function UsersSection() {
         </select>
         <button type="submit" disabled={creating} className={buttonClass}>{creating ? '…' : 'Create user'}</button>
       </form>
-      {createResult && <p className="mt-2 break-all text-xs text-[#A1A1AA]">{createResult}</p>}
+      {createResult && <p className="mt-2 break-all text-xs text-[#90939A]">{createResult}</p>}
 
       {error && <p className="mt-4 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
 
       <div className="mt-6 border-l border-t border-white/10">
-        {users === null && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>}
+        {users === null && <p className="border-b border-r border-white/10 bg-[#17181B] p-4 text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>}
         {users?.map((u) => {
           const locked = u.isSuperAdmin && !currentUser?.isSuperAdmin
           return (
-          <div key={u.id} className="border-b border-r border-white/10 bg-[#0D0D0D] p-4">
+          <div key={u.id} className="border-b border-r border-white/10 bg-[#17181B] p-4">
             <div className="flex flex-wrap items-center gap-3">
               <span className="text-sm font-medium text-white">{u.displayName}</span>
-              <span className="text-xs text-[#A1A1AA]">{u.email}</span>
-              {u.isSuperAdmin && <span className="text-xs uppercase tracking-[0.1em] text-[#FF8A3D]">Super admin</span>}
+              <span className="text-xs text-[#90939A]">{u.email}</span>
+              {u.isSuperAdmin && <span className="text-xs uppercase tracking-[0.1em] text-[#FF7A33]">Super admin</span>}
               {u.bannedAt && <span className="text-xs uppercase tracking-[0.1em] text-[#F85149]">Banned{u.banReason ? `: ${u.banReason}` : ''}</span>}
               {!u.emailVerified && <span className="text-xs uppercase tracking-[0.1em] text-white/40">Unverified</span>}
             </div>
@@ -214,9 +272,9 @@ function UsersSection() {
 
             {expandedIps[u.id] && (
               <div className="mt-3 flex flex-col gap-1.5">
-                {expandedIps[u.id].length === 0 && <span className="text-xs text-[#A1A1AA]">No IPs on record.</span>}
+                {expandedIps[u.id].length === 0 && <span className="text-xs text-[#90939A]">No IPs on record.</span>}
                 {expandedIps[u.id].map((ip) => (
-                  <div key={ip} className="flex items-center gap-3 text-xs text-[#A1A1AA]">
+                  <div key={ip} className="flex items-center gap-3 text-xs text-[#90939A]">
                     <span className="font-mono">{ip}</span>
                     <button type="button" onClick={() => handleBlockIp(ip, u.id)} className="text-[#F85149] underline underline-offset-2 hover:text-white">
                       Block
@@ -235,7 +293,7 @@ function UsersSection() {
 
 /* ==================== Blocked IPs ==================== */
 
-function BlockedIpsSection() {
+function BlockedIpsSection({ onIpsLoaded }: { onIpsLoaded?: (ips: BlockedIp[]) => void }) {
   const [ips, setIps] = useState<BlockedIp[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [newIp, setNewIp] = useState('')
@@ -247,13 +305,18 @@ function BlockedIpsSection() {
 
   function load() {
     return getStaffBlockedIps().then((result) => {
-      if (result.ok) setIps(result.data)
-      else setError(result.error)
+      if (result.ok) {
+        setIps(result.data)
+        onIpsLoaded?.(result.data)
+      } else {
+        setError(result.error)
+      }
     })
   }
 
   useEffect(() => {
     load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function handleAdd(e: React.FormEvent) {
@@ -291,13 +354,13 @@ function BlockedIpsSection() {
       {error && <p className="mt-4 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
 
       <div className="mt-6 border-l border-t border-white/10">
-        {ips === null && !error && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>}
-        {ips?.length === 0 && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA]">Nothing blocked.</p>}
+        {ips === null && !error && <p className="border-b border-r border-white/10 bg-[#17181B] p-4 text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>}
+        {ips?.length === 0 && <p className="border-b border-r border-white/10 bg-[#17181B] p-4 text-sm text-[#90939A]">Nothing blocked.</p>}
         {ips?.map((r) => (
-          <div key={r.id} className="flex flex-wrap items-center justify-between gap-3 border-b border-r border-white/10 bg-[#0D0D0D] p-4">
+          <div key={r.id} className="flex flex-wrap items-center justify-between gap-3 border-b border-r border-white/10 bg-[#17181B] p-4">
             <div>
               <span className="font-mono text-sm text-white">{r.ip}</span>
-              {r.note && <span className="ml-3 text-xs text-[#A1A1AA]">{r.note}</span>}
+              {r.note && <span className="ml-3 text-xs text-[#90939A]">{r.note}</span>}
             </div>
             <button type="button" disabled={refreshing} onClick={() => handleRemove(r.id)} className={buttonClass}>Unblock</button>
           </div>
@@ -333,19 +396,19 @@ function AuditLogSection() {
       {error && <p className="mt-4 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
 
       <div className="mt-6 border-l border-t border-white/10">
-        {entries === null && !error && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>}
-        {entries?.length === 0 && <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA]">Nothing logged yet.</p>}
+        {entries === null && !error && <p className="border-b border-r border-white/10 bg-[#17181B] p-4 text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>}
+        {entries?.length === 0 && <p className="border-b border-r border-white/10 bg-[#17181B] p-4 text-sm text-[#90939A]">Nothing logged yet.</p>}
         {entries?.map((e) => (
-          <div key={e.id} className="border-b border-r border-white/10 bg-[#0D0D0D] p-4">
+          <div key={e.id} className="border-b border-r border-white/10 bg-[#17181B] p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <span className="text-sm font-medium text-white">{ACTION_LABELS[e.action] ?? e.action}</span>
-                {e.targetLabel && <span className="ml-2 text-xs text-[#A1A1AA]">→ {e.targetLabel}</span>}
+                {e.targetLabel && <span className="ml-2 text-xs text-[#90939A]">→ {e.targetLabel}</span>}
               </div>
               <span className="shrink-0 text-xs text-white/40">{new Date(e.createdAt).toLocaleString()}</span>
             </div>
-            <p className="mt-1 text-xs text-[#A1A1AA]">by {e.actorEmail}</p>
-            {e.detail && <p className="mt-2 text-sm text-[#A1A1AA]">{e.detail}</p>}
+            <p className="mt-1 text-xs text-[#90939A]">by {e.actorEmail}</p>
+            {e.detail && <p className="mt-2 text-sm text-[#90939A]">{e.detail}</p>}
           </div>
         ))}
       </div>

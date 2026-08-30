@@ -13,14 +13,14 @@ type Props = {
 export default function AuthTextField({ label, type = 'text', value, onChange, autoComplete, required }: Props) {
   return (
     <label className="block">
-      <span className="text-xs font-medium uppercase tracking-[0.12em] text-[#A1A1AA]">{label}</span>
+      <span className="text-xs font-medium uppercase tracking-[0.12em] text-[#90939A]">{label}</span>
       <input
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         autoComplete={autoComplete}
         required={required}
-        className="mt-2 w-full border border-white/15 bg-[#0D0D0D] px-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none"
+        className="mt-2 w-full border border-white/15 bg-[#17181B] px-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none"
       />
     </label>
   )

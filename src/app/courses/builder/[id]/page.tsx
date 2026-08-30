@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import AuthPageShell from '@/components/auth/AuthPageShell'
 import ActionButton from '@/components/ActionButton'
+import Eyebrow from '@/components/Eyebrow'
 import { useSession } from '@/components/SessionProvider'
 import {
   getMyCourse,
@@ -38,14 +39,14 @@ import {
 // Same style constants as AdminPanel.tsx / the instructor courses list —
 // duplicated rather than shared, matching this app's existing
 // low-abstraction convention.
-const inputClass = "border border-white/15 bg-[#0D0D0D] px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none"
-// Lighter-on-darker, for controls sitting on a bg-[#0D0D0D] row rather
+const inputClass = "border border-white/15 bg-[#17181B] px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none"
+// Lighter-on-darker, for controls sitting on a bg-[#17181B] row rather
 // than the page background — same reasoning as AdminPanel.tsx's
 // rowInputClass, applied one level deeper here (module row -> lesson row
-// -> lesson editor each alternate #0D0D0D/#171717 so nothing blends into
+// -> lesson editor each alternate #17181B/#0B0B0D so nothing blends into
 // its own container).
-const rowInputClass = "border border-white/15 bg-[#171717] px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none"
-const buttonClass = "border border-[#FF8A3D]/50 px-3 py-1.5 text-xs font-medium text-[#FF8A3D] transition-colors transition-transform duration-150 hover:border-[#FF8A3D] hover:bg-[#FF8A3D]/10 active:scale-[0.98] motion-reduce:transition-none disabled:opacity-50 disabled:active:scale-100"
+const rowInputClass = "border border-white/15 bg-[#0B0B0D] px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none"
+const buttonClass = "border border-[#FF7A33]/50 px-3 py-1.5 text-xs font-medium text-[#FF7A33] transition-colors transition-transform duration-150 hover:border-[#FF7A33] hover:bg-[#FF7A33]/10 active:scale-[0.98] motion-reduce:transition-none disabled:opacity-50 disabled:active:scale-100"
 
 const TYPE_LABEL: Record<LessonType, string> = {
   article: 'Article',
@@ -54,14 +55,35 @@ const TYPE_LABEL: Record<LessonType, string> = {
   quiz: 'Quiz',
 }
 
+const STATUS_LABEL: Record<InstructorCourseDetail['status'], string> = {
+  draft: 'Draft',
+  pending_review: 'In review',
+  published: 'Published',
+}
+
+// Bordered chip, not just colored text — a course's status is the single
+// most important thing on this screen (it gates whether Submit for
+// review even does anything), so it gets a persistent, at-a-glance
+// marker in the header instead of being buried in the settings pane.
+const STATUS_CHIP_CLASS: Record<InstructorCourseDetail['status'], string> = {
+  draft: 'border-white/20 text-white/60',
+  pending_review: 'border-[#FF7A33]/40 text-[#FF7A33]',
+  published: 'border-[#3FB950]/40 text-[#3FB950]',
+}
+
 const PROSE_LESSON_CLASS =
-  "prose-lesson [&_a]:text-[#FF8A3D] [&_a]:underline [&_a]:underline-offset-2 [&_blockquote]:border-l-2 [&_blockquote]:border-white/20 [&_blockquote]:pl-4 [&_blockquote]:text-[#A1A1AA] [&_code]:bg-white/[0.06] [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-[0.85em] [&_h1]:mt-10 [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:tracking-[-0.04em] [&_h1]:text-white [&_h2]:mt-10 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:tracking-[-0.03em] [&_h2]:text-white [&_h3]:mt-8 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-white [&_hr]:border-white/10 [&_img]:max-w-full [&_li]:leading-7 [&_ol]:mt-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:mt-4 [&_p]:leading-7 [&_p]:text-[#A1A1AA] [&_pre]:my-4 [&_table]:mt-4 [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-white/10 [&_td]:px-3 [&_td]:py-2 [&_th]:border [&_th]:border-white/10 [&_th]:bg-white/[0.03] [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:text-white [&_ul]:mt-4 [&_ul]:list-disc [&_ul]:pl-6 text-sm"
+  "prose-lesson [&_a]:text-[#FF7A33] [&_a]:underline [&_a]:underline-offset-2 [&_blockquote]:border-l-2 [&_blockquote]:border-white/20 [&_blockquote]:pl-4 [&_blockquote]:text-[#90939A] [&_code]:bg-white/[0.06] [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-[0.85em] [&_h1]:mt-10 [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:tracking-[-0.04em] [&_h1]:text-white [&_h2]:mt-10 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:tracking-[-0.03em] [&_h2]:text-white [&_h3]:mt-8 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-white [&_hr]:border-white/10 [&_img]:max-w-full [&_li]:leading-7 [&_ol]:mt-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:mt-4 [&_p]:leading-7 [&_p]:text-[#90939A] [&_pre]:my-4 [&_table]:mt-4 [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-white/10 [&_td]:px-3 [&_td]:py-2 [&_th]:border [&_th]:border-white/10 [&_th]:bg-white/[0.03] [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:text-white [&_ul]:mt-4 [&_ul]:list-disc [&_ul]:pl-6 text-sm"
 
 function dirnameOf(path: string): string {
   const parts = path.split('/')
   parts.pop()
   return parts.join('/')
 }
+
+// Which lesson (if any) is open in the right-hand editor pane —
+// lessonId: null means "new lesson" (moduleId is the target to create it
+// in). null overall means the pane shows the course-settings view instead.
+type Selection = { moduleId: number; lessonId: number | null } | null
 
 export default function InstructorCourseBuilderPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -70,6 +92,7 @@ export default function InstructorCourseBuilderPage({ params }: { params: Promis
 
   const [course, setCourse] = useState<InstructorCourseDetail | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [selected, setSelected] = useState<Selection>(null)
 
   useEffect(() => {
     if (sessionLoading) return
@@ -97,7 +120,7 @@ export default function InstructorCourseBuilderPage({ params }: { params: Promis
   if (sessionLoading || !user || (user.role !== 'instructor' && user.role !== 'staff')) {
     return (
       <AuthPageShell eyebrow="Instructor" heading="Course" backHref="/courses/builder" backLabel="Your courses">
-        <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>
+        <p className="text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
       </AuthPageShell>
     )
   }
@@ -113,59 +136,102 @@ export default function InstructorCourseBuilderPage({ params }: { params: Promis
   if (!course) {
     return (
       <AuthPageShell eyebrow="Instructor" heading="Course" backHref="/courses/builder" backLabel="Your courses">
-        <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>
+        <p className="text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
       </AuthPageShell>
     )
   }
 
   const lessonCount = course.modules.reduce((n, m) => n + m.lessons.length, 0)
 
+  // Keep an open editor pointed at a real lesson — if it was just deleted,
+  // or a course reload otherwise drops it from the tree, fall back to the
+  // course-settings view rather than rendering a stale/missing lesson.
+  const selectedModule = selected ? course.modules.find((m) => m.id === selected.moduleId) : undefined
+  const selectedLesson = selectedModule && selected?.lessonId != null
+    ? selectedModule.lessons.find((l) => l.id === selected.lessonId)
+    : undefined
+  const showingLessonEditor = Boolean(selectedModule) && (selected?.lessonId === null || Boolean(selectedLesson))
+
   return (
-    <main className="min-h-screen bg-[#171717]">
-      <section className="mx-auto max-w-3xl px-6 pb-10 pt-20 sm:pt-28">
-        <Link href="/courses/builder" className="text-xs uppercase tracking-[0.12em] text-white/40 transition-colors hover:text-white">
-          ← Your courses
-        </Link>
-        <p className="mt-4 text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">Instructor</p>
-        <h1 className="mt-4 text-4xl font-bold tracking-[-0.05em] text-white sm:text-5xl">{course.title}</h1>
-      </section>
+    <main className="min-h-screen bg-[#0B0B0D]">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 px-6 py-5">
+        <div>
+          <Link href="/courses/builder" className="text-xs uppercase tracking-[0.12em] text-white/40 transition-colors hover:text-white">
+            ← Your courses
+          </Link>
+          <div className="mt-2 flex flex-wrap items-center gap-3">
+            <h1 className="text-2xl font-bold tracking-[-0.04em] text-white">{course.title}</h1>
+            <span className={`border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] ${STATUS_CHIP_CLASS[course.status]}`}>
+              {STATUS_LABEL[course.status]}
+            </span>
+          </div>
+          <p className="mt-1 text-xs text-white/40">
+            {course.modules.length} module{course.modules.length === 1 ? '' : 's'} · {lessonCount} lesson{lessonCount === 1 ? '' : 's'} · {course.viewCount} views
+          </p>
+        </div>
+        <button type="button" onClick={() => setSelected(null)} className={buttonClass}>
+          Course settings
+        </button>
+      </div>
 
-      <section className="mx-auto max-w-3xl px-6 pb-24">
-        <div className="grid grid-cols-3 gap-px border border-white/10 bg-white/10">
-          <StatTile label="Views" value={course.viewCount} />
-          <StatTile label="Enrolled" value={course.enrolledCount} />
-          <StatTile label="Completed" value={course.completedCount} />
+      <div className="mx-auto grid max-w-6xl grid-cols-1 md:grid-cols-[280px_1fr]">
+        <div className="border-white/10 px-6 py-6 md:border-r">
+          <div className="flex flex-col gap-4">
+            {course.modules.map((mod) => (
+              <ModuleRow
+                key={mod.id}
+                mod={mod}
+                selected={selected}
+                onSelect={setSelected}
+                onReload={load}
+              />
+            ))}
+          </div>
+          <AddModuleForm courseId={course.id} onCreated={load} />
         </div>
 
-        <CourseIconUpload course={course} onUploaded={load} />
-        <CourseDetailsForm course={course} onSaved={load} />
-        <CourseAuthorsSection course={course} onChanged={load} />
-        <CourseVisibilitySection course={course} onChanged={load} />
+        <div className="min-w-0 px-6 py-6 sm:px-8">
+          {showingLessonEditor && selectedModule ? (
+            <LessonEditor
+              moduleId={selectedModule.id}
+              lesson={selectedLesson}
+              onSaved={() => {
+                setSelected(null)
+                load()
+              }}
+              onCancel={() => setSelected(null)}
+            />
+          ) : (
+            <div>
+              <div className="grid grid-cols-3 gap-px border border-white/10 bg-white/10">
+                <StatTile label="Views" value={course.viewCount} />
+                <StatTile label="Enrolled" value={course.enrolledCount} />
+                <StatTile label="Completed" value={course.completedCount} />
+              </div>
 
-        {course.status === 'draft' && course.rejectionReason && (
-          <p className="mt-4 text-sm text-[#F85149]">Rejected: {course.rejectionReason}</p>
-        )}
+              <CourseIconUpload course={course} onUploaded={load} />
+              <CourseDetailsForm course={course} onSaved={load} />
+              <CourseAuthorsSection course={course} onChanged={load} />
+              <CourseVisibilitySection course={course} onChanged={load} />
 
-        <SubmitForReviewControl course={course} lessonCount={lessonCount} onSubmitted={load} />
+              {course.status === 'draft' && course.rejectionReason && (
+                <p className="mt-4 text-sm text-[#F85149]">Rejected: {course.rejectionReason}</p>
+              )}
 
-        <h2 className="mt-10 text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">Modules</h2>
-        <div className="mt-4 flex flex-col gap-4">
-          {course.modules.map((mod) => (
-            <ModuleRow key={mod.id} mod={mod} onReload={load} />
-          ))}
+              <SubmitForReviewControl course={course} lessonCount={lessonCount} onSubmitted={load} />
+            </div>
+          )}
         </div>
-
-        <AddModuleForm courseId={course.id} onCreated={load} />
-      </section>
+      </div>
     </main>
   )
 }
 
 function StatTile({ label, value }: { label: string; value: number }) {
   return (
-    <div className="bg-[#0D0D0D] p-4">
+    <div className="bg-[#17181B] p-4">
       <p className="text-2xl font-bold tracking-[-0.03em] text-white">{value}</p>
-      <p className="mt-1 text-xs text-[#A1A1AA]">{label}</p>
+      <p className="mt-1 text-xs text-[#90939A]">{label}</p>
     </div>
   )
 }
@@ -197,7 +263,7 @@ function CourseIconUpload({ course, onUploaded }: { course: InstructorCourseDeta
         // eslint-disable-next-line @next/next/no-img-element -- cross-subdomain, session-cookie-gated asset; next/image can't proxy this
         <img src={getAssetSrc(course.iconUrl)} alt="" className="h-16 w-16 shrink-0 border border-white/10 object-cover" />
       ) : (
-        <div className="flex h-16 w-16 shrink-0 items-center justify-center border border-white/10 bg-[#0D0D0D] text-xs text-white/40">No icon</div>
+        <div className="flex h-16 w-16 shrink-0 items-center justify-center border border-white/10 bg-[#17181B] text-xs text-white/40">No icon</div>
       )}
       <div>
         <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/gif,image/svg+xml" className="hidden" onChange={handleChange} />
@@ -291,10 +357,10 @@ function CourseAuthorsSection({ course, onChanged }: { course: InstructorCourseD
 
   return (
     <div className="mt-8">
-      <h2 className="text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">Authors</h2>
+      <Eyebrow as="h2">Authors</Eyebrow>
       <div className="mt-3 flex flex-col gap-2">
         {course.authors.map((author) => (
-          <div key={author.id} className="flex items-center justify-between gap-3 border border-white/10 bg-[#0D0D0D] px-4 py-2 text-sm text-white">
+          <div key={author.id} className="flex items-center justify-between gap-3 border border-white/10 bg-[#17181B] px-4 py-2 text-sm text-white">
             <span>{author.displayName}{author.id === course.createdBy && ' (owner)'}</span>
             {author.id !== course.createdBy && (
               <button type="button" onClick={() => handleRemove(author.id)} className="text-xs text-white/50 underline underline-offset-2 hover:text-white">
@@ -374,7 +440,7 @@ function CourseVisibilitySection({ course, onChanged }: { course: InstructorCour
 
   return (
     <div className="mt-8">
-      <h2 className="text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">Visibility</h2>
+      <Eyebrow as="h2">Visibility</Eyebrow>
       <div className="mt-3 flex gap-2">
         <button
           type="button"
@@ -398,10 +464,10 @@ function CourseVisibilitySection({ course, onChanged }: { course: InstructorCour
         <div className="mt-4">
           <p className="text-xs text-white/40">Only students in the checked groups can see or enroll in this course.</p>
           <div className="mt-2 flex flex-col gap-2">
-            {groups === null && <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading groups…</p>}
+            {groups === null && <p className="text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading groups…</p>}
             {groups?.length === 0 && (
-              <p className="text-sm text-[#A1A1AA]">
-                No groups yet — <Link href="/courses/builder/groups" className="text-[#FF8A3D] underline underline-offset-2">create one</Link>.
+              <p className="text-sm text-[#90939A]">
+                No groups yet — <Link href="/courses/builder/groups" className="text-[#FF7A33] underline underline-offset-2">create one</Link>.
               </p>
             )}
             {groups?.map((group) => (
@@ -455,10 +521,10 @@ function SubmitForReviewControl({
     return <p className="mt-6 text-sm text-[#3FB950]">✓ Published — live on the site.</p>
   }
   if (course.status === 'pending_review') {
-    return <p className="mt-6 text-sm text-[#FF8A3D]">In review — a staff member will approve or reject it soon.</p>
+    return <p className="mt-6 text-sm text-[#FF7A33]">In review — a staff member will approve or reject it soon.</p>
   }
   if (lessonCount === 0) {
-    return <p className="mt-6 text-sm text-[#A1A1AA]">Add at least one lesson before you can submit this course for review.</p>
+    return <p className="mt-6 text-sm text-[#90939A]">Add at least one lesson before you can submit this course for review.</p>
   }
 
   return (
@@ -500,13 +566,21 @@ function AddModuleForm({ courseId, onCreated }: { courseId: number; onCreated: (
   )
 }
 
-function ModuleRow({ mod, onReload }: { mod: InstructorModule; onReload: () => void }) {
+function ModuleRow({
+  mod,
+  selected,
+  onSelect,
+  onReload,
+}: {
+  mod: InstructorModule
+  selected: Selection
+  onSelect: (s: Selection) => void
+  onReload: () => void
+}) {
   const [editing, setEditing] = useState(false)
   const [title, setTitle] = useState(mod.title)
   const [description, setDescription] = useState(mod.description ?? '')
   const [saving, setSaving] = useState(false)
-  const [addingLesson, setAddingLesson] = useState(false)
-  const [expandedLessonId, setExpandedLessonId] = useState<number | null>(null)
 
   async function handleSaveModule(e: React.FormEvent) {
     e.preventDefault()
@@ -525,76 +599,67 @@ function ModuleRow({ mod, onReload }: { mod: InstructorModule; onReload: () => v
 
   async function handleDeleteLesson(lessonId: number) {
     if (!window.confirm('Delete this lesson? This can\'t be undone.')) return
+    if (selected?.moduleId === mod.id && selected.lessonId === lessonId) onSelect(null)
     await deleteLesson(lessonId)
     onReload()
   }
 
   return (
-    <div className="border border-white/10 bg-[#0D0D0D] p-4">
+    <div>
       {editing ? (
-        <form onSubmit={handleSaveModule} className="flex flex-wrap items-end gap-3">
+        <form onSubmit={handleSaveModule} className="flex flex-col gap-2">
           <input value={title} onChange={(e) => setTitle(e.target.value)} required className={rowInputClass} />
           <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description" className={rowInputClass} />
-          <button type="submit" disabled={saving} className={buttonClass}>{saving ? '…' : 'Save'}</button>
-          <button type="button" onClick={() => setEditing(false)} className={buttonClass}>Cancel</button>
+          <div className="flex gap-2">
+            <button type="submit" disabled={saving} className={buttonClass}>{saving ? '…' : 'Save'}</button>
+            <button type="button" onClick={() => setEditing(false)} className={buttonClass}>Cancel</button>
+          </div>
         </form>
       ) : (
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <span className="text-sm font-medium text-white">{mod.title}</span>
-            {mod.description && <span className="ml-2 text-xs text-[#A1A1AA]">{mod.description}</span>}
-          </div>
-          <div className="flex gap-2">
-            <button type="button" onClick={() => setEditing(true)} className={buttonClass}>Edit</button>
-            <button type="button" onClick={handleDeleteModule} className={buttonClass}>Delete</button>
-          </div>
+        <div className="group flex items-center justify-between gap-2">
+          <span className="text-xs font-semibold uppercase tracking-[0.1em] text-white/60">{mod.title}</span>
+          <span className="flex shrink-0 gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+            <button type="button" onClick={() => setEditing(true)} className="text-[10px] uppercase tracking-[0.08em] text-white/40 hover:text-white">Edit</button>
+            <button type="button" onClick={handleDeleteModule} className="text-[10px] uppercase tracking-[0.08em] text-white/40 hover:text-[#F85149]">Delete</button>
+          </span>
         </div>
       )}
 
-      <div className="mt-4 flex flex-col gap-2 border-l border-white/10 pl-4">
-        {mod.lessons.map((lesson) => (
-          <div key={lesson.id}>
-            <div className="flex flex-wrap items-center justify-between gap-3 border border-white/10 bg-[#171717] px-4 py-2.5">
-              <div className="flex items-center gap-3">
-                <span className="text-xs uppercase tracking-[0.1em] text-white/40">{TYPE_LABEL[lesson.type]}</span>
-                <span className="text-sm text-white">{lesson.title}</span>
-              </div>
-              <div className="flex gap-2">
-                <button type="button" onClick={() => setExpandedLessonId(expandedLessonId === lesson.id ? null : lesson.id)} className={buttonClass}>
-                  {expandedLessonId === lesson.id ? 'Close' : 'Edit'}
-                </button>
-                <button type="button" onClick={() => handleDeleteLesson(lesson.id)} className={buttonClass}>Delete</button>
-              </div>
+      <div className="mt-2 flex flex-col gap-1 border-l border-white/10 pl-3">
+        {mod.lessons.map((lesson) => {
+          const isSelected = selected?.moduleId === mod.id && selected.lessonId === lesson.id
+          return (
+            <div
+              key={lesson.id}
+              className={`group flex items-center justify-between gap-2 border-l-2 py-1.5 pl-3 pr-2 text-sm transition-colors ${
+                isSelected ? 'border-[#FF7A33] bg-white/5 text-white' : 'border-transparent text-[#90939A] hover:text-white'
+              }`}
+            >
+              <button type="button" onClick={() => onSelect({ moduleId: mod.id, lessonId: lesson.id })} className="min-w-0 flex-1 truncate text-left">
+                <span className="mr-2 text-[10px] uppercase tracking-[0.08em] text-white/40">{TYPE_LABEL[lesson.type]}</span>
+                {lesson.title}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDeleteLesson(lesson.id)}
+                className="shrink-0 text-white/30 opacity-0 transition-opacity hover:text-[#F85149] group-hover:opacity-100"
+                aria-label={`Delete ${lesson.title}`}
+              >
+                ×
+              </button>
             </div>
-            {expandedLessonId === lesson.id && (
-              <div className="border border-t-0 border-white/10 bg-[#171717] p-4">
-                <LessonEditor
-                  moduleId={mod.id}
-                  lesson={lesson}
-                  onSaved={() => {
-                    setExpandedLessonId(null)
-                    onReload()
-                  }}
-                />
-              </div>
-            )}
-          </div>
-        ))}
+          )
+        })}
 
-        {addingLesson ? (
-          <div className="border border-white/10 bg-[#171717] p-4">
-            <LessonEditor
-              moduleId={mod.id}
-              onSaved={() => {
-                setAddingLesson(false)
-                onReload()
-              }}
-              onCancel={() => setAddingLesson(false)}
-            />
-          </div>
-        ) : (
-          <button type="button" onClick={() => setAddingLesson(true)} className={`self-start ${buttonClass}`}>+ Add lesson</button>
-        )}
+        <button
+          type="button"
+          onClick={() => onSelect({ moduleId: mod.id, lessonId: null })}
+          className={`self-start py-1.5 pl-3 text-xs transition-colors ${
+            selected?.moduleId === mod.id && selected.lessonId === null ? 'text-[#FF7A33]' : 'text-white/40 hover:text-white'
+          }`}
+        >
+          + Add lesson
+        </button>
       </div>
     </div>
   )
@@ -779,7 +844,7 @@ function LessonEditor({
       {type === 'article' && (
         <div>
           {!markdownLoaded ? (
-            <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>
+            <p className="text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
           ) : (
             <>
               <textarea
@@ -788,7 +853,7 @@ function LessonEditor({
                 onChange={(e) => setMarkdown(e.target.value)}
                 rows={20}
                 placeholder="Markdown content…"
-                className="w-full resize-y border border-white/15 bg-[#0D0D0D] px-4 py-2.5 font-mono text-sm text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none"
+                className="w-full resize-y border border-white/15 bg-[#17181B] px-4 py-2.5 font-mono text-sm text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none"
               />
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <button type="button" onClick={handlePreview} className={buttonClass}>Preview</button>
@@ -797,7 +862,7 @@ function LessonEditor({
                   <input type="file" accept="image/png,image/jpeg,image/gif,image/svg+xml" onChange={handleImageUpload} disabled={uploadingImage} className="hidden" />
                 </label>
               </div>
-              {preview && <div className={`mt-4 border border-white/10 bg-[#0D0D0D] p-6 ${PROSE_LESSON_CLASS}`} dangerouslySetInnerHTML={{ __html: preview }} />}
+              {preview && <div className={`mt-4 border border-white/10 bg-[#17181B] p-6 ${PROSE_LESSON_CLASS}`} dangerouslySetInnerHTML={{ __html: preview }} />}
             </>
           )}
         </div>
@@ -819,7 +884,7 @@ function LessonEditor({
       {type === 'quiz' && (
         <div className="flex flex-col gap-4">
           {questions.map((q, qi) => (
-            <fieldset key={qi} className="border border-white/10 bg-[#171717] p-4">
+            <fieldset key={qi} className="border border-white/10 bg-[#0B0B0D] p-4">
               <div className="flex items-start justify-between gap-3">
                 <input
                   value={q.prompt}
@@ -853,7 +918,7 @@ function LessonEditor({
           ))}
           <button type="button" onClick={addQuestion} className={`self-start ${buttonClass}`}>+ Add question</button>
           {!quizValid && questions.length > 0 && (
-            <p className="text-xs text-[#A1A1AA]">Every question needs at least 2 answers with exactly one marked correct.</p>
+            <p className="text-xs text-[#90939A]">Every question needs at least 2 answers with exactly one marked correct.</p>
           )}
         </div>
       )}

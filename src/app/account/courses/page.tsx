@@ -11,6 +11,7 @@ import {
   type MyEnrollment,
   type MyStatistics,
 } from '@/lib/authClient'
+import Eyebrow from '@/components/Eyebrow'
 
 export default function AccountCoursesPage() {
   const router = useRouter()
@@ -44,65 +45,52 @@ export default function AccountCoursesPage() {
   }
 
   if (sessionLoading || !user) {
-    return (
-      <main className="min-h-screen bg-[#171717]">
-        <section className="mx-auto max-w-4xl px-6 pb-10 pt-20 sm:pt-28">
-          <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>
-        </section>
-      </main>
-    )
+    return <p className="pt-1 text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
   }
 
   return (
-    <main className="min-h-screen bg-[#171717]">
-      <section className="mx-auto max-w-4xl px-6 pb-10 pt-20 sm:pt-28">
-        <Link href="/account" className="text-xs uppercase tracking-[0.12em] text-white/40 transition-colors hover:text-white">
-          ← Account
-        </Link>
-        <p className="mt-4 text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">Learning</p>
-        <h1 className="mt-2 text-4xl font-bold tracking-[-0.05em] text-white sm:text-5xl">Enrolled courses</h1>
-      </section>
+    <div>
+      <Eyebrow>Learning</Eyebrow>
+      <h1 className="mt-2 text-4xl font-bold tracking-[-0.05em] text-white">Enrolled courses</h1>
 
-      <section className="mx-auto max-w-4xl px-6 pb-24">
-        {error && <p className="text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
+      {error && <p className="mt-4 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
 
-        {stats && (
-          <div className="grid grid-cols-2 gap-px border border-white/10 bg-white/10 sm:grid-cols-5">
-            <StatTile label="Courses enrolled" value={stats.coursesEnrolled} />
-            <StatTile label="Courses completed" value={stats.coursesCompleted} />
-            <StatTile label="Lessons completed" value={stats.lessonsCompleted} />
-            <StatTile label="Quiz attempts" value={stats.quizAttempts} />
-            <StatTile
-              label="Avg. quiz score"
-              value={stats.averageQuizScorePercent === null ? '—' : `${stats.averageQuizScorePercent}%`}
-            />
-          </div>
-        )}
-
-        <div className="mt-10 flex flex-col gap-3">
-          {enrollments && enrollments.length === 0 && (
-            <p className="text-sm text-[#A1A1AA]">
-              You&apos;re not enrolled in any courses yet.{' '}
-              <Link href="/courses" className="text-[#FF8A3D] underline underline-offset-2">
-                Browse courses
-              </Link>
-              .
-            </p>
-          )}
-          {enrollments?.map((enrollment) => (
-            <EnrollmentCard key={enrollment.courseSlug} enrollment={enrollment} onUnenrolled={handleUnenrolled} />
-          ))}
+      {stats && (
+        <div className="mt-8 grid grid-cols-2 gap-px border border-white/10 bg-white/10 sm:grid-cols-5">
+          <StatTile label="Courses enrolled" value={stats.coursesEnrolled} />
+          <StatTile label="Courses completed" value={stats.coursesCompleted} />
+          <StatTile label="Lessons completed" value={stats.lessonsCompleted} />
+          <StatTile label="Quiz attempts" value={stats.quizAttempts} />
+          <StatTile
+            label="Avg. quiz score"
+            value={stats.averageQuizScorePercent === null ? '—' : `${stats.averageQuizScorePercent}%`}
+          />
         </div>
-      </section>
-    </main>
+      )}
+
+      <div className="mt-10 flex flex-col gap-3">
+        {enrollments && enrollments.length === 0 && (
+          <p className="text-sm text-[#90939A]">
+            You&apos;re not enrolled in any courses yet.{' '}
+            <Link href="/courses" className="text-[#FF7A33] underline underline-offset-2">
+              Browse courses
+            </Link>
+            .
+          </p>
+        )}
+        {enrollments?.map((enrollment) => (
+          <EnrollmentCard key={enrollment.courseSlug} enrollment={enrollment} onUnenrolled={handleUnenrolled} />
+        ))}
+      </div>
+    </div>
   )
 }
 
 function StatTile({ label, value }: { label: string; value: number | string }) {
   return (
-    <div className="bg-[#0D0D0D] p-4">
+    <div className="bg-[#17181B] p-4">
       <p className="text-2xl font-bold tracking-[-0.03em] text-white">{value}</p>
-      <p className="mt-1 text-xs text-[#A1A1AA]">{label}</p>
+      <p className="mt-1 text-xs text-[#90939A]">{label}</p>
     </div>
   )
 }
@@ -136,21 +124,21 @@ function EnrollmentCard({
   }
 
   return (
-    <div className="border border-white/10 bg-[#0D0D0D] p-5">
+    <div className="border border-white/10 bg-[#17181B] p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <span className={enrollment.status === 'completed' ? 'text-sm text-[#3FB950]' : 'text-sm text-[#FF8A3D]'}>
+          <span className={enrollment.status === 'completed' ? 'text-sm text-[#3FB950]' : 'text-sm text-[#FF7A33]'}>
             {enrollment.status === 'completed' ? 'Completed' : 'Enrolled'}
           </span>
           <h2 className="mt-1 text-lg font-semibold text-white">{enrollment.courseTitle}</h2>
-          <p className="mt-1 text-sm text-[#A1A1AA]">
+          <p className="mt-1 text-sm text-[#90939A]">
             {enrollment.completedLessons}/{enrollment.totalLessons} lessons complete
           </p>
         </div>
         <div className="flex items-center gap-4">
           <Link
             href={`/courses/${enrollment.courseSlug}`}
-            className="text-sm font-medium text-white transition-colors hover:text-[#FF8A3D]"
+            className="text-sm font-medium text-white transition-colors hover:text-[#FF7A33]"
           >
             Continue →
           </Link>

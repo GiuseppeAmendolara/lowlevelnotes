@@ -1,21 +1,22 @@
 import Link from 'next/link'
 import { DiscordIcon, GithubIcon, LicenseIcon } from '@/components/icons'
+import Eyebrow from '@/components/Eyebrow'
 
 export default function Footer() {
   return (
-    <footer className="mt-auto border-t border-white/10 bg-[#171717]">
+    <footer className="mt-auto border-t border-white/10 bg-[#0B0B0D]">
       <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-10">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h2 className="text-lg font-bold tracking-[-0.04em] text-white">
-              <span className="text-[#FF8A3D]">0x</span>LLN
+              <span className="text-[#FF7A33]">0x</span>LLN
             </h2>
-            <p className="mt-1 max-w-sm text-sm text-[#A1A1AA]">
+            <p className="mt-1 max-w-sm text-sm text-[#90939A]">
               Organized knowledge for mastering software development.
             </p>
           </div>
 
-          <div className="flex flex-col items-start gap-1 text-sm text-[#A1A1AA]">
+          <div className="flex flex-col items-start gap-1 text-sm text-[#90939A]">
             <p className="flex items-center gap-1.5">
               <DiscordIcon className="h-3.5 w-3.5 shrink-0 text-white/40" />
               <a
@@ -53,9 +54,7 @@ export default function Footer() {
         </div>
 
         <div className="flex flex-col gap-3 border-t border-white/10 pt-6 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">
-            Free &amp; open source · Full privacy · Zero ads
-          </p>
+          <Eyebrow>Free &amp; open source · Full privacy · Zero ads</Eyebrow>
           <div className="flex items-center gap-4 text-xs text-white/30">
             <Link href="/privacy" className="underline underline-offset-2 transition-colors hover:text-white/60">
               Privacy

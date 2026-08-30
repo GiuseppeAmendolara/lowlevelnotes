@@ -12,6 +12,7 @@ import {
 } from '@/lib/authClient'
 import { ArticleBody, VideoBody, ExerciseBody } from '@/components/lesson/LessonContentViews'
 import { SectionHeading, buttonClass } from '@/components/admin/shared'
+import Eyebrow from '@/components/Eyebrow'
 
 export default function CourseReviewPanel({ id }: { id: number }) {
   const router = useRouter()
@@ -68,7 +69,7 @@ export default function CourseReviewPanel({ id }: { id: number }) {
   }
 
   if (!course) {
-    return <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>
+    return <p className="text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
   }
 
   return (
@@ -79,11 +80,9 @@ export default function CourseReviewPanel({ id }: { id: number }) {
 
       <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">
-            {course.category ?? 'Uncategorized'} · {course.status.replace('_', ' ')}
-          </p>
+          <Eyebrow>{course.category ?? 'Uncategorized'} · {course.status.replace('_', ' ')}</Eyebrow>
           <h1 className="mt-1 text-3xl font-bold tracking-[-0.04em] text-white">{course.title}</h1>
-          {course.description && <p className="mt-2 max-w-2xl text-sm text-[#A1A1AA]">{course.description}</p>}
+          {course.description && <p className="mt-2 max-w-2xl text-sm text-[#90939A]">{course.description}</p>}
           {course.rejectionReason && <p className="mt-2 text-xs text-[#F85149]">Previously rejected: {course.rejectionReason}</p>}
         </div>
 
@@ -108,16 +107,16 @@ export default function CourseReviewPanel({ id }: { id: number }) {
       {error && <p className="mt-4 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
 
       <div className="mt-10 flex flex-col gap-10">
-        {course.modules.length === 0 && <p className="text-sm text-[#A1A1AA]">This course has no modules yet.</p>}
+        {course.modules.length === 0 && <p className="text-sm text-[#90939A]">This course has no modules yet.</p>}
         {course.modules.map((mod) => (
           <div key={mod.id}>
             <SectionHeading>{mod.title}</SectionHeading>
-            {mod.description && <p className="mt-2 text-sm text-[#A1A1AA]">{mod.description}</p>}
+            {mod.description && <p className="mt-2 text-sm text-[#90939A]">{mod.description}</p>}
 
             <div className="mt-4 flex flex-col gap-6">
-              {mod.lessons.length === 0 && <p className="text-sm text-[#A1A1AA]">No lessons in this module yet.</p>}
+              {mod.lessons.length === 0 && <p className="text-sm text-[#90939A]">No lessons in this module yet.</p>}
               {mod.lessons.map((lesson) => (
-                <div key={lesson.id} className="border border-white/10 bg-[#0D0D0D] p-5">
+                <div key={lesson.id} className="border border-white/10 bg-[#17181B] p-5">
                   <p className="text-xs uppercase tracking-[0.1em] text-white/40">{lesson.type}</p>
                   <h3 className="mt-1 text-lg font-semibold text-white">{lesson.title}</h3>
                   <div className="mt-4">
@@ -148,7 +147,7 @@ function QuizReview({ questions }: { questions: InstructorQuizQuestion[] }) {
           <p className="text-sm font-medium text-white">{i + 1}. {q.prompt}</p>
           <div className="mt-2 flex flex-col gap-1">
             {q.answers.map((a) => (
-              <p key={a.id} className={`text-sm ${a.correct ? 'text-[#3FB950]' : 'text-[#A1A1AA]'}`}>
+              <p key={a.id} className={`text-sm ${a.correct ? 'text-[#3FB950]' : 'text-[#90939A]'}`}>
                 {a.correct ? '✓' : '·'} {a.body}
               </p>
             ))}

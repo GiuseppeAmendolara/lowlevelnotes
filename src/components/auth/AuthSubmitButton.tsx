@@ -13,7 +13,7 @@ export default function AuthSubmitButton({ loading, disabled, children }: Props)
     <button
       type="submit"
       disabled={loading || disabled}
-      className="inline-flex w-full items-center justify-center gap-3 bg-[#FF8A3D] px-5 py-3.5 text-sm font-semibold text-[#0D0D0D] transition-colors transition-transform duration-150 hover:bg-[#FFA15C] active:scale-[0.98] motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF8A3D] disabled:cursor-not-allowed disabled:opacity-50"
+      className="inline-flex w-full items-center justify-center gap-3 bg-[#FF7A33] px-5 py-3.5 text-sm font-semibold text-[#0D0D0D] transition-colors transition-transform duration-150 hover:bg-[#FF9459] active:scale-[0.98] motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF7A33] disabled:cursor-not-allowed disabled:opacity-50"
     >
       {loading ? '…' : children}
     </button>

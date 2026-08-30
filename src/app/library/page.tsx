@@ -6,6 +6,7 @@ import LibraryBrowser from '@/components/LibraryBrowser'
 import { useSession } from '@/components/SessionProvider'
 import { getLibrary } from '@/lib/authClient'
 import type { Resource, Person } from '@/lib/api'
+import Eyebrow from '@/components/Eyebrow'
 
 // Client-gated and client-fetched, not server-rendered: the library is
 // restricted to logged-in users, and the Worker now enforces that on the
@@ -39,20 +40,20 @@ export default function LibraryPage() {
 
   if (sessionLoading || !user) {
     return (
-      <main className="min-h-screen bg-[#171717]">
+      <main className="min-h-screen bg-[#0B0B0D]">
         <section className="mx-auto max-w-5xl px-6 pb-10 pt-20 sm:pt-28">
-          <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>
+          <p className="text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
         </section>
       </main>
     )
   }
 
   return (
-    <main className="min-h-screen bg-[#171717]">
+    <main className="min-h-screen bg-[#0B0B0D]">
       <section className="mx-auto max-w-5xl px-6 pb-10 pt-20 sm:pt-28">
-        <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">Curated resources</p>
+        <Eyebrow>Curated resources</Eyebrow>
         <h1 className="mt-4 text-4xl font-bold tracking-[-0.05em] text-white sm:text-5xl">Library</h1>
-        <p className="mt-4 max-w-lg leading-7 text-[#A1A1AA]">
+        <p className="mt-4 max-w-lg leading-7 text-[#90939A]">
           {library ? `${library.resources.length} links across the topics in the notes, credited to the people who actually wrote them.` : 'Loading the library…'}
         </p>
       </section>

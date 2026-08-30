@@ -8,6 +8,7 @@ import AuthTextArea from '@/components/auth/AuthTextArea'
 import AuthSelect from '@/components/auth/AuthSelect'
 import AuthSubmitButton from '@/components/auth/AuthSubmitButton'
 import AuthMessage from '@/components/auth/AuthMessage'
+import Eyebrow from '@/components/Eyebrow'
 import { useSession } from '@/components/SessionProvider'
 import {
   getMyRoleRequests,
@@ -38,7 +39,7 @@ export default function ContributePage() {
   if (sessionLoading || !user) {
     return (
       <AuthPageShell eyebrow="Contribute" heading="Contribute" backHref="/account">
-        <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>
+        <p className="text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
       </AuthPageShell>
     )
   }
@@ -81,7 +82,7 @@ function RoleRequestPanel() {
   if (requests === null) {
     return (
       <AuthPageShell eyebrow="Contribute" heading="Contribute" backHref="/account">
-        <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>
+        <p className="text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
       </AuthPageShell>
     )
   }
@@ -92,7 +93,7 @@ function RoleRequestPanel() {
   if (pending) {
     return (
       <AuthPageShell eyebrow="Contribute" heading="Request pending" backHref="/account">
-        <p className="text-sm leading-6 text-[#A1A1AA]">
+        <p className="text-sm leading-6 text-[#90939A]">
           Your request to become a {pending.requestedRole} is waiting on review.
         </p>
         <AuthMessage message="Pending — you'll be able to submit resources once this is approved." />
@@ -218,7 +219,7 @@ function ResourceRequestPanel() {
         <AuthSelect label="Type" value={type} onChange={(v) => setType(v as typeof type)} options={RESOURCE_TYPES} />
         <AuthTextField label="Category" value={category} onChange={setCategory} required />
 
-        <div className="flex gap-4 text-sm text-[#A1A1AA]">
+        <div className="flex gap-4 text-sm text-[#90939A]">
           <label className="flex items-center gap-2">
             <input type="radio" checked={mode === 'link'} onChange={() => setMode('link')} />
             Link
@@ -233,11 +234,11 @@ function ResourceRequestPanel() {
           <AuthTextField label="URL" type="url" value={url} onChange={setUrl} required />
         ) : (
           <label className="block">
-            <span className="text-xs font-medium uppercase tracking-[0.12em] text-[#A1A1AA]">File</span>
+            <span className="text-xs font-medium uppercase tracking-[0.12em] text-[#90939A]">File</span>
             <input
               type="file"
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-              className="mt-2 w-full border border-white/15 bg-[#0D0D0D] px-4 py-2.5 text-sm text-white file:mr-4 file:border-0 file:bg-white/10 file:px-3 file:py-1.5 file:text-white"
+              className="mt-2 w-full border border-white/15 bg-[#17181B] px-4 py-2.5 text-sm text-white file:mr-4 file:border-0 file:bg-white/10 file:px-3 file:py-1.5 file:text-white"
             />
           </label>
         )}
@@ -248,24 +249,24 @@ function ResourceRequestPanel() {
         <AuthSubmitButton loading={submitting}>Submit</AuthSubmitButton>
       </form>
 
-      <h2 className="mt-12 text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">Your submissions</h2>
+      <Eyebrow as="h2" className="mt-12">Your submissions</Eyebrow>
       <div className="mt-4 border-l border-t border-white/10">
         {loadingRequests && (
-          <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>
+          <p className="border-b border-r border-white/10 bg-[#17181B] p-4 text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
         )}
         {!loadingRequests && requests.length === 0 && (
-          <p className="border-b border-r border-white/10 bg-[#0D0D0D] p-4 text-sm text-[#A1A1AA]">Nothing submitted yet.</p>
+          <p className="border-b border-r border-white/10 bg-[#17181B] p-4 text-sm text-[#90939A]">Nothing submitted yet.</p>
         )}
         {requests.map((r) => (
-          <div key={r.id} className="border-b border-r border-white/10 bg-[#0D0D0D] p-4">
+          <div key={r.id} className="border-b border-r border-white/10 bg-[#17181B] p-4">
             <div className="flex items-center justify-between gap-3">
               <span className="text-sm font-medium text-white">{r.title}</span>
-              <span className={`text-xs uppercase tracking-[0.1em] ${r.status === 'approved' ? 'text-[#3FB950]' : r.status === 'rejected' ? 'text-[#F85149]' : 'text-[#A1A1AA]'}`}>
+              <span className={`text-xs uppercase tracking-[0.1em] ${r.status === 'approved' ? 'text-[#3FB950]' : r.status === 'rejected' ? 'text-[#F85149]' : 'text-[#90939A]'}`}>
                 {r.status}
               </span>
             </div>
             {r.status === 'rejected' && r.rejectionReason && (
-              <p className="mt-1 text-xs text-[#A1A1AA]">{r.rejectionReason}</p>
+              <p className="mt-1 text-xs text-[#90939A]">{r.rejectionReason}</p>
             )}
           </div>
         ))}

@@ -11,6 +11,14 @@ const DIFFICULTY_LABEL: Record<CourseDifficulty, string> = {
   advanced: 'Advanced',
 }
 
+// Difficulty as a color, not just a text label — skimmable at a glance
+// across a whole grid, the way a status light is.
+const DIFFICULTY_COLOR: Record<CourseDifficulty, string> = {
+  beginner: '#3FB950',
+  intermediate: '#D29922',
+  advanced: '#F85149',
+}
+
 function authorByline(authors: Course['authors']): string | null {
   if (authors.length === 0) return null
   if (authors.length === 1) return `by ${authors[0].displayName}`
@@ -32,7 +40,7 @@ export default function CourseCatalogCard({ course, index }: { course: Course; i
       ref={ref}
       href={`/courses/${course.slug}`}
       style={{ transitionDelay: `${Math.min(index, 6) * 40}ms` }}
-      className={`group flex flex-col justify-between gap-4 bg-[#0D0D0D] p-6 hover:bg-[#151515] hover:-translate-y-0.5 motion-reduce:hover:translate-y-0 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#FF8A3D] ${revealClass} ${revealState(visible)}`}
+      className={`group flex flex-col justify-between gap-4 bg-[#17181B] p-6 hover:bg-[#151515] hover:-translate-y-0.5 motion-reduce:hover:translate-y-0 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#FF7A33] ${revealClass} ${revealState(visible)}`}
     >
       <div>
         <div className="flex items-center gap-3">
@@ -40,11 +48,15 @@ export default function CourseCatalogCard({ course, index }: { course: Course; i
             // eslint-disable-next-line @next/next/no-img-element -- cross-subdomain, session-cookie-gated asset; next/image can't proxy this
             <img src={getAssetSrc(course.iconUrl)} alt="" className="h-8 w-8 shrink-0 border border-white/10 object-cover" />
           ) : (
-            <span aria-hidden="true" className="h-2 w-2 shrink-0 bg-[#FF8A3D]" />
+            <span
+              aria-hidden="true"
+              className="h-2 w-2 shrink-0 rounded-full"
+              style={{ background: course.difficulty ? DIFFICULTY_COLOR[course.difficulty] : '#FF7A33' }}
+            />
           )}
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             {course.category && (
-              <p className="text-xs font-medium uppercase tracking-[0.14em] text-[#FF8A3D]">{course.category}</p>
+              <p className="text-xs font-medium uppercase tracking-[0.14em] text-[#FF7A33]"><span className="text-[#C95E1A]">#</span>{course.category}</p>
             )}
             {course.difficulty && (
               <p className="text-xs uppercase tracking-[0.1em] text-white/40">{DIFFICULTY_LABEL[course.difficulty]}</p>
@@ -53,7 +65,7 @@ export default function CourseCatalogCard({ course, index }: { course: Course; i
         </div>
         <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">{course.title}</h2>
         {course.description && (
-          <p className="mt-2 text-sm leading-6 text-[#A1A1AA]">{course.description}</p>
+          <p className="mt-2 text-sm leading-6 text-[#90939A]">{course.description}</p>
         )}
         {byline && <p className="mt-2 text-xs text-white/40">{byline}</p>}
       </div>

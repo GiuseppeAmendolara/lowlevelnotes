@@ -35,13 +35,13 @@ export default function VerifyEmailResult({ token }: { token: string }) {
   }, [token])
 
   if (state.loading) {
-    return <p className="text-sm text-[#A1A1AA]">Verifying…</p>
+    return <p className="text-sm text-[#90939A]">Verifying…</p>
   }
 
   return (
     <>
       <AuthMessage message={state.message} tone={state.ok ? 'success' : 'error'} />
-      <p className="mt-6 text-sm text-[#A1A1AA]">
+      <p className="mt-6 text-sm text-[#90939A]">
         <Link href="/login" className="text-white/70 underline underline-offset-2 transition-colors hover:text-white">
           Go to login
         </Link>

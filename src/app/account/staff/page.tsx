@@ -2,7 +2,6 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import AuthPageShell from '@/components/auth/AuthPageShell'
 import { useSession } from '@/components/SessionProvider'
 import AdminPanel from '@/components/admin/AdminPanel'
 
@@ -22,11 +21,7 @@ export default function AdminPage() {
   }, [sessionLoading, user, router])
 
   if (sessionLoading || !user || user.role !== 'staff') {
-    return (
-      <AuthPageShell eyebrow="Staff" heading="Staff" backHref="/account">
-        <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>
-      </AuthPageShell>
-    )
+    return <p className="pt-1 text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
   }
 
   return <AdminPanel />

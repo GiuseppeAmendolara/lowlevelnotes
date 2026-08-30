@@ -7,11 +7,19 @@ import AuthTextField from '@/components/auth/AuthTextField'
 import AuthSubmitButton from '@/components/auth/AuthSubmitButton'
 import AuthMessage from '@/components/auth/AuthMessage'
 import { useSession } from '@/components/SessionProvider'
-import { changePassword, deleteMyAccount, logout, resendVerification, getStaffPendingCounts, roleLabel, getAssetSrc, type StaffPendingCounts } from '@/lib/authClient'
-import { useReveal, revealClass, revealState } from '@/lib/useReveal'
-
-type AccountLink = { href: string; title: string; description: string; badge?: number | null }
-type AccountSection = { heading: string | null; links: AccountLink[] }
+import {
+  changePassword,
+  deleteMyAccount,
+  logout,
+  resendVerification,
+  roleLabel,
+  getAssetSrc,
+  getMyStatistics,
+  getMyProgress,
+  type MyStatistics,
+  type MyEnrollment,
+} from '@/lib/authClient'
+import Eyebrow from '@/components/Eyebrow'
 
 export default function AccountPage() {
   const router = useRouter()
@@ -23,7 +31,8 @@ export default function AccountPage() {
   const [success, setSuccess] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent'>('idle')
-  const [pendingCounts, setPendingCounts] = useState<StaffPendingCounts | null>(null)
+  const [stats, setStats] = useState<MyStatistics | null>(null)
+  const [continuing, setContinuing] = useState<MyEnrollment | null>(null)
   // Suppresses the redirect-to-/login guard below during a deliberate
   // logout — otherwise refresh()'s setUser(null) and this effect's own
   // router.replace('/login') race the logout handler's router.push('/'),
@@ -79,202 +88,133 @@ export default function AccountPage() {
   }
 
   useEffect(() => {
-    if (user?.role !== 'staff') return
+    if (!user) return
 
-    getStaffPendingCounts().then((result) => {
-      if (result.ok) setPendingCounts(result.data)
+    getMyStatistics().then((result) => {
+      if (result.ok) setStats(result.data)
+    })
+    getMyProgress().then((result) => {
+      if (!result.ok) return
+      // "Continue learning" surfaces whatever's in progress, not completed —
+      // the most recently touched active enrollment, falling back to the
+      // first one if none carry a completedAt/enrolledAt ordering worth
+      // relying on client-side.
+      const active = result.data.enrollments.find((e) => e.status !== 'completed') ?? result.data.enrollments[0] ?? null
+      setContinuing(active)
     })
   }, [user])
 
   if (sessionLoading || !user) {
-    return (
-      <main className="min-h-screen bg-[#171717]">
-        <section className="mx-auto max-w-5xl px-6 pb-10 pt-20 sm:pt-28">
-          <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>
-        </section>
-      </main>
-    )
+    return <p className="pt-1 text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
   }
 
-  const pendingTotal = pendingCounts
-    ? pendingCounts.roleRequests + pendingCounts.resourceRequests + pendingCounts.courseRequests
-    : 0
-
-  // Unnamed default section first (every account has these two, so a
-  // label would just be noise), then one section per role tier —
-  // Contributor/Instructor/Staff — each only rendered if the current
-  // role actually has links in it. A student sees just the default
-  // section plus a single "request access" link in Contributor; staff
-  // sees all four.
-  const sections: AccountSection[] = [
-    {
-      heading: null,
-      links: [
-        { href: '/account/profile', title: 'Your profile', description: 'Set a picture and bio, and see how others view your profile.' },
-        { href: '/account/courses', title: 'Enrolled courses', description: 'Manage your enrollments and view your progress.' },
-      ],
-    },
-    {
-      heading: 'Contributor',
-      links: [
-        ...(user.role === 'student'
-          ? [{ href: '/contribute', title: 'Request contributor access', description: 'Apply to submit resources to the library.' }]
-          : []),
-        ...(user.role === 'contributor' || user.role === 'instructor' || user.role === 'staff'
-          ? [{ href: '/contribute', title: 'Contribute', description: 'Submit a resource for review.' }]
-          : []),
-      ],
-    },
-    {
-      heading: 'Instructor',
-      links: [
-        ...(user.role === 'instructor' || user.role === 'staff'
-          ? [{ href: '/courses/builder', title: 'Build a course', description: 'Create and edit your own courses, submit them for review.' }]
-          : []),
-      ],
-    },
-    {
-      heading: 'Staff',
-      links: [
-        ...(user.role === 'staff'
-          ? [
-              { href: '/account/staff', title: 'Staff', description: 'Manage users, blocked IPs, and the activity log.' },
-              {
-                href: '/account/approvals',
-                title: 'Approvals',
-                description: 'Review role, resource, and course requests.',
-                badge: pendingTotal > 0 ? pendingTotal : null,
-              },
-            ]
-          : []),
-      ],
-    },
-  ].filter((section) => section.links.length > 0)
-
-  // A running index across every section's cards, computed once up front
-  // rather than mutated during render, so the staggered reveal cascades
-  // smoothly down the whole page instead of restarting per section.
-  let nextIndex = 0
-  const sectionsWithIndices = sections.map((section) => ({
-    ...section,
-    links: section.links.map((link) => ({ link, index: nextIndex++ })),
-  }))
-
   return (
-    <main className="min-h-screen bg-[#171717]">
-      <section className="mx-auto max-w-5xl px-6 pb-10 pt-20 sm:pt-28">
-        <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">Account</p>
+    <div>
+      <Eyebrow>Overview</Eyebrow>
 
-        <div className="mt-5 flex items-center gap-5">
-          {user.avatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element -- cross-subdomain, session-cookie-gated asset; next/image can't proxy this
-            <img
-              src={getAssetSrc(user.avatarUrl)}
-              alt=""
-              className="h-16 w-16 shrink-0 rounded-full border border-white/10 object-cover sm:h-20 sm:w-20"
-            />
-          ) : (
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-white/10 bg-[#0D0D0D] text-xl font-bold text-white/40 sm:h-20 sm:w-20 sm:text-2xl">
-              {user.displayName.slice(0, 1).toUpperCase()}
-            </div>
-          )}
-          <div>
-            <h1 className="text-3xl font-bold tracking-[-0.05em] text-white sm:text-4xl">{user.displayName}</h1>
-            <p className="mt-1 text-sm text-[#A1A1AA]">{user.email}</p>
-            <p className="mt-1 text-xs uppercase tracking-[0.1em] text-[#FF8A3D]">{roleLabel(user.role)}</p>
-          </div>
-        </div>
-
-        {!user.emailVerified && (
-          <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border border-white/10 bg-[#0D0D0D] px-4 py-3 text-xs text-[#A1A1AA] animate-fade-in-up motion-reduce:animate-none">
-            <span>Your email isn&apos;t verified.</span>
-            {resendState === 'sent' ? (
-              <span className="text-[#3FB950]">Sent — check your email.</span>
-            ) : (
-              <button
-                type="button"
-                onClick={handleResendVerification}
-                disabled={resendState === 'sending'}
-                className="text-white/70 underline underline-offset-2 transition-colors hover:text-white disabled:opacity-50"
-              >
-                {resendState === 'sending' ? 'Sending…' : 'Resend verification email'}
-              </button>
-            )}
+      <div className="mt-5 flex items-center gap-5">
+        {user.avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- cross-subdomain, session-cookie-gated asset; next/image can't proxy this
+          <img
+            src={getAssetSrc(user.avatarUrl)}
+            alt=""
+            className="h-16 w-16 shrink-0 rounded-full border border-white/10 object-cover sm:h-20 sm:w-20"
+          />
+        ) : (
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-white/10 bg-[#17181B] text-xl font-bold text-white/40 sm:h-20 sm:w-20 sm:text-2xl">
+            {user.displayName.slice(0, 1).toUpperCase()}
           </div>
         )}
-      </section>
+        <div>
+          <h1 className="text-3xl font-bold tracking-[-0.05em] text-white sm:text-4xl">Welcome back, {user.displayName.split(' ')[0]}</h1>
+          <p className="mt-1 text-sm text-[#90939A]">{user.email}</p>
+          <p className="mt-1 text-xs uppercase tracking-[0.1em] text-[#FF7A33]">{roleLabel(user.role)}</p>
+        </div>
+      </div>
 
-      <section className="mx-auto flex max-w-5xl flex-col gap-10 px-6 pb-16">
-        {sectionsWithIndices.map((section) => (
-          <div key={section.heading ?? 'default'}>
-            {section.heading && (
-              <p className="mb-3 text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">{section.heading}</p>
-            )}
-            <div className="grid grid-cols-1 gap-px border border-white/10 bg-white/10 sm:grid-cols-2">
-              {section.links.map(({ link, index }) => (
-                <AccountLinkCard key={`${link.href}-${link.title}`} index={index} {...link} />
-              ))}
+      {!user.emailVerified && (
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border border-white/10 bg-[#17181B] px-4 py-3 text-xs text-[#90939A] animate-fade-in-up motion-reduce:animate-none">
+          <span>Your email isn&apos;t verified.</span>
+          {resendState === 'sent' ? (
+            <span className="text-[#3FB950]">Sent — check your email.</span>
+          ) : (
+            <button
+              type="button"
+              onClick={handleResendVerification}
+              disabled={resendState === 'sending'}
+              className="text-white/70 underline underline-offset-2 transition-colors hover:text-white disabled:opacity-50"
+            >
+              {resendState === 'sending' ? 'Sending…' : 'Resend verification email'}
+            </button>
+          )}
+        </div>
+      )}
+
+      {stats && (
+        <div className="mt-10 grid grid-cols-2 gap-px border border-white/10 bg-white/10 sm:grid-cols-4">
+          <StatTile label="Enrolled" value={stats.coursesEnrolled} />
+          <StatTile label="Completed" value={stats.coursesCompleted} />
+          <StatTile label="Lessons done" value={stats.lessonsCompleted} />
+          <StatTile label="Avg. quiz score" value={stats.averageQuizScorePercent === null ? '—' : `${stats.averageQuizScorePercent}%`} />
+        </div>
+      )}
+
+      {continuing && (
+        <div className="mt-8">
+          <Eyebrow className="mb-3">Continue learning</Eyebrow>
+          <Link
+            href={`/courses/${continuing.courseSlug}`}
+            className="block max-w-md border border-white/10 bg-[#17181B] p-5 transition-colors hover:bg-[#151515]"
+          >
+            <h2 className="text-lg font-semibold text-white">{continuing.courseTitle}</h2>
+            <div className="mt-3 flex items-center gap-3">
+              <div className="h-1.5 flex-1 max-w-40 bg-white/10">
+                <div
+                  className="h-full bg-[#FF7A33]"
+                  style={{ width: `${continuing.totalLessons > 0 ? Math.round((continuing.completedLessons / continuing.totalLessons) * 100) : 0}%` }}
+                />
+              </div>
+              <span className="text-xs text-[#90939A]">{continuing.completedLessons}/{continuing.totalLessons}</span>
             </div>
-          </div>
-        ))}
-      </section>
-
-      <section className="mx-auto max-w-5xl px-6 pb-24">
-        <div className="max-w-md border border-white/10 bg-[#0D0D0D]">
-          <SecuritySection
-            currentPassword={currentPassword}
-            setCurrentPassword={setCurrentPassword}
-            newPassword={newPassword}
-            setNewPassword={setNewPassword}
-            error={error}
-            success={success}
-            submitting={submitting}
-            onSubmit={handleChangePassword}
-          />
+            <p className="mt-3 text-xs text-white/40">Resume →</p>
+          </Link>
         </div>
+      )}
 
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="mt-10 text-xs uppercase tracking-[0.12em] text-white/40 underline underline-offset-2 transition-colors hover:text-[#F85149] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-        >
-          Log out
-        </button>
+      <div className="mt-10 max-w-md border border-white/10 bg-[#17181B]">
+        <SecuritySection
+          currentPassword={currentPassword}
+          setCurrentPassword={setCurrentPassword}
+          newPassword={newPassword}
+          setNewPassword={setNewPassword}
+          error={error}
+          success={success}
+          submitting={submitting}
+          onSubmit={handleChangePassword}
+        />
+      </div>
 
-        <div className="mt-10 max-w-md border border-[#F85149]/30 bg-[#0D0D0D]">
-          <DangerZone onDeleted={handleAccountDeleted} />
-        </div>
-      </section>
-    </main>
+      <button
+        type="button"
+        onClick={handleLogout}
+        className="mt-10 text-xs uppercase tracking-[0.12em] text-white/40 underline underline-offset-2 transition-colors hover:text-[#F85149] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+      >
+        Log out
+      </button>
+
+      <div className="mt-10 max-w-md border border-[#F85149]/30 bg-[#17181B]">
+        <DangerZone onDeleted={handleAccountDeleted} />
+      </div>
+    </div>
   )
 }
 
-function AccountLinkCard({ href, title, description, badge, index }: AccountLink & { index: number }) {
-  const { ref, visible } = useReveal<HTMLAnchorElement>()
-
+function StatTile({ label, value }: { label: string; value: number | string }) {
   return (
-    <Link
-      ref={ref}
-      href={href}
-      style={{ transitionDelay: `${Math.min(index, 6) * 40}ms` }}
-      className={`group flex items-start justify-between gap-3 bg-[#0D0D0D] px-6 py-5 text-white hover:bg-[#151515] hover:-translate-y-0.5 motion-reduce:hover:translate-y-0 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#FF8A3D] ${revealClass} ${revealState(visible)}`}
-    >
-      <span className="flex items-start gap-3">
-        <span aria-hidden="true" className="mt-1.5 h-2 w-2 shrink-0 bg-[#FF8A3D]" />
-        <span>
-          <span className="flex items-center gap-2">
-            <span className="font-medium">{title}</span>
-            {badge ? (
-              <span className="flex h-5 min-w-5 items-center justify-center bg-[#FF8A3D] px-1 text-[10px] font-bold text-[#0D0D0D]">
-                {badge}
-              </span>
-            ) : null}
-          </span>
-          <span className="mt-0.5 block text-xs text-[#A1A1AA]">{description}</span>
-        </span>
-      </span>
-      <span aria-hidden="true" className="shrink-0 text-white/40 transition-colors group-hover:text-white">→</span>
-    </Link>
+    <div className="bg-[#17181B] p-4">
+      <p className="text-2xl font-bold tabular-nums tracking-[-0.03em] text-white">{value}</p>
+      <p className="mt-1 text-xs text-[#90939A]">{label}</p>
+    </div>
   )
 }
 
@@ -308,10 +248,10 @@ function SecuritySection({
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left transition-colors hover:bg-[#151515] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#FF8A3D]"
+        className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left transition-colors hover:bg-[#151515] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#FF7A33]"
       >
         <span>
-          <span className="block text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">Security</span>
+          <span className="block text-xs font-medium uppercase tracking-[0.18em] text-[#FF7A33]"><span className="text-[#C95E1A]">{'// '}</span>Security</span>
           <span className="mt-1 block text-sm text-white">Change password</span>
         </span>
         <span aria-hidden="true" className={`text-xl leading-none text-white/40 transition-transform duration-150 motion-reduce:transition-none ${open ? 'rotate-45' : ''}`}>+</span>
@@ -370,7 +310,7 @@ function DangerZone({ onDeleted }: { onDeleted: () => void }) {
         className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left transition-colors hover:bg-[#151515] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#F85149]"
       >
         <span>
-          <span className="block text-xs font-medium uppercase tracking-[0.18em] text-[#F85149]">Danger zone</span>
+          <span className="block text-xs font-medium uppercase tracking-[0.18em] text-[#F85149]">{'// '}Danger zone</span>
           <span className="mt-1 block text-sm text-white">Delete account</span>
         </span>
         <span aria-hidden="true" className={`text-xl leading-none text-white/40 transition-transform duration-150 motion-reduce:transition-none ${open ? 'rotate-45' : ''}`}>+</span>
@@ -378,7 +318,7 @@ function DangerZone({ onDeleted }: { onDeleted: () => void }) {
 
       {open && (
         <form onSubmit={handleDelete} className="flex flex-col gap-4 border-t border-white/10 px-5 py-5 animate-fade-in-up motion-reduce:animate-none">
-          <p className="text-xs leading-5 text-[#A1A1AA]">
+          <p className="text-xs leading-5 text-[#90939A]">
             This permanently deletes your account, enrollments, progress, and submissions. This can&apos;t be undone.
           </p>
           <AuthTextField label="Confirm your password" type="password" value={password} onChange={setPassword} autoComplete="current-password" required />

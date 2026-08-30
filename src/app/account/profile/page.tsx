@@ -3,13 +3,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import AuthPageShell from '@/components/auth/AuthPageShell'
 import AuthSubmitButton from '@/components/auth/AuthSubmitButton'
 import AuthMessage from '@/components/auth/AuthMessage'
 import { useSession } from '@/components/SessionProvider'
 import { getUserProfile, updateMyProfile, uploadMyAvatar, getAssetSrc, type UserProfile } from '@/lib/authClient'
+import Eyebrow from '@/components/Eyebrow'
 
-const textareaClass = "border border-white/15 bg-[#0D0D0D] px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none"
+const textareaClass = "border border-white/15 bg-[#17181B] px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none"
 
 export default function AccountProfilePage() {
   const router = useRouter()
@@ -75,16 +75,15 @@ export default function AccountProfilePage() {
   }
 
   if (sessionLoading || !user) {
-    return (
-      <AuthPageShell eyebrow="Account" heading="Your profile" backHref="/account">
-        <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>
-      </AuthPageShell>
-    )
+    return <p className="pt-1 text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
   }
 
   return (
-    <AuthPageShell eyebrow="Account" heading="Your profile" backHref="/account">
-      <div className="flex items-center gap-5">
+    <div className="max-w-md">
+      <Eyebrow>Account</Eyebrow>
+      <h1 className="mt-4 text-3xl font-bold tracking-[-0.05em] text-white">Your profile</h1>
+
+      <div className="mt-8 flex items-center gap-5">
         {profile?.avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- cross-subdomain, session-cookie-gated asset; next/image can't proxy this
           <img
@@ -93,7 +92,7 @@ export default function AccountProfilePage() {
             className="h-20 w-20 shrink-0 rounded-full border border-white/10 object-cover"
           />
         ) : (
-          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border border-white/10 bg-[#0D0D0D] text-2xl font-bold text-white/40">
+          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border border-white/10 bg-[#17181B] text-2xl font-bold text-white/40">
             {user.displayName.slice(0, 1).toUpperCase()}
           </div>
         )}
@@ -133,6 +132,6 @@ export default function AccountProfilePage() {
       <Link href={`/u/${user.id}`} className="mt-6 inline-block text-sm text-white/70 underline underline-offset-2 transition-colors hover:text-white">
         View your public profile
       </Link>
-    </AuthPageShell>
+    </div>
   )
 }

@@ -66,7 +66,7 @@ export function ArticleBody({ contentPath }: { contentPath: string | null }) {
   }, [contentPath])
 
   if (!contentPath) {
-    return <p className="text-sm text-[#A1A1AA]">This lesson has no content yet.</p>
+    return <p className="text-sm text-[#90939A]">This lesson has no content yet.</p>
   }
 
   if (error) {
@@ -74,12 +74,12 @@ export function ArticleBody({ contentPath }: { contentPath: string | null }) {
   }
 
   if (!html) {
-    return <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>
+    return <p className="text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
   }
 
   return (
     <div
-      className="prose-lesson animate-fade-in-up motion-reduce:animate-none [&_a]:text-[#FF8A3D] [&_a]:underline [&_a]:underline-offset-2 [&_blockquote]:border-l-2 [&_blockquote]:border-white/20 [&_blockquote]:pl-4 [&_blockquote]:text-[#A1A1AA] [&_code]:bg-white/[0.06] [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-[0.85em] [&_h1]:mt-10 [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:tracking-[-0.04em] [&_h1]:text-white [&_h2]:mt-10 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:tracking-[-0.03em] [&_h2]:text-white [&_h3]:mt-8 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-white [&_hr]:border-white/10 [&_img]:max-w-full [&_li]:leading-7 [&_ol]:mt-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:mt-4 [&_p]:leading-7 [&_p]:text-[#A1A1AA] [&_pre]:my-4 [&_table]:mt-4 [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-white/10 [&_td]:px-3 [&_td]:py-2 [&_th]:border [&_th]:border-white/10 [&_th]:bg-white/[0.03] [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:text-white [&_ul]:mt-4 [&_ul]:list-disc [&_ul]:pl-6 text-sm"
+      className="prose-lesson animate-fade-in-up motion-reduce:animate-none [&_a]:text-[#FF7A33] [&_a]:underline [&_a]:underline-offset-2 [&_blockquote]:border-l-2 [&_blockquote]:border-white/20 [&_blockquote]:pl-4 [&_blockquote]:text-[#90939A] [&_code]:bg-white/[0.06] [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-[0.85em] [&_h1]:mt-10 [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:tracking-[-0.04em] [&_h1]:text-white [&_h2]:mt-10 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:tracking-[-0.03em] [&_h2]:text-white [&_h3]:mt-8 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-white [&_hr]:border-white/10 [&_img]:max-w-full [&_li]:leading-7 [&_ol]:mt-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:mt-4 [&_p]:leading-7 [&_p]:text-[#90939A] [&_pre]:my-4 [&_table]:mt-4 [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-white/10 [&_td]:px-3 [&_td]:py-2 [&_th]:border [&_th]:border-white/10 [&_th]:bg-white/[0.03] [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:text-white [&_ul]:mt-4 [&_ul]:list-disc [&_ul]:pl-6 text-sm"
       dangerouslySetInnerHTML={{ __html: html }}
     />
   )
@@ -87,13 +87,13 @@ export function ArticleBody({ contentPath }: { contentPath: string | null }) {
 
 export function VideoBody({ videoUrl }: { videoUrl: string | null }) {
   if (!videoUrl) {
-    return <p className="text-sm text-[#A1A1AA]">This lesson&apos;s video isn&apos;t available yet.</p>
+    return <p className="text-sm text-[#90939A]">This lesson&apos;s video isn&apos;t available yet.</p>
   }
 
   const embed = embedUrl(videoUrl)
 
   return (
-    <div className="aspect-video w-full border border-white/10 bg-[#0D0D0D]">
+    <div className="aspect-video w-full border border-white/10 bg-[#17181B]">
       {embed ? (
         <iframe src={embed} className="h-full w-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
       ) : (
@@ -124,11 +124,11 @@ export function RenderedCode({ code, lang }: { code: string; lang: string }) {
   }, [code, lang])
 
   if (!html) {
-    return <div className="border border-white/10 bg-[#171717] p-5 text-xs text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</div>
+    return <div className="border border-white/10 bg-[#0B0B0D] p-5 text-xs text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</div>
   }
 
   return (
-    <div className="border border-white/10 bg-[#171717]">
+    <div className="border border-white/10 bg-[#0B0B0D]">
       <div
         className="overflow-x-auto p-5 text-xs leading-6 [&_pre]:!bg-transparent [mask-image:linear-gradient(to_right,black_calc(100%-2rem),transparent)]"
         dangerouslySetInnerHTML={{ __html: html }}
@@ -140,7 +140,7 @@ export function RenderedCode({ code, lang }: { code: string; lang: string }) {
 export function ExerciseBody({ exercise }: { exercise: { prompt: string; language: string | null; starterCode: string | null; solutionNotes: string | null } }) {
   return (
     <div>
-      <p className="text-sm leading-7 text-[#A1A1AA]">{exercise.prompt}</p>
+      <p className="text-sm leading-7 text-[#90939A]">{exercise.prompt}</p>
       {exercise.starterCode && (
         <div className="mt-6">
           <RenderedCode code={exercise.starterCode} lang={exercise.language ?? 'text'} />

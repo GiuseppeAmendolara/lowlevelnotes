@@ -62,13 +62,13 @@ export default function LoginPage() {
         <AuthSubmitButton loading={submitting} disabled={!turnstileToken}>Login</AuthSubmitButton>
       </form>
 
-      <p className="mt-6 text-sm text-[#A1A1AA]">
+      <p className="mt-6 text-sm text-[#90939A]">
         No account?{' '}
         <Link href="/register" className="text-white/70 underline underline-offset-2 transition-colors hover:text-white">
           Register
         </Link>
       </p>
-      <p className="mt-2 text-sm text-[#A1A1AA]">
+      <p className="mt-2 text-sm text-[#90939A]">
         <Link href="/forgot-password" className="text-white/70 underline underline-offset-2 transition-colors hover:text-white">
           Forgot your password?
         </Link>

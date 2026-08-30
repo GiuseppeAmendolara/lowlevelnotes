@@ -3,31 +3,44 @@
 import type { ChangelogEntry } from '@/lib/api'
 import { useReveal, revealClass, revealState } from '@/lib/useReveal'
 
-// useReveal applied directly to the <article> — shared-border grid
-// (border-l/border-t on the parent, border-b/border-r per entry), so no
-// wrapper div. Dense list, so color-only hover, no lift.
+// One node on the changelog's git-log timeline — the vertical rail line
+// itself is drawn once by the parent (ChangelogPage), not per-entry, so
+// this only needs to position its own dot against that shared line.
 export default function ChangelogEntryCard({ entry, index, isLatest }: { entry: ChangelogEntry; index: number; isLatest: boolean }) {
   const { ref, visible } = useReveal<HTMLElement>()
+  const anchorId = `v${entry.version.trim()}`
 
   return (
     <article
       ref={ref}
+      id={anchorId}
       style={{ transitionDelay: `${Math.min(index, 6) * 40}ms` }}
-      className={`border-b border-r border-white/10 bg-[#0D0D0D] p-6 hover:bg-[#151515] sm:p-8 ${revealClass} ${revealState(visible)}`}
+      className={`relative scroll-mt-24 pb-10 pl-8 last:pb-0 ${revealClass} ${revealState(visible)}`}
     >
-      <div className="flex flex-wrap items-center gap-3 text-xs">
+      <span
+        aria-hidden="true"
+        className={`absolute left-0 top-1.5 h-[11px] w-[11px] rounded-full border-2 ${
+          isLatest ? 'border-[#FF7A33] bg-[#FF7A33] shadow-[0_0_0_3px_rgba(255,122,51,0.15)]' : 'border-white/30 bg-[#0B0B0D]'
+        }`}
+      />
+
+      <div className="flex flex-wrap items-center gap-2.5">
         {isLatest && (
-          <span className="flex items-center gap-1.5 text-[#3FB950]">
-            <span className="h-1.5 w-1.5 bg-[#3FB950]" aria-hidden="true" />
+          <span className="bg-[#FF7A33] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-[#0B0B0D]">
             Latest
           </span>
         )}
-        <span className="text-[#FF8A3D]">v{entry.version.trim()}</span>
-        <span className="text-white/20">·</span>
-        <time className="text-white/40">{entry.releaseDate}</time>
+        <span
+          className={`border px-2 py-0.5 text-[13px] font-bold tracking-[-0.02em] ${
+            isLatest ? 'border-[#FF7A33]/40 bg-[#17181B] text-[#FF7A33]' : 'border-white/10 bg-[#17181B] text-white'
+          }`}
+        >
+          v{entry.version.trim()}
+        </span>
+        <time className="text-xs text-white/40">{entry.releaseDate}</time>
       </div>
       <h2 className="mt-3 text-xl font-semibold tracking-[-0.03em] text-white">{entry.title.trim()}</h2>
-      <p className="mt-2 max-w-2xl leading-6 text-[#A1A1AA]">{entry.description.trim()}</p>
+      <p className="mt-2 max-w-xl leading-6 text-[#90939A]">{entry.description.trim()}</p>
     </article>
   )
 }

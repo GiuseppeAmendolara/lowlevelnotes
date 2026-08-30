@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import AuthPageShell from '@/components/auth/AuthPageShell'
+import Eyebrow from '@/components/Eyebrow'
 import { useSession } from '@/components/SessionProvider'
 import {
   getMyGroups,
@@ -19,8 +20,8 @@ import {
 // Same style constants as the rest of the instructor surface — duplicated
 // rather than shared, matching this app's existing low-abstraction
 // convention.
-const inputClass = "border border-white/15 bg-[#0D0D0D] px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none"
-const buttonClass = "border border-[#FF8A3D]/50 px-3 py-1.5 text-xs font-medium text-[#FF8A3D] transition-colors transition-transform duration-150 hover:border-[#FF8A3D] hover:bg-[#FF8A3D]/10 active:scale-[0.98] motion-reduce:transition-none disabled:opacity-50 disabled:active:scale-100"
+const inputClass = "border border-white/15 bg-[#17181B] px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none"
+const buttonClass = "border border-[#FF7A33]/50 px-3 py-1.5 text-xs font-medium text-[#FF7A33] transition-colors transition-transform duration-150 hover:border-[#FF7A33] hover:bg-[#FF7A33]/10 active:scale-[0.98] motion-reduce:transition-none disabled:opacity-50 disabled:active:scale-100"
 
 export default function GroupsPage() {
   const router = useRouter()
@@ -76,20 +77,20 @@ export default function GroupsPage() {
   if (sessionLoading || !user || (user.role !== 'instructor' && user.role !== 'staff')) {
     return (
       <AuthPageShell eyebrow="Instructor" heading="Groups" backHref="/courses/builder" backLabel="Your courses">
-        <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>
+        <p className="text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
       </AuthPageShell>
     )
   }
 
   return (
-    <main className="min-h-screen bg-[#171717]">
+    <main className="min-h-screen bg-[#0B0B0D]">
       <section className="mx-auto max-w-3xl px-6 pb-10 pt-20 sm:pt-28">
         <Link href="/courses/builder" className="text-xs uppercase tracking-[0.12em] text-white/40 transition-colors hover:text-white">
           ← Your courses
         </Link>
-        <p className="mt-4 text-xs font-medium uppercase tracking-[0.18em] text-[#FF8A3D]">Instructor</p>
+        <Eyebrow className="mt-4">Instructor</Eyebrow>
         <h1 className="mt-4 text-4xl font-bold tracking-[-0.05em] text-white sm:text-5xl">Student groups</h1>
-        <p className="mt-4 max-w-xl text-sm leading-7 text-[#A1A1AA]">
+        <p className="mt-4 max-w-xl text-sm leading-7 text-[#90939A]">
           Reusable rosters you can restrict any of your courses to — build a group once, add students to it, and reuse it across courses.
         </p>
       </section>
@@ -102,14 +103,14 @@ export default function GroupsPage() {
         {error && <p className="mt-2 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
 
         <div className="mt-6 flex flex-col gap-3">
-          {groups === null && <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>}
-          {groups?.length === 0 && <p className="text-sm text-[#A1A1AA]">No groups yet — create one above.</p>}
+          {groups === null && <p className="text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>}
+          {groups?.length === 0 && <p className="text-sm text-[#90939A]">No groups yet — create one above.</p>}
           {groups?.map((group) => (
-            <div key={group.id} className="border border-white/10 bg-[#0D0D0D] p-4">
+            <div key={group.id} className="border border-white/10 bg-[#17181B] p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-medium text-white">{group.name}</p>
-                  <p className="mt-1 text-xs text-[#A1A1AA]">{group.memberCount} students</p>
+                  <p className="mt-1 text-xs text-[#90939A]">{group.memberCount} students</p>
                 </div>
                 <div className="flex gap-3">
                   <button
@@ -180,10 +181,10 @@ function GroupRoster({ groupId, onChanged }: { groupId: number; onChanged: () =>
   return (
     <div className="mt-4 border-t border-white/10 pt-4">
       <div className="flex flex-col gap-2">
-        {members === null && <p className="text-xs text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>}
-        {members?.length === 0 && <p className="text-xs text-[#A1A1AA]">No students yet.</p>}
+        {members === null && <p className="text-xs text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>}
+        {members?.length === 0 && <p className="text-xs text-[#90939A]">No students yet.</p>}
         {members?.map((member) => (
-          <div key={member.id} className="flex items-center justify-between gap-3 border border-white/10 bg-[#171717] px-3 py-2 text-sm text-white">
+          <div key={member.id} className="flex items-center justify-between gap-3 border border-white/10 bg-[#0B0B0D] px-3 py-2 text-sm text-white">
             <span>{member.displayName} <span className="text-white/40">({member.email})</span></span>
             <button type="button" onClick={() => handleRemove(member.id)} className="text-xs text-white/50 underline underline-offset-2 hover:text-white">
               Remove

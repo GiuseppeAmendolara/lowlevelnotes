@@ -43,6 +43,13 @@ export type LibraryCategoryStat = {
   count: number
 }
 
+export type SiteStatsSummary = {
+  resources: number
+  authors: number
+  courses: number
+  lessons: number
+}
+
 // Vercel's outbound connection to the Worker occasionally throws
 // `TypeError: fetch failed` / `SocketError: other side closed` with zero
 // bytes read — a stale-connection-reuse failure, not an application
@@ -86,6 +93,7 @@ async function apiFetch<T>(endpoint: string): Promise<T> {
 export const getChangelog = () => apiFetch<ChangelogEntry[]>('/changelog')
 export const getFeaturedCourses = () => apiFetch<FeaturedCourse[]>('/v1/courses/featured')
 export const getLibraryCategoryStats = () => apiFetch<LibraryCategoryStat[]>('/v1/library/category-stats')
+export const getSiteStatsSummary = () => apiFetch<SiteStatsSummary>('/v1/stats/summary')
 
 export async function incrementResourceViews(id: number): Promise<void> {
   const res = await fetchWithRetry(`${API_BASE}/resource/${id}`, {

@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import AuthPageShell from '@/components/auth/AuthPageShell'
 import { useSession } from '@/components/SessionProvider'
 import { getStaffPendingCounts, type StaffPendingCounts } from '@/lib/authClient'
+import Eyebrow from '@/components/Eyebrow'
 
 export default function ApprovalPage() {
   const router = useRouter()
@@ -32,23 +32,21 @@ export default function ApprovalPage() {
   }, [user])
 
   if (sessionLoading || !user || user.role !== 'staff') {
-    return (
-      <AuthPageShell eyebrow="Staff" heading="Approvals" backHref="/account/staff" backLabel="Staff">
-        <p className="text-sm text-[#A1A1AA] animate-pulse motion-reduce:animate-none">Loading…</p>
-      </AuthPageShell>
-    )
+    return <p className="pt-1 text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
   }
 
   return (
-    <AuthPageShell eyebrow="Staff" heading="Approvals" backHref="/account/staff" backLabel="Staff">
-      <p className="text-sm text-[#A1A1AA]">Review requests before they take effect.</p>
+    <div className="max-w-md">
+      <Eyebrow>Staff</Eyebrow>
+      <h1 className="mt-4 text-3xl font-bold tracking-[-0.05em] text-white">Approvals</h1>
+      <p className="mt-3 text-sm text-[#90939A]">Review requests before they take effect.</p>
 
       <div className="mt-6 flex flex-col gap-2">
         <ApprovalLinkCard href="/account/approvals/role-requests" title="Role requests" count={counts?.roleRequests} description="Student requests to become a contributor or instructor." />
         <ApprovalLinkCard href="/account/approvals/resource-requests" title="Resource requests" count={counts?.resourceRequests} description="Links and files submitted for the library." />
         <ApprovalLinkCard href="/account/approvals/course-requests" title="Course requests" count={counts?.courseRequests} description="Open a course to review its full content before publishing, or remove one." />
       </div>
-    </AuthPageShell>
+    </div>
   )
 }
 
@@ -56,14 +54,14 @@ function ApprovalLinkCard({ href, title, count, description }: { href: string; t
   return (
     <Link
       href={href}
-      className="flex items-center justify-between gap-3 border border-white/10 bg-[#0D0D0D] px-4 py-3 text-sm text-white transition-colors transition-transform duration-150 hover:border-white/40 hover:bg-[#171717] hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:translate-y-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF8A3D]"
+      className="flex items-center justify-between gap-3 border border-white/10 bg-[#17181B] px-4 py-3 text-sm text-white transition-colors transition-transform duration-150 hover:border-white/40 hover:bg-[#0B0B0D] hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:translate-y-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF7A33]"
     >
       <span>
         <span className="block font-medium">
           {title}
-          {Boolean(count) && <span className="ml-2 text-xs text-[#FF8A3D]">{count} pending</span>}
+          {Boolean(count) && <span className="ml-2 text-xs text-[#FF7A33]">{count} pending</span>}
         </span>
-        <span className="mt-0.5 block text-xs text-[#A1A1AA]">{description}</span>
+        <span className="mt-0.5 block text-xs text-[#90939A]">{description}</span>
       </span>
       <span aria-hidden="true" className="shrink-0 text-white/40">→</span>
     </Link>

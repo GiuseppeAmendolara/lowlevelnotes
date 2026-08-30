@@ -74,7 +74,7 @@ export default function ForgotPasswordPage() {
         <AuthSubmitButton loading={submitting} disabled={!turnstileToken}>Send reset link</AuthSubmitButton>
       </form>
 
-      <p className="mt-6 text-sm text-[#A1A1AA]">
+      <p className="mt-6 text-sm text-[#90939A]">
         <Link href="/login" className="text-white/70 underline underline-offset-2 transition-colors hover:text-white">
           Back to login
         </Link>

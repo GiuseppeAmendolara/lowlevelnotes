@@ -1183,10 +1183,51 @@ main domain is scoped against — see below.
 Keep the experience dark, technical, and legible. This file is the source of
 truth for the current palette:
 
-- Background: `#171717`; deep background: `#0D0D0D`
-- Primary text: `#FFFFFF`; muted text: `#A1A1AA`
-- Accent: `#FF8A3D`; hover: `#FFA15C`; deep: `#C95E1A`; dark: `#3A2113`
+- Background (void — the page itself): `#0B0B0D`
+- Surface (cards/panels): `#17181B` — deliberately *lighter* than the page
+  background, not darker. Panels are meant to read as raised above the page,
+  not receding into it. `text-[#0D0D0D]` (still called `--background-deep`
+  in `globals.css`) survives as a separate, narrower role: text-on-accent
+  (button labels) and `::selection`'s highlighted-text color, where a true
+  near-black is what's wanted regardless of the surface/void relationship.
+- Primary text: `#FFFFFF`; muted text: `#90939A`
+- Accent: `#FF7A33`; hover: `#FF9459`; deep: `#C95E1A`; dark: `#3A2113`
 - Success: `#3FB950`; error: `#F85149`
+
+**Eyebrows read like source comments, not marketing labels.** Every section
+label (`Eyebrow` — `src/components/Eyebrow.tsx`) renders as `// Label`, with
+the `//` in `--accent-deep` (`#C95E1A`, a darker cut of the accent) and the
+label itself in the full accent. This is also the answer to "where does a
+secondary/muted accent color come from": reach for `--accent-deep` (darker)
+or the accent at reduced opacity — never an unrelated hue (a cyan/teal
+secondary was tried and explicitly rejected) — for anything that needs to
+read as "accent, but quieter." `Eyebrow` takes an optional `as="h2"` for
+section headings that need to be a real heading rather than a `<p>`;
+`admin/shared.tsx`'s `SectionHeading` is a thin wrapper over it. Every raw
+`text-xs font-medium uppercase tracking-[0.18em] text-[#FF7A33]` paragraph
+across the site was migrated to this component — don't hand-roll a new one.
+
+`/transparency` (the page showing the `status.svg`/`history.svg`/`stats.svg`/
+`courses.svg` badges) was removed from the site entirely, 2026-08-30 — it
+read as scattered, low-value marketing chrome once reviewed against the
+redesign. The Worker endpoints that generate those SVGs are untouched and
+still live (they're embeddable badges independent of any Next.js page,
+e.g. for the GitHub README) — only the page that displayed them inline is
+gone. `SvgBadge.tsx` (its only consumer) was deleted with it. The home page
+now surfaces the same underlying numbers itself instead, via a new public
+`GET /v1/stats/summary` endpoint (`getSiteStatsSummaryV1` in
+`worker/routes/badges.js`) — same counts as `stats.svg`/`courses.svg`, JSON
+instead of SVG.
+
+`/account/*` is a real dashboard now, not a stack of pages that each
+reinvent their own back-link. `src/app/account/layout.tsx` owns a persistent,
+role-aware left nav (Overview/Profile/Courses/Contribute, plus Course
+builder/Staff/Approvals once the role actually has them) shared across every
+nested route — nested pages render only their own content, no `<main>`
+wrapper, no back-link, no `AuthPageShell`. `/courses/builder/*` is
+intentionally **not** nested under this layout — it's a separate, denser
+workspace (two-pane module tree + editor) with its own header bar, not a
+dashboard sub-page.
 
 `#3FB950` (success) and the status badge's "degraded" amber `#D29922` are
 both taken from GitHub's dark theme; `#F85149` (error, introduced for the
@@ -1299,6 +1340,21 @@ throughout the product:
   where practical.
 - Keep the `UI consistency protocol` and its design-system contract up to date
   whenever a homepage design decision becomes a reusable platform convention.
+- **Verify visual/UI changes with a real screenshot, not just by reading the
+  CSS/JSX.** No browser extension is connected in this environment, but
+  Playwright's Chromium is already installed and cached
+  (`~/.cache/ms-playwright`), so a real render is one command away:
+  `npx --no-install playwright screenshot --viewport-size="<w>,<h>"
+  --wait-for-timeout=800 http://localhost:3000<path> <output>.png`, then
+  view the PNG with the Read tool (it renders images directly). Check at
+  minimum a wide desktop width (e.g. 1920×1080), a common laptop width
+  (1440×900), and a phone width (390×844) — several real bugs on the home
+  hero (an opacity that read far more legible than intended, a glow radius
+  that looked fine at one width but washed out the header/title at
+  another) were only caught this way; reasoning about the code alone
+  missed them both times. The dev server must already be running
+  (`curl -s -o /dev/null -w "%{http_code}" http://localhost:3000` to
+  confirm) — this doesn't start one.
 - Treat existing uncommitted changes as user work. Do not discard or overwrite
   unrelated edits.
 - The user has granted standing permission to operate on the live Cloudflare
