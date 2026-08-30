@@ -112,13 +112,12 @@ export default function CoursesPage() {
           <p className="text-sm text-[#90939A]">No courses published yet.</p>
         )}
         {filtered && filtered.length > 0 && (
-          /* Transparent, not the usual bg-white/10 hairline fill — a
-             filtered result set is often just one course, and a lone
-             card in a 2-column grid left the untouched second cell
-             showing that fill as a solid gray block next to it. The 1px
-             gap still reads fine as a divider against the page's own
-             background when there are two or more cards. */
-          <div className="grid grid-cols-1 gap-px border border-white/10 bg-transparent sm:grid-cols-2">
+          /* Transparent, not the usual bg-white/10 hairline fill (see
+             below), plus grid-cols-2 only once there are 2+ cards —
+             with exactly one, the border wrapping a still-two-track
+             grid visibly stuck out past the card into the empty second
+             cell. At one item the border now hugs just that card. */
+          <div className={`grid grid-cols-1 gap-px border border-white/10 bg-transparent ${filtered.length > 1 ? 'sm:grid-cols-2' : ''}`}>
             {filtered.map((course, i) => (
               <CourseCatalogCard key={course.id} course={course} index={i} />
             ))}

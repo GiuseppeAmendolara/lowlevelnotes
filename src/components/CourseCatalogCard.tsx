@@ -50,11 +50,8 @@ export default function CourseCatalogCard({ course, index }: { course: Course; i
         {course.description && (
           <p className="mt-2 text-sm leading-6 text-[#90939A]">{course.description}</p>
         )}
-        {byline && <p className="mt-2 text-xs text-white/40">{byline}</p>}
       </div>
-      <span className="text-xs uppercase tracking-[0.12em] text-white/40 transition-colors group-hover:text-white">
-        View course →
-      </span>
+      {byline && <p className="text-xs text-white/40">{byline}</p>}
     </Link>
   )
 }

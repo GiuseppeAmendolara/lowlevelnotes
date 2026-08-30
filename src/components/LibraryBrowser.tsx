@@ -286,7 +286,11 @@ function FacetRow({
       }`}
     >
       {Icon && <Icon className="h-3.5 w-3.5 shrink-0" style={color ? { color } : undefined} />}
-      <span className="min-w-0 flex-1 truncate">{label}</span>
+      {/* Wraps instead of truncating — a category name getting cut to
+          "Malware & Offensi…" is worse than the row just growing a
+          second line. break-words is the fallback for a single word
+          wider than the 220px sidebar column, not the common case. */}
+      <span className="min-w-0 flex-1 break-words">{label}</span>
       <span className="shrink-0 text-xs text-white/40">{count}</span>
     </button>
   )

@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useSession } from '@/components/SessionProvider'
 import { useToast } from '@/components/ToastProvider'
 import { getStaffPendingCounts, logout, unwrapResult, type StaffPendingCounts } from '@/lib/authClient'
+import { Skeleton } from '@/components/Skeleton'
 
 // How often a staff session polls for new users/requests while a
 // dashboard page is open, to surface them as a toast without needing a
@@ -97,7 +98,15 @@ export default function AccountShell({ children }: { children: React.ReactNode }
         <nav aria-label="Account navigation" className="md:sticky md:top-24 md:self-start">
           <p className="mb-3 text-xs font-medium uppercase tracking-[0.18em] text-white/40">Dashboard</p>
           {loading || !user ? (
-            <div className="h-32 animate-pulse motion-reduce:animate-none" />
+            // Sized and shaped like real nav rows (not a single generic
+            // blob) — the plain h-32 box this replaced didn't read as
+            // "nav is loading" and was shorter than the real list, so
+            // the sidebar visibly jumped taller the moment it resolved.
+            <div className="flex flex-col gap-1">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={i} className="ml-0.5 h-5 w-24" />
+              ))}
+            </div>
           ) : (
             <div className="flex flex-row flex-wrap gap-1 md:flex-col md:flex-nowrap">
               {items.map((item) => {
