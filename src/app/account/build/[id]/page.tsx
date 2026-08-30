@@ -3,7 +3,6 @@
 import { use, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import AuthPageShell from '@/components/auth/AuthPageShell'
 import ActionButton from '@/components/ActionButton'
 import Eyebrow from '@/components/Eyebrow'
 import { useSession } from '@/components/SessionProvider'
@@ -118,27 +117,15 @@ export default function InstructorCourseBuilderPage({ params }: { params: Promis
   }, [user, id])
 
   if (sessionLoading || !user || (user.role !== 'instructor' && user.role !== 'staff')) {
-    return (
-      <AuthPageShell eyebrow="Instructor" heading="Course" backHref="/courses/builder" backLabel="Your courses">
-        <p className="text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
-      </AuthPageShell>
-    )
+    return <p className="pt-1 text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
   }
 
   if (error) {
-    return (
-      <AuthPageShell eyebrow="Instructor" heading="Course" backHref="/courses/builder" backLabel="Your courses">
-        <p className="text-sm text-[#F85149]">{error}</p>
-      </AuthPageShell>
-    )
+    return <p className="text-sm text-[#F85149]">{error}</p>
   }
 
   if (!course) {
-    return (
-      <AuthPageShell eyebrow="Instructor" heading="Course" backHref="/courses/builder" backLabel="Your courses">
-        <p className="text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
-      </AuthPageShell>
-    )
+    return <p className="pt-1 text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
   }
 
   const lessonCount = course.modules.reduce((n, m) => n + m.lessons.length, 0)
@@ -153,10 +140,10 @@ export default function InstructorCourseBuilderPage({ params }: { params: Promis
   const showingLessonEditor = Boolean(selectedModule) && (selected?.lessonId === null || Boolean(selectedLesson))
 
   return (
-    <main className="min-h-screen bg-[#0B0B0D]">
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 px-6 py-5">
+    <div>
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-5">
         <div>
-          <Link href="/courses/builder" className="text-xs uppercase tracking-[0.12em] text-white/40 transition-colors hover:text-white">
+          <Link href="/account/build" className="text-xs uppercase tracking-[0.12em] text-white/40 transition-colors hover:text-white">
             ← Your courses
           </Link>
           <div className="mt-2 flex flex-wrap items-center gap-3">
@@ -174,8 +161,8 @@ export default function InstructorCourseBuilderPage({ params }: { params: Promis
         </button>
       </div>
 
-      <div className="mx-auto grid max-w-6xl grid-cols-1 md:grid-cols-[280px_1fr]">
-        <div className="border-white/10 px-6 py-6 md:border-r">
+      <div className="grid grid-cols-1 md:grid-cols-[280px_1fr]">
+        <div className="border-white/10 py-6 md:border-r md:pr-6">
           <div className="flex flex-col gap-4">
             {course.modules.map((mod) => (
               <ModuleRow
@@ -190,7 +177,7 @@ export default function InstructorCourseBuilderPage({ params }: { params: Promis
           <AddModuleForm courseId={course.id} onCreated={load} />
         </div>
 
-        <div className="min-w-0 px-6 py-6 sm:px-8">
+        <div className="min-w-0 py-6 md:pl-8">
           {showingLessonEditor && selectedModule ? (
             <LessonEditor
               moduleId={selectedModule.id}
@@ -223,7 +210,7 @@ export default function InstructorCourseBuilderPage({ params }: { params: Promis
           )}
         </div>
       </div>
-    </main>
+    </div>
   )
 }
 
@@ -467,7 +454,7 @@ function CourseVisibilitySection({ course, onChanged }: { course: InstructorCour
             {groups === null && <p className="text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading groups…</p>}
             {groups?.length === 0 && (
               <p className="text-sm text-[#90939A]">
-                No groups yet — <Link href="/courses/builder/groups" className="text-[#FF7A33] underline underline-offset-2">create one</Link>.
+                No groups yet — <Link href="/account/build/groups" className="text-[#FF7A33] underline underline-offset-2">create one</Link>.
               </p>
             )}
             {groups?.map((group) => (

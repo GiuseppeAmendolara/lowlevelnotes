@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import AuthPageShell from '@/components/auth/AuthPageShell'
 import Eyebrow from '@/components/Eyebrow'
 import { useSession } from '@/components/SessionProvider'
 import {
@@ -83,58 +82,47 @@ export default function InstructorCoursesPage() {
   }
 
   if (sessionLoading || !user || (user.role !== 'instructor' && user.role !== 'staff')) {
-    return (
-      <AuthPageShell eyebrow="Instructor" heading="Your courses" backHref="/account">
-        <p className="text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
-      </AuthPageShell>
-    )
+    return <p className="pt-1 text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
   }
 
   return (
-    <main className="min-h-screen bg-[#0B0B0D]">
-      <section className="mx-auto max-w-3xl px-6 pb-10 pt-20 sm:pt-28">
-        <Link href="/account" className="text-xs uppercase tracking-[0.12em] text-white/40 transition-colors hover:text-white">
-          ← Account
+    <div>
+      <Eyebrow>Instructor</Eyebrow>
+      <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
+        <h1 className="text-4xl font-bold tracking-[-0.05em] text-white">Your courses</h1>
+        <Link href="/account/build/groups" className="text-sm text-white/70 underline underline-offset-2 transition-colors hover:text-white">
+          Manage student groups
         </Link>
-        <Eyebrow className="mt-4">Instructor</Eyebrow>
-        <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
-          <h1 className="text-4xl font-bold tracking-[-0.05em] text-white sm:text-5xl">Your courses</h1>
-          <Link href="/courses/builder/groups" className="text-sm text-white/70 underline underline-offset-2 transition-colors hover:text-white">
-            Manage student groups
+      </div>
+
+      <form onSubmit={handleCreate} className="mt-8 flex flex-wrap items-end gap-3">
+        <input type="text" required placeholder="Course title" value={title} onChange={(e) => setTitle(e.target.value)} className={inputClass} />
+        <input type="text" placeholder="Description (optional)" value={description} onChange={(e) => setDescription(e.target.value)} className={inputClass} />
+        <input type="text" placeholder="Category (optional)" value={category} onChange={(e) => setCategory(e.target.value)} className={inputClass} />
+        <button type="submit" disabled={creating} className={buttonClass}>{creating ? '…' : 'New course'}</button>
+      </form>
+      {error && <p className="mt-2 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
+
+      <div className="mt-6 border-l border-t border-white/10">
+        {courses === null && <p className="border-b border-r border-white/10 bg-[#17181B] p-4 text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>}
+        {courses?.length === 0 && <p className="border-b border-r border-white/10 bg-[#17181B] p-4 text-sm text-[#90939A]">No courses yet — create one above.</p>}
+        {courses?.map((c) => (
+          <Link
+            key={c.id}
+            href={`/account/build/${c.id}`}
+            className="block border-b border-r border-white/10 bg-[#17181B] p-4 transition-colors hover:bg-[#0B0B0D]"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <span className="text-sm font-medium text-white">{c.title}</span>
+              <span className={`text-xs uppercase tracking-[0.1em] ${STATUS_CLASS[c.status]}`}>{STATUS_LABEL[c.status]}</span>
+            </div>
+            {c.description && <p className="mt-2 text-sm text-[#90939A]">{c.description}</p>}
+            {c.status === 'draft' && c.rejectionReason && (
+              <p className="mt-2 text-xs text-[#F85149]">Rejected: {c.rejectionReason}</p>
+            )}
           </Link>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-3xl px-6 pb-24">
-        <form onSubmit={handleCreate} className="flex flex-wrap items-end gap-3">
-          <input type="text" required placeholder="Course title" value={title} onChange={(e) => setTitle(e.target.value)} className={inputClass} />
-          <input type="text" placeholder="Description (optional)" value={description} onChange={(e) => setDescription(e.target.value)} className={inputClass} />
-          <input type="text" placeholder="Category (optional)" value={category} onChange={(e) => setCategory(e.target.value)} className={inputClass} />
-          <button type="submit" disabled={creating} className={buttonClass}>{creating ? '…' : 'New course'}</button>
-        </form>
-        {error && <p className="mt-2 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
-
-        <div className="mt-6 border-l border-t border-white/10">
-          {courses === null && <p className="border-b border-r border-white/10 bg-[#17181B] p-4 text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>}
-          {courses?.length === 0 && <p className="border-b border-r border-white/10 bg-[#17181B] p-4 text-sm text-[#90939A]">No courses yet — create one above.</p>}
-          {courses?.map((c) => (
-            <Link
-              key={c.id}
-              href={`/courses/builder/${c.id}`}
-              className="block border-b border-r border-white/10 bg-[#17181B] p-4 transition-colors hover:bg-[#0B0B0D]"
-            >
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <span className="text-sm font-medium text-white">{c.title}</span>
-                <span className={`text-xs uppercase tracking-[0.1em] ${STATUS_CLASS[c.status]}`}>{STATUS_LABEL[c.status]}</span>
-              </div>
-              {c.description && <p className="mt-2 text-sm text-[#90939A]">{c.description}</p>}
-              {c.status === 'draft' && c.rejectionReason && (
-                <p className="mt-2 text-xs text-[#F85149]">Rejected: {c.rejectionReason}</p>
-              )}
-            </Link>
-          ))}
-        </div>
-      </section>
-    </main>
+        ))}
+      </div>
+    </div>
   )
 }

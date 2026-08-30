@@ -55,7 +55,7 @@ export default async function ChangelogPage() {
                   <Eyebrow className="text-[11px]">{year}</Eyebrow>
                 </div>
               )}
-              <ChangelogEntryCard entry={entry} index={i} isLatest={i === 0} />
+              <ChangelogEntryCard entry={entry} index={i} isLatest={i === 0} isLast={i === withYears.length - 1} />
             </div>
           ))}
         </div>

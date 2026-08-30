@@ -6,13 +6,13 @@ import Link from 'next/link'
 import { useSession } from '@/components/SessionProvider'
 import ActionButton from '@/components/ActionButton'
 import CourseTreeRail from '@/components/CourseTreeRail'
+import { CourseIcon } from '@/components/CourseIcon'
 import {
   getCourse,
   getCourseLessons,
   getMyProgress,
   enrollCourse,
   unenrollCourse,
-  getAssetSrc,
   type Course,
   type CourseDifficulty,
   type Lesson,
@@ -172,12 +172,7 @@ export default function CoursePage({ params }: { params: Promise<{ course: strin
         <div className="mt-6 grid grid-cols-1 gap-10 md:grid-cols-[1fr_280px]">
           <div>
             <div className="flex items-center gap-4">
-              {course.iconUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element -- cross-subdomain, session-cookie-gated asset; next/image can't proxy this
-                <img src={getAssetSrc(course.iconUrl)} alt="" className="h-12 w-12 shrink-0 border border-white/10 object-cover" />
-              ) : (
-                <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 bg-[#FF7A33]" />
-              )}
+              <CourseIcon slug={course.slug} iconUrl={course.iconUrl} size="lg" />
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                 {course.category && (
                   <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#FF7A33]"><span className="text-[#C95E1A]">#</span>{course.category}</p>

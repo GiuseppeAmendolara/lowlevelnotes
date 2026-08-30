@@ -34,10 +34,10 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
   const items: NavItem[] = user
     ? [
         { href: '/account', label: 'Overview' },
-        { href: '/account/profile', label: 'Profile' },
+        { href: `/u/${user.id}`, label: 'Profile' },
         { href: '/account/courses', label: 'Courses' },
-        { href: '/contribute', label: 'Contribute' },
-        ...(user.role === 'instructor' || user.role === 'staff' ? [{ href: '/courses/builder', label: 'Course builder' }] : []),
+        { href: '/account/contribute', label: 'Contribute' },
+        ...(user.role === 'instructor' || user.role === 'staff' ? [{ href: '/account/build', label: 'Build' }] : []),
         ...(user.role === 'staff' ? [{ href: '/account/staff', label: 'Staff' }] : []),
         ...(user.role === 'staff'
           ? [{ href: '/account/approvals', label: 'Approvals', badge: pendingTotal > 0 ? pendingTotal : null }]

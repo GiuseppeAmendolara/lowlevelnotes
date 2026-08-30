@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import AuthPageShell from '@/components/auth/AuthPageShell'
 import AuthTextField from '@/components/auth/AuthTextField'
 import AuthTextArea from '@/components/auth/AuthTextArea'
 import AuthSelect from '@/components/auth/AuthSelect'
@@ -26,6 +25,20 @@ const RESOURCE_TYPES = [
   { value: 'git', label: 'Git repository' },
 ]
 
+// Shared eyebrow/heading/subtext block — every branch below (loading,
+// pending, done, the two real forms) renders one of these instead of a
+// standalone AuthPageShell, since this page now lives inside the account
+// dashboard's own shell rather than being a separate page.
+function ContributeHeader({ heading, subtext }: { heading: string; subtext?: string }) {
+  return (
+    <>
+      <Eyebrow>Contribute</Eyebrow>
+      <h1 className="mt-2 text-4xl font-bold tracking-[-0.05em] text-white">{heading}</h1>
+      {subtext && <p className="mt-4 max-w-xl leading-7 text-[#90939A]">{subtext}</p>}
+    </>
+  )
+}
+
 export default function ContributePage() {
   const router = useRouter()
   const { user, loading: sessionLoading } = useSession()
@@ -38,9 +51,10 @@ export default function ContributePage() {
 
   if (sessionLoading || !user) {
     return (
-      <AuthPageShell eyebrow="Contribute" heading="Contribute" backHref="/account">
-        <p className="text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
-      </AuthPageShell>
+      <div>
+        <ContributeHeader heading="Contribute" />
+        <p className="mt-6 text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
+      </div>
     )
   }
 
@@ -81,9 +95,10 @@ function RoleRequestPanel() {
 
   if (requests === null) {
     return (
-      <AuthPageShell eyebrow="Contribute" heading="Contribute" backHref="/account">
-        <p className="text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
-      </AuthPageShell>
+      <div>
+        <ContributeHeader heading="Contribute" />
+        <p className="mt-6 text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
+      </div>
     )
   }
 
@@ -92,34 +107,42 @@ function RoleRequestPanel() {
 
   if (pending) {
     return (
-      <AuthPageShell eyebrow="Contribute" heading="Request pending" backHref="/account">
-        <p className="text-sm leading-6 text-[#90939A]">
+      <div>
+        <ContributeHeader heading="Request pending" />
+        <p className="mt-6 text-sm leading-6 text-[#90939A]">
           Your request to become a {pending.requestedRole} is waiting on review.
         </p>
-        <AuthMessage message="Pending — you'll be able to submit resources once this is approved." />
-      </AuthPageShell>
+        <div className="mt-4 max-w-md">
+          <AuthMessage message="Pending — you'll be able to submit resources once this is approved." />
+        </div>
+      </div>
     )
   }
 
   if (done) {
     return (
-      <AuthPageShell eyebrow="Contribute" heading="Request sent" backHref="/account">
-        <AuthMessage message="Your request has been submitted for review." tone="success" />
-      </AuthPageShell>
+      <div>
+        <ContributeHeader heading="Request sent" />
+        <div className="mt-6 max-w-md">
+          <AuthMessage message="Your request has been submitted for review." tone="success" />
+        </div>
+      </div>
     )
   }
 
   return (
-    <AuthPageShell
-      eyebrow="Contribute"
-      heading="Request access"
-      subtext="Contributors and instructors can submit resources for the library. Every submission is reviewed before it goes live."
-      backHref="/account"
-    >
+    <div className="max-w-md">
+      <ContributeHeader
+        heading="Request access"
+        subtext="Contributors and instructors can submit resources for the library. Every submission is reviewed before it goes live."
+      />
+
       {latest?.status === 'rejected' && (
-        <AuthMessage
-          message={latest.rejectionReason ? `Your last request was declined: ${latest.rejectionReason}` : 'Your last request was declined.'}
-        />
+        <div className="mt-6">
+          <AuthMessage
+            message={latest.rejectionReason ? `Your last request was declined: ${latest.rejectionReason}` : 'Your last request was declined.'}
+          />
+        </div>
       )}
 
       <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
@@ -138,13 +161,12 @@ function RoleRequestPanel() {
 
         <AuthSubmitButton loading={submitting}>Submit request</AuthSubmitButton>
       </form>
-    </AuthPageShell>
+    </div>
   )
 }
 
 function ResourceRequestPanel() {
-  const [requests, setRequests] = useState<ResourceRequest[]>([])
-  const [loadingRequests, setLoadingRequests] = useState(true)
+  const [requests, setRequests] = useState<ResourceRequest[] | null>(null)
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -158,10 +180,8 @@ function ResourceRequestPanel() {
   const [submitting, setSubmitting] = useState(false)
 
   function loadRequests() {
-    setLoadingRequests(true)
     getMyResourceRequests().then((result) => {
       if (result.ok) setRequests(result.data)
-      setLoadingRequests(false)
     })
   }
 
@@ -207,13 +227,10 @@ function ResourceRequestPanel() {
   }
 
   return (
-    <AuthPageShell
-      eyebrow="Contribute"
-      heading="Submit a resource"
-      subtext="Every submission is reviewed before it appears in the library."
-      backHref="/account"
-    >
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <div className="max-w-md">
+      <ContributeHeader heading="Submit a resource" subtext="Every submission is reviewed before it appears in the library." />
+
+      <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
         <AuthTextField label="Title" value={title} onChange={setTitle} required />
         <AuthTextArea label="Description" value={description} onChange={setDescription} />
         <AuthSelect label="Type" value={type} onChange={(v) => setType(v as typeof type)} options={RESOURCE_TYPES} />
@@ -251,13 +268,13 @@ function ResourceRequestPanel() {
 
       <Eyebrow as="h2" className="mt-12">Your submissions</Eyebrow>
       <div className="mt-4 border-l border-t border-white/10">
-        {loadingRequests && (
+        {requests === null && (
           <p className="border-b border-r border-white/10 bg-[#17181B] p-4 text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
         )}
-        {!loadingRequests && requests.length === 0 && (
+        {requests?.length === 0 && (
           <p className="border-b border-r border-white/10 bg-[#17181B] p-4 text-sm text-[#90939A]">Nothing submitted yet.</p>
         )}
-        {requests.map((r) => (
+        {requests?.map((r) => (
           <div key={r.id} className="border-b border-r border-white/10 bg-[#17181B] p-4">
             <div className="flex items-center justify-between gap-3">
               <span className="text-sm font-medium text-white">{r.title}</span>
@@ -271,6 +288,6 @@ function ResourceRequestPanel() {
           </div>
         ))}
       </div>
-    </AuthPageShell>
+    </div>
   )
 }

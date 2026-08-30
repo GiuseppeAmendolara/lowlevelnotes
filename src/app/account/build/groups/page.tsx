@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import AuthPageShell from '@/components/auth/AuthPageShell'
 import Eyebrow from '@/components/Eyebrow'
 import { useSession } from '@/components/SessionProvider'
 import {
@@ -75,66 +73,55 @@ export default function GroupsPage() {
   }
 
   if (sessionLoading || !user || (user.role !== 'instructor' && user.role !== 'staff')) {
-    return (
-      <AuthPageShell eyebrow="Instructor" heading="Groups" backHref="/courses/builder" backLabel="Your courses">
-        <p className="text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
-      </AuthPageShell>
-    )
+    return <p className="pt-1 text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>
   }
 
   return (
-    <main className="min-h-screen bg-[#0B0B0D]">
-      <section className="mx-auto max-w-3xl px-6 pb-10 pt-20 sm:pt-28">
-        <Link href="/courses/builder" className="text-xs uppercase tracking-[0.12em] text-white/40 transition-colors hover:text-white">
-          ← Your courses
-        </Link>
-        <Eyebrow className="mt-4">Instructor</Eyebrow>
-        <h1 className="mt-4 text-4xl font-bold tracking-[-0.05em] text-white sm:text-5xl">Student groups</h1>
-        <p className="mt-4 max-w-xl text-sm leading-7 text-[#90939A]">
-          Reusable rosters you can restrict any of your courses to — build a group once, add students to it, and reuse it across courses.
-        </p>
-      </section>
+    <div>
+      <Eyebrow>Instructor</Eyebrow>
+      <h1 className="mt-2 text-4xl font-bold tracking-[-0.05em] text-white">Student groups</h1>
+      <p className="mt-4 max-w-xl text-sm leading-7 text-[#90939A]">
+        Reusable rosters you can restrict any of your courses to — build a group once, add students to it, and reuse it across courses.
+      </p>
 
-      <section className="mx-auto max-w-3xl px-6 pb-24">
-        <form onSubmit={handleCreate} className="flex flex-wrap items-center gap-2">
-          <input value={name} onChange={(e) => setName(e.target.value)} required placeholder="Group name" className={inputClass} />
-          <button type="submit" disabled={creating} className={buttonClass}>{creating ? '…' : 'Create group'}</button>
-        </form>
-        {error && <p className="mt-2 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
+      <form onSubmit={handleCreate} className="mt-8 flex flex-wrap items-center gap-2">
+        <input value={name} onChange={(e) => setName(e.target.value)} required placeholder="Group name" className={inputClass} />
+        <button type="submit" disabled={creating} className={buttonClass}>{creating ? '…' : 'Create group'}</button>
+      </form>
+      {error && <p className="mt-2 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error}</p>}
 
-        <div className="mt-6 flex flex-col gap-3">
-          {groups === null && <p className="text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>}
-          {groups?.length === 0 && <p className="text-sm text-[#90939A]">No groups yet — create one above.</p>}
-          {groups?.map((group) => (
-            <div key={group.id} className="border border-white/10 bg-[#17181B] p-4">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-medium text-white">{group.name}</p>
-                  <p className="mt-1 text-xs text-[#90939A]">{group.memberCount} students</p>
-                </div>
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setExpandedId(expandedId === group.id ? null : group.id)}
-                    className="text-xs text-white/70 underline underline-offset-2 hover:text-white"
-                  >
-                    {expandedId === group.id ? 'Hide roster' : 'Manage roster'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(group.id)}
-                    className="text-xs text-[#F85149] underline underline-offset-2 hover:text-[#F85149]/80"
-                  >
-                    Delete
-                  </button>
-                </div>
+      <div className="mt-6 flex flex-col gap-3">
+        {groups === null && <p className="text-sm text-[#90939A] animate-pulse motion-reduce:animate-none">Loading…</p>}
+        {groups?.length === 0 && <p className="text-sm text-[#90939A]">No groups yet — create one above.</p>}
+        {groups?.map((group) => (
+          <div key={group.id} className="border border-white/10 bg-[#17181B] p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium text-white">{group.name}</p>
+                <p className="mt-1 text-xs text-[#90939A]">{group.memberCount} students</p>
               </div>
-              {expandedId === group.id && <GroupRoster groupId={group.id} onChanged={load} />}
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setExpandedId(expandedId === group.id ? null : group.id)}
+                  className="text-xs text-white/70 underline underline-offset-2 hover:text-white"
+                >
+                  {expandedId === group.id ? 'Hide roster' : 'Manage roster'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDelete(group.id)}
+                  className="text-xs text-[#F85149] underline underline-offset-2 hover:text-[#F85149]/80"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
-          ))}
-        </div>
-      </section>
-    </main>
+            {expandedId === group.id && <GroupRoster groupId={group.id} onChanged={load} />}
+          </div>
+        ))}
+      </div>
+    </div>
   )
 }
 

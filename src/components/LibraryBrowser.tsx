@@ -1,9 +1,20 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ComponentType, type CSSProperties } from 'react'
 import type { Resource, Person } from '@/lib/api'
 import { useReveal, revealClass, revealState } from '@/lib/useReveal'
 import Eyebrow from '@/components/Eyebrow'
+import { FileIcon, GlobeIcon, PlayIcon, GitBranchIcon, ToolsIcon } from '@/components/icons'
+
+// One in-house glyph per resource type, replacing a plain color swatch —
+// same treatment as the GitHub/Discord marks in the footer.
+const typeIcons: Record<Resource['type'], ComponentType<{ className?: string; style?: CSSProperties }>> = {
+  pdf: FileIcon,
+  website: GlobeIcon,
+  videos: PlayIcon,
+  git: GitBranchIcon,
+  tool: ToolsIcon,
+}
 
 const typeLabels: Record<Resource['type'], string> = {
   pdf: 'PDF',
@@ -191,7 +202,7 @@ export default function LibraryBrowser({ resources, people }: Props) {
           <Eyebrow className="border-b border-white/10 px-4 py-3">Type</Eyebrow>
           <FacetRow label="All types" count={items.length} active={type === ''} onClick={() => handleTypeChange('')} />
           {typeCounts.map(([t, count]) => (
-            <FacetRow key={t} label={typeLabels[t]} color={typeColors[t]} count={count} active={type === t} onClick={() => handleTypeChange(t)} />
+            <FacetRow key={t} label={typeLabels[t]} icon={typeIcons[t]} color={typeColors[t]} count={count} active={type === t} onClick={() => handleTypeChange(t)} />
           ))}
         </div>
 
@@ -251,7 +262,21 @@ export default function LibraryBrowser({ resources, people }: Props) {
 // A single facet row — replaces a <select><option> pair with something
 // that shows both current state and relative size at a glance, the way a
 // dropdown never can without opening it.
-function FacetRow({ label, count, active, onClick, color }: { label: string; count: number; active: boolean; onClick: () => void; color?: string }) {
+function FacetRow({
+  label,
+  count,
+  active,
+  onClick,
+  color,
+  icon: Icon,
+}: {
+  label: string
+  count: number
+  active: boolean
+  onClick: () => void
+  color?: string
+  icon?: ComponentType<{ className?: string; style?: CSSProperties }>
+}) {
   return (
     <button
       type="button"
@@ -260,7 +285,7 @@ function FacetRow({ label, count, active, onClick, color }: { label: string; cou
         active ? 'border-[#FF7A33] bg-white/5 text-white' : 'border-transparent text-[#90939A] hover:text-white'
       }`}
     >
-      {color && <span aria-hidden="true" className="h-2 w-2 shrink-0" style={{ background: color }} />}
+      {Icon && <Icon className="h-3.5 w-3.5 shrink-0" style={color ? { color } : undefined} />}
       <span className="min-w-0 flex-1 truncate">{label}</span>
       <span className="shrink-0 text-xs text-white/40">{count}</span>
     </button>
