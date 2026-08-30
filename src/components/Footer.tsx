@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { DiscordIcon, GithubIcon, LicenseIcon } from '@/components/icons'
+import { DiscordIcon, ShieldLockIcon, LicenseIcon } from '@/components/icons'
 import Eyebrow from '@/components/Eyebrow'
 
 export default function Footer() {
@@ -29,32 +29,28 @@ export default function Footer() {
               </a>
             </p>
             <p className="flex items-center gap-1.5">
-              <LicenseIcon className="h-3.5 w-3.5 shrink-0 text-white/40" />
-              <a
-                href="https://github.com/GiuseppeAmendolara/lowlevelnotes/blob/main/LICENSE"
-                target="_blank"
-                rel="noopener noreferrer"
+              <ShieldLockIcon className="h-3.5 w-3.5 shrink-0 text-white/40" />
+              <Link
+                href="/privacy"
                 className="text-white/70 underline underline-offset-2 transition-colors hover:text-white"
               >
-                MIT license
-              </a>
+                Privacy policy
+              </Link>
             </p>
             <p className="flex items-center gap-1.5">
-              <GithubIcon className="h-3.5 w-3.5 shrink-0 text-white/40" />
-              <a
-                href="https://github.com/GiuseppeAmendolara/lowlevelnotes"
-                target="_blank"
-                rel="noopener noreferrer"
+              <LicenseIcon className="h-3.5 w-3.5 shrink-0 text-white/40" />
+              <Link
+                href="/terms"
                 className="text-white/70 underline underline-offset-2 transition-colors hover:text-white"
               >
-                Repository
-              </a>
+                Terms of use
+              </Link>
             </p>
           </div>
         </div>
 
         <div className="flex flex-col gap-3 border-t border-white/10 pt-6 sm:flex-row sm:items-center sm:justify-between">
-          <Eyebrow>Free &amp; open source · Full privacy · Zero ads</Eyebrow>
+          <Eyebrow>Free · Full privacy · Zero ads</Eyebrow>
           <div className="flex items-center gap-4 text-xs text-white/30">
             <Link href="/privacy" className="underline underline-offset-2 transition-colors hover:text-white/60">
               Privacy

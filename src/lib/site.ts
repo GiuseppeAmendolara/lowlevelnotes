@@ -2,13 +2,12 @@ export const baseUrl = "https://lowlevelnotes.com";
 export const googleSearchConsoleVerification = "ef9KpIV_Ll2l0ggil98ixxCXyg_3_mNMf0KT61fvR2o";
 
 const creator = {
-    name: "Giuseppe Amendolara",
+    name: "lowlevelnotes",
 }
 
 const authors = [
     {
-        name: "Giuseppe Amendolara",
-        url: "https://github.com/GiuseppeAmendolara/",
+        name: "lowlevelnotes",
     },
 ];
 

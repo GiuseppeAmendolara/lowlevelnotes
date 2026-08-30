@@ -3,7 +3,7 @@ import CodeBlock from '@/components/CodeBlock'
 import HeroBackground from '@/components/HeroBackground'
 import HomeExplore from '@/components/HomeExplore'
 import ScrollReveal from '@/components/ScrollReveal'
-import { DiscordIcon, GithubIcon } from '@/components/icons'
+import { DiscordIcon } from '@/components/icons'
 import { getFeaturedCourses, getLibraryCategoryStats, getSiteStatsSummary, type FeaturedCourse, type LibraryCategoryStat, type SiteStatsSummary } from '@/lib/api'
 import Eyebrow from '@/components/Eyebrow'
 
@@ -132,7 +132,7 @@ export default async function Home() {
           <div className="order-2 lg:order-1">
             <Eyebrow>Straight from the notes</Eyebrow>
             <h2 className="mt-4 max-w-lg text-3xl font-bold tracking-[-0.05em] text-white sm:text-4xl">Code samples</h2>
-            <p className="mt-4 max-w-md leading-7 text-[#90939A]">Written from a developer&apos;s point of view, line by line. Open source and MIT-licensed, so if you want to fix a mistake or add a section, that&apos;s open too.</p>
+            <p className="mt-4 max-w-md leading-7 text-[#90939A]">Written from a developer&apos;s point of view, line by line, and shaped by feedback from the community.</p>
           </div>
 
           <div className="order-1 min-w-0 lg:order-2">
@@ -160,15 +160,6 @@ export default async function Home() {
             >
               <DiscordIcon className="h-4 w-4 shrink-0" />
               Join the Discord
-            </a>
-            <a
-              href="https://github.com/GiuseppeAmendolara/lowlevelnotes"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-3 border border-white/15 bg-[#17181B] px-5 py-3.5 text-sm font-medium text-white transition-colors transition-transform duration-150 hover:border-white/40 hover:bg-[#0B0B0D] active:scale-[0.98] motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-            >
-              <GithubIcon className="h-4 w-4 shrink-0" />
-              Contribute on GitHub
             </a>
           </div>
         </div>
