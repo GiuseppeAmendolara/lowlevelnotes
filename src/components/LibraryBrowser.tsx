@@ -5,6 +5,7 @@ import type { Resource, Person } from '@/lib/api'
 import { useReveal, revealClass, revealState } from '@/lib/useReveal'
 import Eyebrow from '@/components/Eyebrow'
 import { FileIcon, GlobeIcon, PlayIcon, GitBranchIcon, ToolsIcon } from '@/components/icons'
+import { openResource } from '@/lib/authClient'
 
 // One in-house glyph per resource type, replacing a plain color swatch —
 // same treatment as the GitHub/Discord marks in the footer.
@@ -61,7 +62,13 @@ function resolveHref(path: string) {
 }
 
 function trackView(item: Item) {
+  // Two separate signals: the anonymous public view counter (works for a
+  // logged-out click too, via the internal-key-gated Next.js route), and
+  // this user's own non-repeatable leaderboard XP (session-cookie auth,
+  // straight to the Worker, silently a no-op if this resource was
+  // already opened before or the visitor isn't signed in).
   fetch(`/api/resource/${item.id}`, { method: 'POST' }).catch(() => {})
+  openResource(Number(item.id)).catch(() => {})
 }
 
 function matchesQuery(item: Item, query: string) {

@@ -400,6 +400,27 @@ export function uploadMyAvatar(file: File) {
   return authFetchForm<{ avatarUrl: string }>('/v1/me/avatar', form)
 }
 
+// Per-user, non-repeatable — distinct from incrementResourceViews (src/lib/api.ts),
+// which is the anonymous public view counter. Awards leaderboard XP (and,
+// via the Bookworm achievement, evaluates achievements) the first time
+// this user opens a given resource; every open after that silently
+// no-ops server-side, so this is safe to call on every click.
+export function openResource(id: number) {
+  return authFetch<{ message: string }>(`/v1/library/${id}/open`, { method: 'POST' })
+}
+
+export type LeaderboardEntry = {
+  rank: number
+  id: number
+  displayName: string
+  avatarUrl: string | null
+  xp: number
+}
+
+export function getLeaderboard() {
+  return authFetch<LeaderboardEntry[]>('/v1/leaderboard')
+}
+
 // A bare R2 key (avatarUrl, a course's iconUrl, content_path, ...) — this
 // builds the actual <img src>, same gated-assets base every other
 // cross-subdomain image on this site already uses (see
