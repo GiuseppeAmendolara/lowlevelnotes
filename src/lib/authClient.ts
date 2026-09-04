@@ -387,10 +387,10 @@ export function getUserProfile(id: number) {
   return authFetch<UserProfile>(`/v1/users/${id}/profile`)
 }
 
-export function updateMyProfile(bio: string) {
+export function updateMyProfile(displayName: string, bio: string) {
   return authFetch<{ message: string }>('/v1/me/profile', {
     method: 'PUT',
-    body: JSON.stringify({ bio }),
+    body: JSON.stringify({ displayName, bio }),
   })
 }
 
@@ -604,6 +604,12 @@ export function deleteStaffUser(id: number) {
 
 export function getStaffUserIps(id: number) {
   return authFetch<{ ips: string[] }>(`/v1/staff/users/${id}/ips`)
+}
+
+export type DisplayNameChange = { oldName: string; newName: string; changedAt: string }
+
+export function getStaffUserNameHistory(id: number) {
+  return authFetch<{ history: DisplayNameChange[] }>(`/v1/staff/users/${id}/name-history`)
 }
 
 // -------- Staff: blocked IPs --------

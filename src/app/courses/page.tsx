@@ -84,7 +84,7 @@ export default function CoursesPage() {
                 category === null ? 'border-[#FF7A33] text-[#FF7A33]' : 'border-white/15 text-[#90939A] hover:border-white/40'
               }`}
             >
-              All <span className="text-white/40">{courses?.length}</span>
+              All <span className={category === null ? 'text-[#FF7A33]' : 'text-white/40'}>{courses?.length}</span>
             </button>
             {categories.map(([cat, count]) => (
               <button
@@ -95,7 +95,7 @@ export default function CoursesPage() {
                   category === cat ? 'border-[#FF7A33] text-[#FF7A33]' : 'border-white/15 text-[#90939A] hover:border-white/40'
                 }`}
               >
-                {cat} <span className="text-white/40">{count}</span>
+                {cat} <span className={category === cat ? 'text-[#FF7A33]' : 'text-white/40'}>{count}</span>
               </button>
             ))}
           </div>

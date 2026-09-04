@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useEffect, useState } from 'react'
+import { use, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -191,7 +191,7 @@ export default function LessonPage({ params }: { params: Promise<{ course: strin
                     />
                   )}
 
-                  <LessonNav courseSlug={courseSlug} nextLesson={nextLesson} />
+                  <LessonNav courseSlug={courseSlug} nextLesson={nextLesson} isCompleted={isCompleted} />
                 </div>
               )}
             </div>
@@ -266,16 +266,33 @@ function LockedLesson({
   )
 }
 
-function LessonNav({ courseSlug, nextLesson }: { courseSlug: string; nextLesson: Lesson | undefined }) {
+function LessonNav({
+  courseSlug,
+  nextLesson,
+  isCompleted,
+}: {
+  courseSlug: string
+  nextLesson: Lesson | undefined
+  isCompleted: boolean
+}) {
   return (
     <div className="mt-6 flex justify-end">
       {nextLesson ? (
-        <Link
-          href={`/courses/${courseSlug}/${nextLesson.slug}`}
-          className="inline-flex items-center gap-2 text-sm font-medium text-white transition-colors hover:text-[#FF7A33]"
-        >
-          Next lesson: {nextLesson.title} →
-        </Link>
+        isCompleted ? (
+          <Link
+            href={`/courses/${courseSlug}/${nextLesson.slug}`}
+            className="inline-flex items-center justify-center gap-2 bg-[#FF7A33] px-5 py-3 text-sm font-semibold text-[#0D0D0D] transition-colors transition-transform duration-150 hover:bg-[#FF9459] active:scale-[0.98] motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF7A33]"
+          >
+            Next lesson: {nextLesson.title} →
+          </Link>
+        ) : (
+          <Link
+            href={`/courses/${courseSlug}/${nextLesson.slug}`}
+            className="inline-flex items-center gap-2 text-sm font-medium text-white transition-colors hover:text-[#FF7A33]"
+          >
+            Next lesson: {nextLesson.title} →
+          </Link>
+        )
       ) : (
         <Link
           href={`/courses/${courseSlug}`}
@@ -286,6 +303,21 @@ function LessonNav({ courseSlug, nextLesson }: { courseSlug: string; nextLesson:
       )}
     </div>
   )
+}
+
+// Answer options come back from the API ordered by their fixed `position`
+// (the correct one is often authored first), which would otherwise make
+// the correct answer visually predictable across every quiz. Shuffled
+// once per mount via Fisher-Yates and re-shuffled on retake, but never on
+// every render — recomputing on each answer selection would shift options
+// under the user's cursor mid-quiz.
+function shuffle<T>(items: T[]): T[] {
+  const result = [...items]
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[result[i], result[j]] = [result[j], result[i]]
+  }
+  return result
 }
 
 // Any successful attempt (any score) marks the lesson completed
@@ -307,6 +339,13 @@ function QuizBody({
   const toast = useToast()
   const [answers, setAnswers] = useState<Record<number, number>>({})
   const [result, setResult] = useState<QuizAttemptResult | null>(null)
+  const [shuffleSeed, setShuffleSeed] = useState(0)
+
+  const questions = useMemo(
+    () => quiz.questions.map((q) => ({ ...q, answers: shuffle(q.answers) })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- shuffleSeed intentionally forces a re-shuffle on retake; quiz itself is stable per lesson
+    [quiz, shuffleSeed]
+  )
 
   const attemptMutation = useMutation({
     mutationFn: (payload: { questionId: number; answerId: number }[]) => unwrapResult(attemptQuiz(lessonId, payload)),
@@ -318,17 +357,18 @@ function QuizBody({
   })
 
   const resultByQuestion = new Map(result?.results.map((r) => [r.questionId, r]))
-  const allAnswered = quiz.questions.every((q) => answers[q.id] !== undefined)
+  const allAnswered = questions.every((q) => answers[q.id] !== undefined)
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const payload = quiz.questions.map((q) => ({ questionId: q.id, answerId: answers[q.id] }))
+    const payload = questions.map((q) => ({ questionId: q.id, answerId: answers[q.id] }))
     attemptMutation.mutate(payload)
   }
 
   function handleRetake() {
     setResult(null)
     setAnswers({})
+    setShuffleSeed((s) => s + 1)
   }
 
   return (
@@ -354,7 +394,7 @@ function QuizBody({
       )}
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        {quiz.questions.map((question, qi) => {
+        {questions.map((question, qi) => {
           const questionResult = resultByQuestion.get(question.id)
 
           return (

@@ -12,12 +12,12 @@ import { getUserProfile, updateMyProfile, uploadMyAvatar, unwrapResult, getAsset
 import Eyebrow from '@/components/Eyebrow'
 import AccountShell from '@/components/AccountShell'
 
-const textareaClass = "w-full border border-white/15 bg-[#17181B] px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none"
+const fieldClass = "w-full border border-white/15 bg-[#17181B] px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none"
 
 export default function UserProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
-  const { user, loading: sessionLoading } = useSession()
+  const { user, loading: sessionLoading, refresh } = useSession()
   const queryClient = useQueryClient()
   const toast = useToast()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -30,14 +30,17 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
   const profile = profileQuery.data
 
   const [bio, setBio] = useState('')
-  // Seeds the bio draft once per profile id, not on every render of fresh
-  // query data — a background revalidation landing mid-edit (this query's
-  // default 60s staleTime will eventually trigger one) must never
-  // silently overwrite text the user is in the middle of typing.
+  const [displayName, setDisplayName] = useState('')
+  // Seeds the bio/display name draft once per profile id, not on every
+  // render of fresh query data — a background revalidation landing
+  // mid-edit (this query's default 60s staleTime will eventually trigger
+  // one) must never silently overwrite text the user is in the middle of
+  // typing.
   const initializedForId = useRef<string | null>(null)
   useEffect(() => {
     if (profile && initializedForId.current !== id) {
       setBio(profile.bio ?? '')
+      setDisplayName(profile.displayName)
       initializedForId.current = id
     }
   }, [id, profile])
@@ -61,11 +64,15 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
     },
     onError: (error) => toast.error(error.message),
   })
-  const saveBioMutation = useMutation({
-    mutationFn: () => unwrapResult(updateMyProfile(bio)),
+  const saveProfileMutation = useMutation({
+    mutationFn: () => unwrapResult(updateMyProfile(displayName, bio)),
     onSuccess: () => {
-      queryClient.setQueryData<UserProfile>(['userProfile', id], (prev) => (prev ? { ...prev, bio } : prev))
-      toast.success('Bio saved.')
+      queryClient.setQueryData<UserProfile>(['userProfile', id], (prev) => (prev ? { ...prev, displayName, bio } : prev))
+      // Session-wide user.displayName (header, account welcome message,
+      // etc.) is separate cached state from this profile query, so it
+      // needs its own refetch to pick up the change immediately.
+      refresh()
+      toast.success('Profile saved.')
     },
     onError: (error) => toast.error(error.message),
   })
@@ -76,9 +83,9 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
     avatarMutation.mutate(file)
   }
 
-  function handleSaveBio(e: React.FormEvent) {
+  function handleSaveProfile(e: React.FormEvent) {
     e.preventDefault()
-    saveBioMutation.mutate()
+    saveProfileMutation.mutate()
   }
 
   // Whether this is your own profile depends on `user`, which isn't known
@@ -148,7 +155,20 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
           </div>
 
           {isOwnProfile ? (
-            <form onSubmit={handleSaveBio} className="mt-6 flex max-w-xl flex-col gap-3">
+            <form onSubmit={handleSaveProfile} className="mt-6 flex max-w-xl flex-col gap-3">
+              <label className="flex flex-col gap-2">
+                <span className="text-xs font-medium uppercase tracking-[0.1em] text-white/40">Display name</span>
+                <input
+                  type="text"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  maxLength={80}
+                  required
+                  placeholder="Your name"
+                  className={fieldClass}
+                />
+              </label>
+
               <label className="flex flex-col gap-2">
                 <span className="text-xs font-medium uppercase tracking-[0.1em] text-white/40">Bio</span>
                 <textarea
@@ -157,11 +177,11 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
                   maxLength={1000}
                   rows={4}
                   placeholder="Tell people a bit about yourself…"
-                  className={textareaClass}
+                  className={fieldClass}
                 />
               </label>
 
-              <AuthSubmitButton loading={saveBioMutation.isPending}>Save</AuthSubmitButton>
+              <AuthSubmitButton loading={saveProfileMutation.isPending}>Save</AuthSubmitButton>
             </form>
           ) : (
             profile.bio && <p className="mt-6 max-w-xl text-sm leading-7 text-[#90939A]">{profile.bio}</p>

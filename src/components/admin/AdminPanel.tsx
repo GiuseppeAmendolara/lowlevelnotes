@@ -11,6 +11,7 @@ import {
   unbanStaffUser,
   deleteStaffUser,
   getStaffUserIps,
+  getStaffUserNameHistory,
   getStaffBlockedIps,
   blockIp,
   unblockIp,
@@ -123,6 +124,7 @@ function UsersSection() {
   const toast = useToast()
   const { data: users, error } = useQuery({ queryKey: ['staffUsers'], queryFn: () => unwrapResult(getStaffUsers()) })
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set())
+  const [expandedNameIds, setExpandedNameIds] = useState<Set<number>>(new Set())
 
   const [newEmail, setNewEmail] = useState('')
   const [newName, setNewName] = useState('')
@@ -214,6 +216,15 @@ function UsersSection() {
     })
   }
 
+  function toggleNames(id: number) {
+    setExpandedNameIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
   return (
     <div>
       <SectionHeading>Users</SectionHeading>
@@ -255,9 +266,13 @@ function UsersSection() {
               <button type="button" onClick={() => toggleIps(u.id)} className={buttonClass}>
                 {expandedIds.has(u.id) ? 'Hide IPs' : 'View IPs'}
               </button>
+              <button type="button" onClick={() => toggleNames(u.id)} className={buttonClass}>
+                {expandedNameIds.has(u.id) ? 'Hide name history' : 'View name history'}
+              </button>
             </div>
 
             {expandedIds.has(u.id) && <UserIpsList userId={u.id} />}
+            {expandedNameIds.has(u.id) && <UserNameHistoryList userId={u.id} />}
           </div>
           )
         })}
@@ -294,6 +309,28 @@ function UserIpsList({ userId }: { userId: number }) {
           <button type="button" onClick={() => handleBlockIp(ip)} className="text-[#F85149] underline underline-offset-2 hover:text-white">
             Block
           </button>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// Its own query (['staffUserNameHistory', userId]) for the same
+// re-expand-from-cache reason as UserIpsList above.
+function UserNameHistoryList({ userId }: { userId: number }) {
+  const { data } = useQuery({ queryKey: ['staffUserNameHistory', userId], queryFn: () => unwrapResult(getStaffUserNameHistory(userId)) })
+
+  if (!data) {
+    return <Skeleton className="mt-3 h-4 w-32" />
+  }
+
+  return (
+    <div className="mt-3 flex flex-col gap-1.5">
+      {data.history.length === 0 && <span className="text-xs text-[#90939A]">No name changes on record.</span>}
+      {data.history.map((change, i) => (
+        <div key={i} className="text-xs text-[#90939A]">
+          <span className="text-white">{change.oldName}</span> → <span className="text-white">{change.newName}</span>
+          <span className="ml-2 text-white/40">{new Date(change.changedAt).toLocaleString()}</span>
         </div>
       ))}
     </div>
