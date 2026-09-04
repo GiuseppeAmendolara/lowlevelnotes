@@ -11,6 +11,7 @@ import AuthMessage from '@/components/auth/AuthMessage'
 import TurnstileWidget, { type TurnstileHandle } from '@/components/auth/TurnstileWidget'
 import { useSession } from '@/components/SessionProvider'
 import { login, unwrapResult } from '@/lib/authClient'
+import { computeDeviceFingerprint } from '@/lib/securityMonitor'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -22,7 +23,7 @@ export default function LoginPage() {
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
 
   const loginMutation = useMutation({
-    mutationFn: () => unwrapResult(login(email, password, turnstileToken!)),
+    mutationFn: async () => unwrapResult(login(email, password, turnstileToken!, await computeDeviceFingerprint())),
     // Tokens are single-use regardless of outcome — fetch a fresh one
     // before the next attempt.
     onSettled: () => {

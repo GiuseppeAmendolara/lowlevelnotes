@@ -133,10 +133,10 @@ export function getSession() {
   return authFetch<AuthUser>('/v1/auth/session')
 }
 
-export function login(email: string, password: string, turnstileToken: string) {
+export function login(email: string, password: string, turnstileToken: string, fingerprint?: string | null) {
   return authFetch<{ token: string; expiresAt: string; user: AuthUser }>('/v1/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ email, password, turnstileToken }),
+    body: JSON.stringify({ email, password, turnstileToken, fingerprint: fingerprint ?? undefined }),
   })
 }
 
@@ -494,6 +494,7 @@ export type StaffUser = {
   banReason: string | null
   isSuperAdmin: boolean
   createdAt: string
+  securityEventCount: number
 }
 
 export type BlockedIp = {
@@ -610,6 +611,32 @@ export type DisplayNameChange = { oldName: string; newName: string; changedAt: s
 
 export function getStaffUserNameHistory(id: number) {
   return authFetch<{ history: DisplayNameChange[] }>(`/v1/staff/users/${id}/name-history`)
+}
+
+export type SecurityEventType =
+  | 'content_copy'
+  | 'text_select_large'
+  | 'devtools_opened'
+  | 'scrape_pattern'
+  | 'rate_limit_hit'
+  | 'bot_user_agent'
+  | 'multi_account_ip'
+
+export type SecurityEvent = { eventType: SecurityEventType; ip: string | null; detail: string | null; createdAt: string }
+
+export function getStaffUserSecurityEvents(id: number) {
+  return authFetch<{ events: SecurityEvent[] }>(`/v1/staff/users/${id}/security-events`)
+}
+
+// Client-observable signals only (server-observed ones — rate limit
+// hits, bot user agents, multi-account IPs — are logged directly from
+// the Worker, never through this). Fire-and-forget by every caller: a
+// failure here should never interrupt whatever the user was doing.
+export function reportSecurityEvent(type: 'content_copy' | 'text_select_large' | 'devtools_opened', detail?: string) {
+  return authFetch<{ message: string }>('/v1/me/security-event', {
+    method: 'POST',
+    body: JSON.stringify({ type, detail }),
+  })
 }
 
 // -------- Staff: blocked IPs --------

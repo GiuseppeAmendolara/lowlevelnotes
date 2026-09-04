@@ -12,6 +12,7 @@ import {
   deleteStaffUser,
   getStaffUserIps,
   getStaffUserNameHistory,
+  getStaffUserSecurityEvents,
   getStaffBlockedIps,
   blockIp,
   unblockIp,
@@ -125,6 +126,7 @@ function UsersSection() {
   const { data: users, error } = useQuery({ queryKey: ['staffUsers'], queryFn: () => unwrapResult(getStaffUsers()) })
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set())
   const [expandedNameIds, setExpandedNameIds] = useState<Set<number>>(new Set())
+  const [expandedSecurityIds, setExpandedSecurityIds] = useState<Set<number>>(new Set())
 
   const [newEmail, setNewEmail] = useState('')
   const [newName, setNewName] = useState('')
@@ -225,6 +227,15 @@ function UsersSection() {
     })
   }
 
+  function toggleSecurity(id: number) {
+    setExpandedSecurityIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
   return (
     <div>
       <SectionHeading>Users</SectionHeading>
@@ -253,6 +264,11 @@ function UsersSection() {
               {u.isSuperAdmin && <span className="text-xs uppercase tracking-[0.1em] text-[#FF7A33]">Super admin</span>}
               {u.bannedAt && <span className="text-xs uppercase tracking-[0.1em] text-[#F85149]">Banned{u.banReason ? `: ${u.banReason}` : ''}</span>}
               {!u.emailVerified && <span className="text-xs uppercase tracking-[0.1em] text-white/40">Unverified</span>}
+              {u.securityEventCount > 0 && (
+                <span className="text-xs uppercase tracking-[0.1em] text-[#F0B429]" title="Security signals logged for this account — see below">
+                  ⚠ {u.securityEventCount}
+                </span>
+              )}
             </div>
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -269,10 +285,14 @@ function UsersSection() {
               <button type="button" onClick={() => toggleNames(u.id)} className={buttonClass}>
                 {expandedNameIds.has(u.id) ? 'Hide name history' : 'View name history'}
               </button>
+              <button type="button" onClick={() => toggleSecurity(u.id)} className={buttonClass}>
+                {expandedSecurityIds.has(u.id) ? 'Hide security events' : `View security events${u.securityEventCount > 0 ? ` (${u.securityEventCount})` : ''}`}
+              </button>
             </div>
 
             {expandedIds.has(u.id) && <UserIpsList userId={u.id} />}
             {expandedNameIds.has(u.id) && <UserNameHistoryList userId={u.id} />}
+            {expandedSecurityIds.has(u.id) && <UserSecurityEventsList userId={u.id} />}
           </div>
           )
         })}
@@ -331,6 +351,40 @@ function UserNameHistoryList({ userId }: { userId: number }) {
         <div key={i} className="text-xs text-[#90939A]">
           <span className="text-white">{change.oldName}</span> → <span className="text-white">{change.newName}</span>
           <span className="ml-2 text-white/40">{new Date(change.changedAt).toLocaleString()}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+const SECURITY_EVENT_LABELS: Record<string, string> = {
+  content_copy: 'Copied lesson content',
+  text_select_large: 'Selected a large block of text',
+  devtools_opened: 'Devtools opened (low confidence)',
+  scrape_pattern: 'Bulk-download pattern',
+  rate_limit_hit: 'Hit a rate limit',
+  bot_user_agent: 'Non-browser user agent',
+  multi_account_ip: 'Shares an IP with other accounts',
+}
+
+// Its own query (['staffUserSecurityEvents', userId]) for the same
+// re-expand-from-cache reason as UserIpsList/UserNameHistoryList above.
+function UserSecurityEventsList({ userId }: { userId: number }) {
+  const { data } = useQuery({ queryKey: ['staffUserSecurityEvents', userId], queryFn: () => unwrapResult(getStaffUserSecurityEvents(userId)) })
+
+  if (!data) {
+    return <Skeleton className="mt-3 h-4 w-32" />
+  }
+
+  return (
+    <div className="mt-3 flex flex-col gap-1.5">
+      {data.events.length === 0 && <span className="text-xs text-[#90939A]">No security signals on record.</span>}
+      {data.events.map((event, i) => (
+        <div key={i} className="text-xs text-[#90939A]">
+          <span className="text-white">{SECURITY_EVENT_LABELS[event.eventType] ?? event.eventType}</span>
+          {event.detail && <span className="ml-2 text-[#90939A]">{event.detail}</span>}
+          {event.ip && <span className="ml-2 font-mono text-white/40">{event.ip}</span>}
+          <span className="ml-2 text-white/40">{new Date(event.createdAt).toLocaleString()}</span>
         </div>
       ))}
     </div>

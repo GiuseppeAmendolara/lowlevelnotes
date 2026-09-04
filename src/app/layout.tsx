@@ -7,6 +7,7 @@ import Footer from "@/components/Footer";
 import SessionProvider from "@/components/SessionProvider";
 import QueryProvider from "@/components/QueryProvider";
 import ToastProvider from "@/components/ToastProvider";
+import SecurityMonitor from "@/components/SecurityMonitor";
 
 export const viewport: Viewport = siteConfig.viewport;
 export const metadata: Metadata = siteConfig.metaData;
@@ -18,6 +19,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <QueryProvider>
           <SessionProvider>
             <ToastProvider>
+              <SecurityMonitor />
               <Header />
               {children}
               <Footer />

@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import SolutionReveal from '@/components/SolutionReveal'
 import { Skeleton } from '@/components/Skeleton'
 import { getLessonContent } from '@/lib/authClient'
+import { attachContentCopyDetection, attachLargeSelectionDetection } from '@/lib/securityMonitor'
 
 function ProseSkeleton() {
   return (
@@ -46,6 +47,21 @@ function embedUrl(videoUrl: string): string | null {
 export function ArticleBody({ contentPath }: { contentPath: string | null }) {
   const [html, setHtml] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
+
+  // Attached only once the real content is in the DOM (not the skeleton)
+  // — both detectors read the live selection off this element, so there's
+  // nothing useful to attach to before then.
+  useEffect(() => {
+    const el = contentRef.current
+    if (!el || !html) return
+    const detachCopy = attachContentCopyDetection(el)
+    const detachSelection = attachLargeSelectionDetection(el)
+    return () => {
+      detachCopy()
+      detachSelection()
+    }
+  }, [html])
 
   useEffect(() => {
     if (!contentPath) return
@@ -92,6 +108,7 @@ export function ArticleBody({ contentPath }: { contentPath: string | null }) {
 
   return (
     <div
+      ref={contentRef}
       className="prose-lesson animate-fade-in-up motion-reduce:animate-none [&_a]:text-[#FF7A33] [&_a]:underline [&_a]:underline-offset-2 [&_blockquote]:border-l-2 [&_blockquote]:border-white/20 [&_blockquote]:pl-4 [&_blockquote]:text-[#90939A] [&_code]:bg-white/[0.06] [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-[0.85em] [&_h1]:mt-10 [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:tracking-[-0.04em] [&_h1]:text-white [&_h2]:mt-10 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:tracking-[-0.03em] [&_h2]:text-white [&_h3]:mt-8 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-white [&_hr]:border-white/10 [&_img]:max-w-full [&_li]:leading-7 [&_ol]:mt-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:mt-4 [&_p]:leading-7 [&_p]:text-[#90939A] [&_pre]:my-4 [&_table]:mt-4 [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-white/10 [&_td]:px-3 [&_td]:py-2 [&_th]:border [&_th]:border-white/10 [&_th]:bg-white/[0.03] [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:text-white [&_ul]:mt-4 [&_ul]:list-disc [&_ul]:pl-6 text-sm"
       dangerouslySetInnerHTML={{ __html: html }}
     />
