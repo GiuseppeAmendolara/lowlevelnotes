@@ -1179,7 +1179,14 @@ main domain is scoped against — see below.
   reused out of habit. Deliberately not listed in a `robots.txt` Disallow
   (there isn't one yet) since that itself is a common way scanners discover
   "interesting" paths; a `noindex`/`nofollow` meta tag keeps it out of search
-  results instead.
+  results instead. The visitor's IP is read from `cf-connecting-ip`, not
+  `x-forwarded-for` — the site sits behind Cloudflare in front of Vercel, so
+  `x-forwarded-for`'s first entry is Cloudflare's own edge IP
+  (`162.158.0.0/15`), not the visitor's (confirmed live: every early hit
+  logged the same Cloudflare range). `cf-connecting-ip` is what Cloudflare
+  itself sets to the real client IP and strips from anything the client
+  sent, same reason the Worker trusts it everywhere else instead of
+  `x-forwarded-for`.
 
 ### Learning and motivation model
 
