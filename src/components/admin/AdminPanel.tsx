@@ -19,6 +19,7 @@ import {
   getStaffAuditLog,
   getStaffPendingCounts,
   getStaffHoneypotHits,
+  confirmHoneypotHitBenign,
   unwrapResult,
   roleLabel,
   type Role,
@@ -45,6 +46,7 @@ const ACTION_LABELS: Record<string, string> = {
   approve_course: 'Approve course',
   reject_course: 'Reject course',
   delete_course: 'Delete course',
+  confirm_benign_honeypot_hit: 'Confirm honeypot hit benign',
 }
 
 const ROLES: Role[] = ['student', 'contributor', 'instructor', 'staff']
@@ -371,6 +373,7 @@ const SECURITY_EVENT_LABELS: Record<string, string> = {
   rate_limit_hit: 'Hit a rate limit',
   bot_user_agent: 'Non-browser user agent',
   multi_account_ip: 'Shares an IP with other accounts',
+  honeypot_hit: 'Visited the decoy admin page',
 }
 
 // Its own query (['staffUserSecurityEvents', userId]) for the same
@@ -477,11 +480,28 @@ function HoneypotSection() {
   const queryClient = useQueryClient()
   const toast = useToast()
   const { data, error } = useQuery({ queryKey: ['staffHoneypotHits'], queryFn: () => unwrapResult(getStaffHoneypotHits()) })
+
+  function invalidateHits() {
+    return queryClient.invalidateQueries({ queryKey: ['staffHoneypotHits'] })
+  }
+
   const blockMutation = useMutation({
     mutationFn: (ip: string) => unwrapResult(blockIp(ip, 'Honeypot hit')),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staffBlockedIps'] })
       toast.success('IP blocked.')
+    },
+    onError: (error) => toast.error(error.message),
+  })
+  // Shared across every row rather than one instance per row, same
+  // reflow-safety reasoning as UsersSection's mutations — confirming one
+  // row doesn't remove it here, but keeping the pattern consistent costs
+  // nothing.
+  const confirmMutation = useMutation({
+    mutationFn: (id: number) => unwrapResult(confirmHoneypotHitBenign(id)),
+    onSuccess: () => {
+      invalidateHits()
+      toast.success('Marked benign.')
     },
     onError: (error) => toast.error(error.message),
   })
@@ -495,7 +515,7 @@ function HoneypotSection() {
     <div>
       <SectionHeading>Honeypot</SectionHeading>
       <p className="mt-2 max-w-2xl text-sm text-[#90939A]">
-        Visits to /admin — a decoy admin login not linked anywhere on the real site. Anyone here found it by guessing, so treat every row as a scanner or bot.
+        Visits to /admin — a decoy admin login not linked anywhere on the real site. Anyone here found it by guessing, so treat every row as a scanner or bot. A POST row means something submitted credentials directly, without ever loading the page — its payload is shown below the row. A blue tag means the IP matches a real account on file — that visit is also logged on that account&apos;s own security events.
       </p>
 
       {error && <p className="mt-4 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error.message}</p>}
@@ -503,21 +523,48 @@ function HoneypotSection() {
       <div className="mt-6 border-l border-t border-white/10">
         {data === undefined && !error && <SkeletonRow count={3} />}
         {data?.hits.length === 0 && <p className="border-b border-r border-white/10 bg-[#17181B] p-4 text-sm text-[#90939A]">No hits yet.</p>}
-        {data?.hits.map((hit, i) => (
-          <div key={i} className="flex flex-wrap items-center justify-between gap-3 border-b border-r border-white/10 bg-[#17181B] p-4">
-            <div>
+        {data?.hits.map((hit) => (
+          <div key={hit.id} className={`flex flex-wrap items-center justify-between gap-3 border-b border-r border-white/10 bg-[#17181B] p-4 ${hit.confirmedBenignAt ? 'opacity-50' : ''}`}>
+            <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-3">
+                <span
+                  className={`text-xs font-semibold uppercase tracking-[0.08em] ${hit.method === 'GET' ? 'text-white/40' : 'text-[#F0B429]'}`}
+                  title={hit.method !== 'GET' ? 'A direct submission, not a page load — the client never rendered this as a browser would.' : undefined}
+                >
+                  {hit.method}
+                </span>
                 <span className="font-mono text-sm text-white">{hit.ip ?? 'unknown IP'}</span>
                 <span className="text-xs text-white/40">{new Date(hit.createdAt).toLocaleString()}</span>
+                {hit.matchedUser && (
+                  <span className="text-xs uppercase tracking-[0.08em] text-[#58A6FF]" title="A session or login is on file from this IP">
+                    matches {hit.matchedUser.displayName} ({hit.matchedUser.email})
+                  </span>
+                )}
               </div>
+              {hit.path && hit.path !== '/admin' && <p className="mt-1 break-all font-mono text-xs text-white/40">{hit.path}</p>}
               {hit.userAgent && <p className="mt-1 break-all text-xs text-[#90939A]">{hit.userAgent}</p>}
               {hit.referrer && <p className="mt-1 break-all text-xs text-white/40">from {hit.referrer}</p>}
+              {hit.body && (
+                <pre className="mt-2 max-w-full overflow-x-auto whitespace-pre-wrap break-all border border-white/10 bg-black/30 p-2 text-xs text-[#F0B429]">
+                  {hit.body}
+                </pre>
+              )}
+              {hit.confirmedBenignAt && (
+                <p className="mt-1 text-xs text-[#3FB950]">✓ Confirmed benign by {hit.confirmedBenignBy} on {new Date(hit.confirmedBenignAt).toLocaleString()}</p>
+              )}
             </div>
-            {hit.ip && (
-              <button type="button" disabled={blockMutation.isPending} onClick={() => handleBlock(hit.ip!)} className="shrink-0 text-xs text-[#F85149] underline underline-offset-2 hover:text-white">
-                Block
-              </button>
-            )}
+            <div className="flex shrink-0 items-center gap-3">
+              {!hit.confirmedBenignAt && (
+                <button type="button" disabled={confirmMutation.isPending} onClick={() => confirmMutation.mutate(hit.id)} className="text-xs text-[#3FB950] underline underline-offset-2 hover:text-white">
+                  Confirm non-malicious
+                </button>
+              )}
+              {hit.ip && (
+                <button type="button" disabled={blockMutation.isPending} onClick={() => handleBlock(hit.ip!)} className="text-xs text-[#F85149] underline underline-offset-2 hover:text-white">
+                  Block
+                </button>
+              )}
+            </div>
           </div>
         ))}
       </div>

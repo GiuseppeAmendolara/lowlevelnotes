@@ -621,6 +621,7 @@ export type SecurityEventType =
   | 'rate_limit_hit'
   | 'bot_user_agent'
   | 'multi_account_ip'
+  | 'honeypot_hit'
 
 export type SecurityEvent = { eventType: SecurityEventType; ip: string | null; detail: string | null; createdAt: string }
 
@@ -639,10 +640,26 @@ export function reportSecurityEvent(type: 'content_copy' | 'text_select_large' |
   })
 }
 
-export type HoneypotHit = { path: string; ip: string | null; userAgent: string | null; referrer: string | null; createdAt: string }
+export type HoneypotHit = {
+  id: number
+  path: string
+  method: string
+  ip: string | null
+  userAgent: string | null
+  referrer: string | null
+  body: string | null
+  confirmedBenignAt: string | null
+  confirmedBenignBy: string | null
+  matchedUser: { id: number; email: string; displayName: string } | null
+  createdAt: string
+}
 
 export function getStaffHoneypotHits() {
   return authFetch<{ hits: HoneypotHit[] }>('/v1/staff/honeypot-hits')
+}
+
+export function confirmHoneypotHitBenign(id: number) {
+  return authFetch<{ message: string }>(`/v1/staff/honeypot-hits/${id}/confirm-benign`, { method: 'PUT' })
 }
 
 // -------- Staff: blocked IPs --------
