@@ -639,6 +639,12 @@ export function reportSecurityEvent(type: 'content_copy' | 'text_select_large' |
   })
 }
 
+export type HoneypotHit = { path: string; ip: string | null; userAgent: string | null; referrer: string | null; createdAt: string }
+
+export function getStaffHoneypotHits() {
+  return authFetch<{ hits: HoneypotHit[] }>('/v1/staff/honeypot-hits')
+}
+
 // -------- Staff: blocked IPs --------
 
 export function getStaffBlockedIps() {

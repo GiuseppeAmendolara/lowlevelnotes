@@ -18,6 +18,7 @@ import {
   unblockIp,
   getStaffAuditLog,
   getStaffPendingCounts,
+  getStaffHoneypotHits,
   unwrapResult,
   roleLabel,
   type Role,
@@ -27,7 +28,7 @@ import Eyebrow from '@/components/Eyebrow'
 import { useToast } from '@/components/ToastProvider'
 import { Skeleton, SkeletonRow } from '@/components/Skeleton'
 
-type Tab = 'users' | 'ips' | 'log'
+type Tab = 'users' | 'ips' | 'honeypot' | 'log'
 
 const ACTION_LABELS: Record<string, string> = {
   role_change: 'Role change',
@@ -51,6 +52,7 @@ const ROLES: Role[] = ['student', 'contributor', 'instructor', 'staff']
 const TABS: { id: Tab; label: string }[] = [
   { id: 'users', label: 'Users' },
   { id: 'ips', label: 'Blocked IPs' },
+  { id: 'honeypot', label: 'Honeypot' },
   { id: 'log', label: 'Activity log' },
 ]
 
@@ -64,22 +66,25 @@ export default function AdminPanel() {
   const { data: users } = useQuery({ queryKey: ['staffUsers'], queryFn: () => unwrapResult(getStaffUsers()) })
   const { data: ips } = useQuery({ queryKey: ['staffBlockedIps'], queryFn: () => unwrapResult(getStaffBlockedIps()) })
   const { data: pendingCounts } = useQuery({ queryKey: ['staffPendingCounts'], queryFn: () => unwrapResult(getStaffPendingCounts()) })
+  const { data: honeypotHits } = useQuery({ queryKey: ['staffHoneypotHits'], queryFn: () => unwrapResult(getStaffHoneypotHits()) })
 
   const userCount = users?.length ?? null
   const bannedCount = users ? users.filter((u) => u.bannedAt).length : null
   const ipCount = ips?.length ?? null
   const pendingTotal = pendingCounts ? pendingCounts.roleRequests + pendingCounts.resourceRequests + pendingCounts.courseRequests : null
+  const honeypotCount = honeypotHits?.hits.length ?? null
 
   return (
     <div>
       <Eyebrow>Staff</Eyebrow>
       <h1 className="mt-2 text-4xl font-bold tracking-[-0.05em] text-white">Staff</h1>
 
-      <div className="mt-8 grid grid-cols-2 gap-px border border-white/10 bg-white/10 sm:grid-cols-4">
+      <div className="mt-8 grid grid-cols-2 gap-px border border-white/10 bg-white/10 sm:grid-cols-5">
         <StatTile label="Total users" value={userCount} />
         <StatTile label="Banned" value={bannedCount} />
         <StatTile label="Blocked IPs" value={ipCount} />
         <StatTile label="Pending approvals" value={pendingTotal} accent={Boolean(pendingTotal)} />
+        <StatTile label="Honeypot hits" value={honeypotCount} accent={Boolean(honeypotCount)} />
       </div>
 
       <div className="mt-10 flex gap-2 border-b border-white/10">
@@ -100,6 +105,7 @@ export default function AdminPanel() {
       <div className="mt-8">
         {tab === 'users' && <UsersSection />}
         {tab === 'ips' && <BlockedIpsSection />}
+        {tab === 'honeypot' && <HoneypotSection />}
         {tab === 'log' && <AuditLogSection />}
       </div>
     </div>
@@ -452,6 +458,66 @@ function BlockedIpsSection() {
               {r.note && <span className="ml-3 text-xs text-[#90939A]">{r.note}</span>}
             </div>
             <button type="button" disabled={removeMutation.isPending} onClick={() => removeMutation.mutate(r.id)} className={buttonClass}>Unblock</button>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* ==================== Honeypot ==================== */
+
+// /admin (src/app/admin/page.tsx) is a decoy login page never linked from
+// anywhere on the real site — no legitimate visitor has a reason to land
+// on it, so every row here is a scanner, bot, or someone manually probing
+// for an admin panel. Read-only besides the one-click block, same reason
+// AuditLogSection is read-only: there's nothing to configure, just signal
+// to watch.
+function HoneypotSection() {
+  const queryClient = useQueryClient()
+  const toast = useToast()
+  const { data, error } = useQuery({ queryKey: ['staffHoneypotHits'], queryFn: () => unwrapResult(getStaffHoneypotHits()) })
+  const blockMutation = useMutation({
+    mutationFn: (ip: string) => unwrapResult(blockIp(ip, 'Honeypot hit')),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['staffBlockedIps'] })
+      toast.success('IP blocked.')
+    },
+    onError: (error) => toast.error(error.message),
+  })
+
+  function handleBlock(ip: string) {
+    if (!window.confirm(`Block ${ip} at the Cloudflare edge?`)) return
+    blockMutation.mutate(ip)
+  }
+
+  return (
+    <div>
+      <SectionHeading>Honeypot</SectionHeading>
+      <p className="mt-2 max-w-2xl text-sm text-[#90939A]">
+        Visits to /admin — a decoy admin login not linked anywhere on the real site. Anyone here found it by guessing, so treat every row as a scanner or bot.
+      </p>
+
+      {error && <p className="mt-4 text-sm text-[#F85149] animate-fade-in-up motion-reduce:animate-none">{error.message}</p>}
+
+      <div className="mt-6 border-l border-t border-white/10">
+        {data === undefined && !error && <SkeletonRow count={3} />}
+        {data?.hits.length === 0 && <p className="border-b border-r border-white/10 bg-[#17181B] p-4 text-sm text-[#90939A]">No hits yet.</p>}
+        {data?.hits.map((hit, i) => (
+          <div key={i} className="flex flex-wrap items-center justify-between gap-3 border-b border-r border-white/10 bg-[#17181B] p-4">
+            <div>
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="font-mono text-sm text-white">{hit.ip ?? 'unknown IP'}</span>
+                <span className="text-xs text-white/40">{new Date(hit.createdAt).toLocaleString()}</span>
+              </div>
+              {hit.userAgent && <p className="mt-1 break-all text-xs text-[#90939A]">{hit.userAgent}</p>}
+              {hit.referrer && <p className="mt-1 break-all text-xs text-white/40">from {hit.referrer}</p>}
+            </div>
+            {hit.ip && (
+              <button type="button" disabled={blockMutation.isPending} onClick={() => handleBlock(hit.ip!)} className="shrink-0 text-xs text-[#F85149] underline underline-offset-2 hover:text-white">
+                Block
+              </button>
+            )}
           </div>
         ))}
       </div>

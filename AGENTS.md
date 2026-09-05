@@ -1165,6 +1165,21 @@ main domain is scoped against — see below.
 - Students read courses, complete lessons, take quizzes, and track progress.
 - Contributors create and edit lessons. Instructors create courses, manage
   exercises, and view student statistics. Administrators have full access.
+- `/admin` (`src/app/admin/page.tsx`) is a decoy login page, unrelated to the
+  real staff panel at `/account/staff` — never linked from `Header`/`Footer`/
+  `sitemap.ts`, so anyone landing on it got there by guessing a common admin
+  path. Every visit is logged server-side (not via a client beacon, so it
+  also catches non-JS scanners) into `honeypot_hits`
+  (`worker/migrations/0027_honeypot_hits.sql`) via `POST /v1/honeypot`
+  (`worker/routes/security.js`'s `logHoneypotHitV1`, `INTERNAL_API_KEY`-gated
+  like the rest of `src/lib/api.ts`), surfaced on the staff panel's Honeypot
+  tab with a one-click block-IP action. The page's own login form never
+  transmits what's typed — only the visit is logged, not attempted
+  credentials, so a compromised table can't leak a real password someone
+  reused out of habit. Deliberately not listed in a `robots.txt` Disallow
+  (there isn't one yet) since that itself is a common way scanners discover
+  "interesting" paths; a `noindex`/`nofollow` meta tag keeps it out of search
+  results instead.
 
 ### Learning and motivation model
 
