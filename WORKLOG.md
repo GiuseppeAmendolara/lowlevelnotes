@@ -5711,3 +5711,55 @@ already-working styling pattern verbatim. `tsc`/`eslint`/`next build`
 clean, 149/149 tests still passing (no behavior change worth a new
 test — pure display logic over data two existing endpoints already
 return).
+
+## Exercise language picker: 2 options to ~85, via search (2026-09-07)
+
+User pasted Piston's full `/runtimes` response (~85 languages) and
+asked, reasonably, why the course builder's dropdown only offered two.
+The honest answer: the 2-option lock was never a Piston limitation, it
+was this app's own syntax-highlighting coverage at the time. Proposed
+three curated-list sizes; user rejected all three in favor of a better
+idea — search/autocomplete over the real full list instead of trying to
+guess a "right" subset.
+
+`src/lib/pistonLanguages.ts` — the full deduplicated language list
+(three genuine name collisions in Piston's own data: two `matl`
+versions, and `typescript`/`javascript` each listed twice under deno vs
+default runtimes; kept one entry per name). Cross-referenced every
+`@codemirror/legacy-modes` export name directly against the installed
+package (`ls node_modules/.../mode/`, then `grep "^export"` on each
+`.d.ts`) rather than guessing modes existed — caught that `haskell` got
+imported but never actually added to either the language list or the
+highlighting map on a first pass, fixed before shipping. `worker/lib/
+pistonLanguages.js` mirrors the same `value`s as a validation whitelist;
+verified the two lists match exactly via a one-off Node script parsing
+both files (not eyeballed) after every edit.
+
+`LanguagePicker.tsx` — a combobox: typing filters by label/value/alias,
+arrow keys + Enter select, click-outside closes and reverts to the last
+real selection. Critically, `onChange` only fires from an actual
+selection, never from typed text — preserves the exact "can't submit a
+typo" guarantee the old locked `<select>` gave, which is why a search
+box was safe to build instead of reopening that risk. Verified for real
+via the same isolated-preview-route + Playwright technique used earlier
+this session (no `claude-in-chrome` here): searching "c#" surfaces both
+C# variants via alias match, selecting one sets the correct canonical
+`csharp`/`csharp.net` value, keyboard nav (arrow + Enter) correctly
+selects the highlighted result, a no-match query shows "No matches",
+and click-outside reverts the input text to the current selection's
+label. Hit one real React lint rule along the way
+(`react-hooks/set-state-in-effect`) from the original "sync display text
+via useEffect when the value prop changes" approach — replaced with
+React's own recommended "adjust state during render" pattern (compare
+against a tracked `prevValue`, call `setState` directly in the render
+body when it differs) instead of suppressing the rule.
+
+`languageExtensionFor()` grew from 2 to ~35 mapped languages. New
+worker-side test in `course-authoring.test.js`: a known language
+(`python`) is accepted, a real Piston alias that isn't this app's
+canonical stored value (`c#`, vs. the stored `csharp`) is rejected —
+only reachable by calling the API directly, since `LanguagePicker` only
+ever emits a canonical value. 151/151 tests passing, worker redeployed
+(no new migration — plain validation logic, no schema change), verified
+end-to-end against production with a throwaway instructor account
+(accept/reject both confirmed for real, then deleted).

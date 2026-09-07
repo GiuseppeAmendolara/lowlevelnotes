@@ -322,6 +322,36 @@ client-side WASM/x86 emulator) and Piston was the pick either way.
   preview got its own `ExerciseReview` (parallel to its existing
   `QuizReview`) rather than reusing the now-interactive `ExerciseBody`,
   since a review pass isn't a real enrolled attempt.
+- **Language selection (2026-09-07):** originally locked to a 2-option
+  `<select>` (C#, Assembly) — the only two languages this app had
+  syntax highlighting for at the time — until the user pointed out
+  Piston's public `/runtimes` actually lists ~85 languages and asked
+  why the dropdown didn't reflect that. `src/lib/pistonLanguages.ts`
+  holds the full deduplicated list (`{value, label, aliases}` per
+  language; `value` is always Piston's own canonical name or one of its
+  real aliases, so it resolves server-side with zero translation, the
+  same way NASM's `asm` alias already did); `LanguagePicker.tsx`
+  (`src/components`) is a search/autocomplete combobox over it —
+  `onChange` only ever fires from an actual list selection (click or
+  Enter on a highlighted option), never from raw typed text, preserving
+  the original "no typo can reach Piston" guarantee a plain `<select>`
+  gave, without needing to cram 85 options into one dropdown (nothing
+  shows until you type, so the esoteric/golfing entries Piston also
+  supports cost nothing to include). `languageExtensionFor()`
+  (`codeEditorTheme.ts`) grew from 2 to ~35 mapped languages via more
+  `@codemirror/legacy-modes` imports (Python, JS/TS, Go, Rust, Ruby,
+  Haskell, SQL, and more); the remainder (PHP, Prolog, AWK, Nim, Zig,
+  the golfing languages, etc.) have no CM5-era mode to port and fall
+  through to plain-text editing, same graceful degradation as before.
+  `worker/lib/pistonLanguages.js` mirrors the frontend list's `value`s
+  as a plain whitelist `Set` (kept in sync by hand — confirmed
+  byte-for-byte via a one-off Node script comparing both files' parsed
+  arrays, not eyeballed) so `courseAccess.js`'s `validateLessonTypeFields`
+  rejects an unrecognized language even if the API is called directly,
+  not just through `LanguagePicker`. Verified against production with a
+  throwaway instructor account: a known language (`python`) is accepted,
+  a real Piston *alias* that isn't this app's canonical stored value
+  (`c#`, vs. the stored `csharp`) is correctly rejected with 400.
 - **Security boundary:** correctness of isolation is Piston's job, not this
   app's — the Worker only needs to be a disciplined caller (real timeouts,
   rate limits, never trusting output beyond the harness's own pass/fail

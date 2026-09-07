@@ -1,8 +1,38 @@
 import { tags as t } from '@lezer/highlight'
 import { createTheme } from '@uiw/codemirror-themes'
-import { StreamLanguage } from '@codemirror/language'
-import { csharp } from '@codemirror/legacy-modes/mode/clike'
+import { StreamLanguage, type StreamParser } from '@codemirror/language'
+import { csharp, cpp, c, java, kotlin, scala, dart } from '@codemirror/legacy-modes/mode/clike'
 import { gas } from '@codemirror/legacy-modes/mode/gas'
+import { go } from '@codemirror/legacy-modes/mode/go'
+import { rust } from '@codemirror/legacy-modes/mode/rust'
+import { python } from '@codemirror/legacy-modes/mode/python'
+import { javascript, typescript } from '@codemirror/legacy-modes/mode/javascript'
+import { coffeeScript } from '@codemirror/legacy-modes/mode/coffeescript'
+import { ruby } from '@codemirror/legacy-modes/mode/ruby'
+import { swift } from '@codemirror/legacy-modes/mode/swift'
+import { haskell } from '@codemirror/legacy-modes/mode/haskell'
+import { perl } from '@codemirror/legacy-modes/mode/perl'
+import { lua } from '@codemirror/legacy-modes/mode/lua'
+import { r } from '@codemirror/legacy-modes/mode/r'
+import { octave } from '@codemirror/legacy-modes/mode/octave'
+import { sqlite } from '@codemirror/legacy-modes/mode/sql'
+import { powerShell } from '@codemirror/legacy-modes/mode/powershell'
+import { pascal } from '@codemirror/legacy-modes/mode/pascal'
+import { fortran } from '@codemirror/legacy-modes/mode/fortran'
+import { vb } from '@codemirror/legacy-modes/mode/vb'
+import { cobol } from '@codemirror/legacy-modes/mode/cobol'
+import { crystal } from '@codemirror/legacy-modes/mode/crystal'
+import { groovy } from '@codemirror/legacy-modes/mode/groovy'
+import { erlang } from '@codemirror/legacy-modes/mode/erlang'
+import { verilog } from '@codemirror/legacy-modes/mode/verilog'
+import { clojure } from '@codemirror/legacy-modes/mode/clojure'
+import { oCaml, fSharp } from '@codemirror/legacy-modes/mode/mllike'
+import { commonLisp } from '@codemirror/legacy-modes/mode/commonlisp'
+import { forth } from '@codemirror/legacy-modes/mode/forth'
+import { smalltalk } from '@codemirror/legacy-modes/mode/smalltalk'
+import { julia } from '@codemirror/legacy-modes/mode/julia'
+import { shell } from '@codemirror/legacy-modes/mode/shell'
+import { d } from '@codemirror/legacy-modes/mode/d'
 import type { Extension } from '@codemirror/state'
 
 // Mirrors shikiTheme.ts's palette exactly (same site, same read-only
@@ -35,22 +65,66 @@ export const codeEditorTheme = createTheme({
   ],
 })
 
-// This app's `exercises.language` values are chosen for display, same
-// spirit as worker/lib/piston.js's PISTON_LANGUAGE_ALIASES -- CodeMirror
-// has no official lezer grammar for either C# or NASM, so this uses
-// @codemirror/legacy-modes' ported CodeMirror-5 stream parsers (clike's
-// csharp config, and gas for x86 assembly -- close enough to NASM for
-// highlighting purposes; there's no dedicated NASM stream mode).
-// Returns [] for an unrecognized language rather than throwing, so a
-// future exercise language with no highlighting support here still
-// gets a working, just plain-text, editor.
+// This app's exercise `language` values (src/lib/pistonLanguages.ts)
+// are chosen for display, same spirit as worker/lib/piston.js's
+// PISTON_LANGUAGE_ALIASES -- CodeMirror has no official lezer grammar
+// for most of these, so this uses @codemirror/legacy-modes' ported
+// CodeMirror-5 stream parsers. Not every listed language has one
+// available (the esoteric/golfing entries, PHP, Prolog, AWK, Nim, Zig,
+// V, and a few others genuinely have no CM5-era mode to port) -- those
+// fall through to [] below, which still gives a working, just
+// plain-text, editor rather than throwing.
+const LANGUAGE_PARSERS: Record<string, StreamParser<unknown>> = {
+  python,
+  python2: python,
+  javascript,
+  typescript,
+  coffeescript: coffeeScript,
+  c,
+  'c++': cpp,
+  csharp,
+  'csharp.net': csharp,
+  'fsharp.net': fSharp,
+  fsi: fSharp,
+  basic: vb,
+  'basic.net': vb,
+  java,
+  kotlin,
+  scala,
+  groovy,
+  go,
+  rust,
+  swift,
+  d,
+  dart,
+  ruby,
+  perl,
+  lua,
+  haskell,
+  erlang,
+  clojure,
+  ocaml: oCaml,
+  lisp: commonLisp,
+  julia,
+  rscript: r,
+  octave,
+  sqlite3: sqlite,
+  bash: shell,
+  dash: shell,
+  powershell: powerShell,
+  asm: gas,
+  asm64: gas,
+  iverilog: verilog,
+  cobol,
+  fortran,
+  pascal,
+  forth,
+  smalltalk,
+  crystal,
+}
+
 export function languageExtensionFor(language: string | null): Extension[] {
-  switch (language) {
-    case 'csharp':
-      return [StreamLanguage.define(csharp)]
-    case 'asm':
-      return [StreamLanguage.define(gas)]
-    default:
-      return []
-  }
+  if (!language) return []
+  const parser = LANGUAGE_PARSERS[language]
+  return parser ? [StreamLanguage.define(parser)] : []
 }

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import ActionButton from '@/components/ActionButton'
+import LanguagePicker from '@/components/LanguagePicker'
 import Eyebrow from '@/components/Eyebrow'
 import { useSession } from '@/components/SessionProvider'
 import { useToast } from '@/components/ToastProvider'
@@ -1024,11 +1025,7 @@ function LessonEditor({
 
           <div className="flex flex-col gap-1">
             <label className={labelClass} htmlFor="exercise-language">Language</label>
-            <select id="exercise-language" value={language} onChange={(e) => setLanguage(e.target.value)} required className={`${inputClass} w-full`}>
-              <option value="" disabled>Select a language…</option>
-              <option value="csharp">C#</option>
-              <option value="asm">Assembly (NASM)</option>
-            </select>
+            <LanguagePicker id="exercise-language" value={language} onChange={setLanguage} />
           </div>
 
           <div className="flex flex-col gap-1">
