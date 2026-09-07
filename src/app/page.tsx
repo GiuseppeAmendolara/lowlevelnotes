@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import CodeBlock from '@/components/CodeBlock'
+import HomeCodeDemo from '@/components/HomeCodeDemo'
 import HeroBackground from '@/components/HeroBackground'
 import HomeExplore from '@/components/HomeExplore'
 import ScrollReveal from '@/components/ScrollReveal'
@@ -130,13 +130,16 @@ export default async function Home() {
       <section className="border-y border-white/10 bg-[#17181B]">
         <ScrollReveal className="mx-auto grid max-w-6xl gap-12 px-6 py-16 sm:py-20 lg:grid-cols-2 lg:items-center">
           <div className="order-2 lg:order-1">
-            <Eyebrow>Straight from the notes</Eyebrow>
-            <h2 className="mt-4 max-w-lg text-3xl font-bold tracking-[-0.05em] text-white sm:text-4xl">Code samples</h2>
-            <p className="mt-4 max-w-md leading-7 text-[#90939A]">Written from a developer&apos;s point of view, line by line, and shaped by feedback from the community.</p>
+            <Eyebrow>Learn by doing</Eyebrow>
+            <h2 className="mt-4 max-w-lg text-3xl font-bold tracking-[-0.05em] text-white sm:text-4xl">Run your solution</h2>
+            <p className="mt-4 max-w-md leading-7 text-[#90939A]">
+              Write your solution, hit Run, and see it pass or fail against real test
+              cases.
+            </p>
           </div>
 
           <div className="order-1 min-w-0 lg:order-2">
-            <CodeBlock code={csharpSnippet} lang="csharp" filename="Program.cs" />
+            <HomeCodeDemo code={csharpSnippet} />
           </div>
         </ScrollReveal>
       </section>
