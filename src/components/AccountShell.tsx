@@ -72,6 +72,7 @@ export default function AccountShell({ children }: { children: React.ReactNode }
   // wins). Leaving the page while `user` is still (stale) truthy means
   // none of them ever observe the logged-out state, so nothing fires.
   async function handleLogout() {
+    if (!window.confirm('Log out?')) return
     await logout()
     router.push('/')
     await refresh()

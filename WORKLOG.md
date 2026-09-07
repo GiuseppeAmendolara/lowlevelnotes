@@ -5565,3 +5565,149 @@ back `{"compile":{"wallTimeMs":425,...},"run":{"wallTimeMs":11,...}}` —
 genuinely distinct numbers, confirming the duplicate-suppression logic
 doesn't accidentally suppress the real case too. 145/145 still passing,
 `tsc`/`eslint`/`next build` all clean, worker redeployed.
+
+## Wired exercise passes into achievements (2026-09-07)
+
+After confirming the whole "take it to the next level" roadmap was now
+done, asked what's next; recommended this alongside finally enforcing
+CSP. User said hold off on CSP for now ("It's not ready" — checked
+`csp_reports` first, 141 script-src + 60 script-src-elem violations in
+3 days, so that reluctance tracks) and green-lit this one: closing the
+"exercise results achievements" gap AGENTS.md's own End-Phase plan
+explicitly left out when exercise execution shipped.
+
+`migrations/0040_first_exercise_achievement.sql` — added
+`'first_exercise_complete'` to `achievements.criteria_type` via the same
+proven-safe rename-away/recreate procedure 0022 and 0037 already used
+(SQLite can't ALTER a CHECK constraint, and a bare DROP+CREATE on a
+table with a CASCADE child reproduces the D1 cascade-delete bug from
+0014/0019), seeded a new "First Pass" achievement (slug
+`first-exercise`, position 9). `computeAchievementStatsV1`
+(`worker/routes/profile.js`) counts `exercise_attempts WHERE passed = 1`;
+`achievementSatisfies` unlocks on `>= 1`, same one-shot-boolean shape as
+`first_lesson_complete`/`first_quiz_complete` (no progress bar).
+`evaluateAchievementsV1` already ran on every exercise submission that
+passed (`submitExerciseV1`), so no new call site was needed — purely a
+schema + stats-function change. `AchievementTile.tsx`'s per-slug icon
+map got `'first-exercise': PlayIcon` (already existed, unused
+elsewhere on this page — a natural fit for "ran code").
+
+Two new assertions in the existing `exercise-submission.test.js` tests
+(not new test files — extended the pass/fail cases already there):
+confirms `first-exercise` unlocks on a pass, confirms it does *not*
+unlock on a fail. 145/145 still passing (same count — extended existing
+tests, didn't add new ones). Migration applied to production
+(achievements: 9→10 rows, user_achievements: 11 rows preserved through
+the recreate), worker redeployed, verified end-to-end with a throwaway
+QA account: a real passing submission unlocked both "First Lesson" and
+"First Pass" (the exercise lesson completing counts toward
+`first_lesson_complete` too, since that's just "any lesson_progress row
+completed" — expected, not a bug). QA account deleted after.
+
+Also corrected two stale bits in `project_platform_roadmap_2026_09`
+memory while in there: the "expand test coverage" item was actually
+finished the same day it was written (just later that day), and #3
+(code execution) is obviously done now too.
+
+## Six UX fixes in one pass (2026-09-07)
+
+User filed six separate complaints in one message. Explored each area
+directly (no subagents — already had file:line root causes) before
+entering plan mode; two real product decisions confirmed via
+AskUserQuestion rather than assumed: XP/level hides on `/u/[id]` when a
+profile is anonymous (achievements stay always-shown, XP/level doesn't
+— a genuine divergence, not an oversight), and the exercise builder's
+free-text "Language" field became a locked `<select>` (C#/Assembly
+only) since a typo there silently breaks Piston execution.
+
+1. **Notification unread badge — already existed**, no work needed.
+   **Clearable — built.** Notifications are synthesized on the fly, not
+   stored, so there's nothing to delete; added `notification_dismissals`
+   (migration `0041`) keyed by a stable `type:ref:at` string, a new
+   `POST /v1/me/notifications/dismiss` endpoint (one call handles both
+   a single dismiss and "Clear all"), and per-row "×" + header "Clear
+   all" in `NotificationBell.tsx`. 4 new tests.
+2. **Avatar border** — `border border-[#FF7A33]` added to both the
+   image and initial-letter fallback in `Header.tsx`. Square, not
+   round — matches the site's existing avatar treatment everywhere else.
+3. **`/account/contribute` tabs** — copied `AdminPanel.tsx`'s tab bar
+   pattern almost verbatim; "Resource Requests" / "Build Courses",
+   only rendered when the user can actually build courses (a
+   student-only view still has nothing to tab between).
+4. **Exercise builder layout — root cause found, not guessed.** The
+   quiz section's inputs explicitly add `flex-1` to stretch in a flex
+   row; exercise's fields had neither `flex-1` nor `w-full`, so they
+   rendered at the browser's intrinsic (small) textarea/input width.
+   Added `w-full` to all five fields, a visible `<label>` above each
+   (previously placeholder-only, which disappears once you start
+   typing), and converted the free-text language input to the locked
+   `<select>` above. Verified visually via a temporary, unauthenticated
+   preview route (`src/app/dev-preview-exercise`, reproducing the exact
+   JSX/classNames with local state, deleted after) + a local headless
+   Chromium screenshot — full-width fields, legible labels, working
+   dropdown, confirmed.
+5. **`/u/[id]`: Level/XP + anonymous-mode indicator.** XP/level already
+   existed on the leaderboard and the owner-only `/account/courses`
+   stats but never on the public profile itself. `getUserProfileV1` now
+   computes it the same way (`xpToLevel()`), hidden when `isAnonymous`.
+   Added an owner-only banner reusing the existing `getAnonymousMode()`
+   (already used on `/account/security`) — "Anonymous mode is ON/OFF —
+   others can/can't see your name, photo, XP..." with a link to change
+   it. Leaderboard needed no change — confirmed by reading
+   `getLeaderboardV1` directly that it already shows xp/level regardless
+   of `anonymous_mode`, which is the behavior the user described as the
+   reference exception. New tests extend `anonymous-mode.test.js`'s
+   existing three-viewer-perspective suite (third party/owner/staff)
+   rather than adding a new file.
+6. **Logout confirmation** — `if (!window.confirm('Log out?')) return`
+   as the first line of `AccountShell.tsx`'s `handleLogout`, matching
+   the exact `window.confirm(...)` pattern already used at six other
+   destructive-action call sites in this codebase (delete course/user/
+   lesson/module/group, block IP, unenroll) — no new modal component.
+
+**Verified for real, not just typechecked.** Migration `0041` applied
+to production, worker redeployed. A throwaway QA account (created and
+deleted the same way as every other feature this session) confirmed
+end-to-end against production: XP/level visible to self, `null` to a
+third-party viewer once anonymous mode is on, still real on the
+leaderboard for that same anonymized user; a real achievement-unlock
+notification dismissed via the new endpoint disappeared from the list
+and zeroed the unseen count. The user's own local dev server (which had
+already been reflecting these changes) had stopped running by the time
+of this check — started a temporary one instead for the exercise-layout
+screenshot, same technique as earlier sessions' Piston/CodeMirror
+verification passes.
+
+**Structural note for next time:** none of items 1/3/4/5/6 could be
+browser-verified against a *real logged-in session* locally — every one
+needs auth, and `SameSite=Strict` on the session cookie means a fetch
+from `localhost` to `api.lowlevelnotes.com` is cross-site regardless of
+whose browser it is or how the cookie got there (confirmed by reasoning
+through the cookie attributes directly, not assumed). The only way to
+browser-verify an authenticated page for real is against the actual
+deployed frontend post-push, or an isolated unauthenticated preview
+route with faked props/state (used for item 4 above) — that only proves
+the markup/CSS, not the real data-fetching path, which is why the
+throwaway-QA-account + curl approach carried the actual correctness
+verification here instead.
+
+149/149 tests passing, `tsc`/`eslint`/`next build` all clean. Frontend
+changes need a user commit+push (per standing instruction, never run
+`git commit` myself) before they reach production.
+
+## Honeypot: grey out already-blocked IPs (2026-09-07)
+
+Small follow-up: `HoneypotSection` (`AdminPanel.tsx`) already greys out
+a confirmed-benign hit (`opacity-50`); extended the same treatment to
+any hit whose IP is already in the Blocked IPs list, and swapped its
+"Block" button for a plain "Blocked" label in that case (no point
+letting staff click Block again). Reuses the exact `['staffBlockedIps']`
+query key `BlockedIpsSection`/`AdminPanel` itself already registers —
+React Query dedupes it into the same shared cache entry, so this is one
+new `useQuery` call and a `Set` membership check, no new request. Not
+browser-verified (staff-only page, same auth-can't-test-locally
+constraint as the six-fixes entry above) — low risk, reuses an
+already-working styling pattern verbatim. `tsc`/`eslint`/`next build`
+clean, 149/149 tests still passing (no behavior change worth a new
+test — pure display logic over data two existing endpoints already
+return).

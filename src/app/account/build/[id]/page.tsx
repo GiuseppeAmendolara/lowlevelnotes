@@ -44,6 +44,7 @@ import {
 // duplicated rather than shared, matching this app's existing
 // low-abstraction convention.
 const inputClass = "border border-white/15 bg-[#17181B] px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none"
+const labelClass = "text-xs font-medium uppercase tracking-[0.1em] text-white/40"
 // Lighter-on-darker, for controls sitting on a bg-[#17181B] row rather
 // than the page background — same reasoning as AdminPanel.tsx's
 // rowInputClass, applied one level deeper here (module row -> lesson row
@@ -1015,20 +1016,42 @@ function LessonEditor({
       )}
 
       {type === 'exercise' && (
-        <div className="flex flex-col gap-3">
-          <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} required rows={4} placeholder="Prompt" className={`${inputClass} resize-y`} />
-          <input value={language} onChange={(e) => setLanguage(e.target.value)} placeholder="Language (e.g. c, asm)" className={inputClass} />
-          <textarea value={starterCode} onChange={(e) => setStarterCode(e.target.value)} rows={6} placeholder="Starter code" className={`${inputClass} resize-y font-mono`} />
-          <textarea value={solutionNotes} onChange={(e) => setSolutionNotes(e.target.value)} rows={4} placeholder="Solution notes" className={`${inputClass} resize-y`} />
-          <div>
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <label className={labelClass} htmlFor="exercise-prompt">Prompt</label>
+            <textarea id="exercise-prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} required rows={4} placeholder="What should the student write?" className={`${inputClass} w-full resize-y`} />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className={labelClass} htmlFor="exercise-language">Language</label>
+            <select id="exercise-language" value={language} onChange={(e) => setLanguage(e.target.value)} required className={`${inputClass} w-full`}>
+              <option value="" disabled>Select a language…</option>
+              <option value="csharp">C#</option>
+              <option value="asm">Assembly (NASM)</option>
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className={labelClass} htmlFor="exercise-starter">Starter code</label>
+            <textarea id="exercise-starter" value={starterCode} onChange={(e) => setStarterCode(e.target.value)} rows={6} placeholder="Shown to students as a starting point" className={`${inputClass} w-full resize-y font-mono`} />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className={labelClass} htmlFor="exercise-solution-notes">Solution notes</label>
+            <textarea id="exercise-solution-notes" value={solutionNotes} onChange={(e) => setSolutionNotes(e.target.value)} rows={4} placeholder="Revealed to students who ask for the solution" className={`${inputClass} w-full resize-y`} />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className={labelClass} htmlFor="exercise-harness">Test harness</label>
             <textarea
+              id="exercise-harness"
               value={testHarness}
               onChange={(e) => setTestHarness(e.target.value)}
               rows={8}
-              placeholder="Test harness — code that calls the student's submission, feeds it fixed inputs, and exits 0 on pass / nonzero on fail"
-              className={`${inputClass} resize-y font-mono`}
+              placeholder="Code that calls the student's submission, feeds it fixed inputs, and exits 0 on pass / nonzero on fail"
+              className={`${inputClass} w-full resize-y font-mono`}
             />
-            <p className="mt-1 text-xs text-white/40">
+            <p className="text-xs text-white/40">
               Appended after the student&rsquo;s code and run together on submit. Never shown to students. Leave blank to let any exit-0 submission pass.
             </p>
           </div>

@@ -436,6 +436,11 @@ export type UserProfile = {
   // current viewer — never true for the owner viewing their own profile
   // or for staff, who always see real data regardless of the setting.
   isAnonymous: boolean
+  // null exactly when isAnonymous is true (unlike achievements, which
+  // always show) -- the leaderboard is the one place XP/level shows
+  // regardless of anonymous_mode.
+  xp: number | null
+  level: number | null
 }
 
 export function getUserProfile(id: number) {
@@ -464,11 +469,12 @@ export function setAnonymizeCourseAuthorship(enabled: boolean) {
   })
 }
 
-export type Notification =
+export type Notification = { key: string } & (
   | { type: 'achievement_unlocked'; at: string; title: string; slug: string }
   | { type: 'course_approved'; at: string; courseId: number; courseTitle: string }
   | { type: 'course_rejected'; at: string; courseId: number; courseTitle: string; reason: string | null }
   | { type: 'added_as_coauthor'; at: string; courseId: number; courseTitle: string }
+)
 
 export type MyNotifications = {
   unseenCount: number
@@ -481,6 +487,13 @@ export function getMyNotifications() {
 
 export function markNotificationsSeen() {
   return authFetch<{ message: string }>('/v1/me/notifications/seen', { method: 'POST' })
+}
+
+export function dismissNotifications(keys: string[]) {
+  return authFetch<{ message: string }>('/v1/me/notifications/dismiss', {
+    method: 'POST',
+    body: JSON.stringify({ keys }),
+  })
 }
 
 export function updateMyProfile(displayName: string, bio: string) {

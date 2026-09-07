@@ -98,10 +98,52 @@ export default function ContributePage() {
 
   const canBuild = user.role === 'instructor' || user.role === 'staff'
 
+  if (!canBuild) {
+    return (
+      <div>
+        <ResourceRequestPanel />
+      </div>
+    )
+  }
+
+  return <ContributeTabs />
+}
+
+type ContributeTab = 'requests' | 'build'
+
+// Only reachable for instructor/staff (the two-section case) — a
+// student-only view has nothing to tab between. Same tab-bar pattern as
+// AdminPanel.tsx, so this and /account/staff don't look like two
+// different products for the same interaction.
+function ContributeTabs() {
+  const [tab, setTab] = useState<ContributeTab>('requests')
+
+  const TABS: { id: ContributeTab; label: string }[] = [
+    { id: 'requests', label: 'Resource Requests' },
+    { id: 'build', label: 'Build Courses' },
+  ]
+
   return (
     <div>
-      <ResourceRequestPanel />
-      {canBuild && <CourseBuildSection />}
+      <div className="flex flex-wrap gap-2 border-b border-white/10">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => setTab(t.id)}
+            className={`-mb-px border-b-2 px-1 py-3 text-xs font-medium uppercase tracking-[0.1em] transition-colors ${
+              tab === t.id ? 'border-[#FF7A33] text-white' : 'border-transparent text-[#90939A] hover:text-white'
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-8">
+        {tab === 'requests' && <ResourceRequestPanel />}
+        {tab === 'build' && <CourseBuildSection />}
+      </div>
     </div>
   )
 }
@@ -370,7 +412,7 @@ function CourseBuildSection() {
   }
 
   return (
-    <div className="mt-16 border-t border-white/10 pt-10">
+    <div>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <Eyebrow as="h2">Manage courses</Eyebrow>
         <Link href="/account/build/groups" className="text-sm text-white/70 underline underline-offset-2 transition-colors hover:text-white">

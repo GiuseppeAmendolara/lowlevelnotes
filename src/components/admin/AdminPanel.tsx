@@ -541,6 +541,11 @@ function HoneypotSection() {
   const queryClient = useQueryClient()
   const toast = useToast()
   const { data, error } = useQuery({ queryKey: ['staffHoneypotHits'], queryFn: () => unwrapResult(getStaffHoneypotHits()) })
+  // Same query key as BlockedIpsSection/AdminPanel's own top-level call —
+  // React Query dedupes these into one shared cache entry rather than
+  // needing an onXLoaded callback to lift the data up here.
+  const { data: blockedIps } = useQuery({ queryKey: ['staffBlockedIps'], queryFn: () => unwrapResult(getStaffBlockedIps()) })
+  const blockedIpSet = new Set(blockedIps?.map((r) => r.ip))
 
   function invalidateHits() {
     return queryClient.invalidateQueries({ queryKey: ['staffHoneypotHits'] })
@@ -584,8 +589,10 @@ function HoneypotSection() {
       <div className="mt-6 border-l border-t border-white/10">
         {data === undefined && !error && <SkeletonRow count={3} />}
         {data?.hits.length === 0 && <p className="border-b border-r border-white/10 bg-[#17181B] p-4 text-sm text-[#90939A]">No hits yet.</p>}
-        {data?.hits.map((hit) => (
-          <div key={hit.id} className={`flex flex-wrap items-center justify-between gap-3 border-b border-r border-white/10 bg-[#17181B] p-4 ${hit.confirmedBenignAt ? 'opacity-50' : ''}`}>
+        {data?.hits.map((hit) => {
+          const isBlocked = Boolean(hit.ip && blockedIpSet.has(hit.ip))
+          return (
+          <div key={hit.id} className={`flex flex-wrap items-center justify-between gap-3 border-b border-r border-white/10 bg-[#17181B] p-4 ${hit.confirmedBenignAt || isBlocked ? 'opacity-50' : ''}`}>
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-3">
                 <span
@@ -621,13 +628,18 @@ function HoneypotSection() {
                 </button>
               )}
               {hit.ip && (
-                <button type="button" disabled={blockMutation.isPending} onClick={() => handleBlock(hit.ip!)} className="text-xs text-[#F85149] underline underline-offset-2 hover:text-white">
-                  Block
-                </button>
+                isBlocked ? (
+                  <span className="text-xs text-white/40">Blocked</span>
+                ) : (
+                  <button type="button" disabled={blockMutation.isPending} onClick={() => handleBlock(hit.ip!)} className="text-xs text-[#F85149] underline underline-offset-2 hover:text-white">
+                    Block
+                  </button>
+                )
               )}
             </div>
           </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )

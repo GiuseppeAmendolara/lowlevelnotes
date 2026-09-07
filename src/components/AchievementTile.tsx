@@ -10,6 +10,7 @@ import {
   FlameIcon,
   BookIcon,
   ZapIcon,
+  PlayIcon,
 } from '@/components/icons'
 
 // One in-house Octicon per achievement, keyed by slug -- same treatment
@@ -26,6 +27,7 @@ const achievementIcons: Record<string, ComponentType<{ className?: string; style
   'streak-7': FlameIcon,
   bookworm: BookIcon,
   'level-5': ZapIcon,
+  'first-exercise': PlayIcon,
 }
 
 export default function AchievementTile({ achievement }: { achievement: UserAchievement }) {

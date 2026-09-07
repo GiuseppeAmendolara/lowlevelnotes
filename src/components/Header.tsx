@@ -59,9 +59,9 @@ export default function Header() {
                 >
                   {user.avatarUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element -- cross-subdomain, session-cookie-gated asset; next/image can't proxy this
-                    <img src={getAssetSrc(user.avatarUrl)} alt="" className="h-5 w-5 shrink-0 object-cover" />
+                    <img src={getAssetSrc(user.avatarUrl)} alt="" className="h-5 w-5 shrink-0 border border-[#FF7A33] object-cover" />
                   ) : (
-                    <span aria-hidden="true" className="flex h-5 w-5 shrink-0 items-center justify-center bg-white/10 text-[9px] font-bold normal-case text-white/60">
+                    <span aria-hidden="true" className="flex h-5 w-5 shrink-0 items-center justify-center border border-[#FF7A33] bg-white/10 text-[9px] font-bold normal-case text-white/60">
                       {user.displayName.slice(0, 1).toUpperCase()}
                     </span>
                   )}

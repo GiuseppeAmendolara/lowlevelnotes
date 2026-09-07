@@ -272,9 +272,18 @@ client-side WASM/x86 emulator) and Piston was the pick either way.
   whole point is correct code, not just an attempt. `test_harness` is
   never sent to students: `mapExercise` (student-facing, `getLessonV1`)
   omits it; only `mapExerciseForInstructor` (author/staff-facing,
-  `getMyCourseV1`) includes it. Achievements still use only the original
-  Phase 9 `criteria_type`s — no `exercise_*` criteria added yet, so
-  exercise attempts don't unlock anything new on their own for now.
+  `getMyCourseV1`) includes it. **Achievements (2026-09-07):**
+  `migrations/0040_first_exercise_achievement.sql` added
+  `'first_exercise_complete'` to `achievements.criteria_type` (same
+  proven-safe rename-away/recreate procedure as 0022's and 0037's own
+  additions) and seeded a "First Pass" achievement, unlocking on any
+  passing exercise via the existing `evaluateAchievementsV1` call in
+  `submitExerciseV1` — no new call site needed, it already ran on every
+  submission. `computeAchievementStatsV1` (`worker/routes/profile.js`)
+  counts `exercise_attempts WHERE passed = 1`; one-shot boolean like
+  `first_lesson_complete`/`first_quiz_complete`, so no numeric progress
+  bar. `AchievementTile.tsx`'s per-slug icon map got `'first-exercise':
+  PlayIcon`.
 - **Frontend:** `ExerciseBody` (`src/components/lesson/
   LessonContentViews.tsx`) is now interactive — originally shipped as a
   plain `<textarea>` to avoid a new dependency, upgraded to a real
@@ -906,6 +915,26 @@ These are planning notes, not authorization to begin future phases early.
     that the approval event ties to the real `reviewed_at` rather than
     `updated_at`, and that adding a co-author doesn't notify the person
     who did the adding).
+  - **Clearable, added 2026-09-07.** Since events are synthesized on the
+    fly, not stored, there's nothing to delete when a user dismisses one
+    — instead `notification_dismissals` (migration
+    `0041_notification_dismissals.sql`; `user_id`, `event_key`,
+    `UNIQUE(user_id, event_key)`) tracks which synthetic events a user
+    has hidden. `getRecentNotificationEventsV1` now attaches a stable
+    `` `${type}:${slug ?? courseId}:${at}` `` key to every event
+    (`at` disambiguates a course being reviewed more than once — a fresh
+    review is a fresh notification, not still-matching an old
+    dismissal); `getMyNotificationsV1` filters dismissed keys out before
+    slicing to 20 or computing `unseenCount`. One endpoint,
+    `POST /v1/me/notifications/dismiss` (`dismissNotificationsV1`, body
+    `{ keys: string[] }`), handles both a single dismiss and "Clear
+    all" (pass every currently-loaded key) — no separate bulk
+    endpoint needed. `NotificationBell.tsx` optimistically removes
+    dismissed items from the React Query cache the same
+    fire-and-forget-on-failure way `markNotificationsSeen` already
+    does — dismissing is only reachable with the dropdown open, which
+    already zeroed `unseenCount`, so no extra bookkeeping needed there.
+    4 new tests in `notifications.test.js`.
   - Same conversation also flagged, then corrected, a claimed empty-state
     gap: the achievements grid on a profile looked like it might render
     blank with nothing unlocked, but `getAchievementsForUserV1` always
@@ -1821,7 +1850,17 @@ main domain is scoped against — see below.
   shape from the first: `courses.icon_glyph` is read throughout the
   codebase but no tracked migration ever adds it — confirmed against the
   real production schema, patched in `worker/test/setup.js` at the time,
-  not fixed for real yet. See WORKLOG's "Opt-in anonymous mode" entry for
+  not fixed for real yet. **XP/level added to the profile page
+  (2026-09-07)** — `getUserProfileV1` now returns `xp`/`level`
+  (`xpToLevel()`, same as the leaderboard/statistics already compute),
+  `null` exactly when `isAnonymous` is true. This is the one place
+  profile visibility diverges from achievements on the same page:
+  achievements always show regardless of `anonymous_mode` (see the
+  in-app-notifications entry above — "not personally identifying"), but
+  XP/level hides alongside name/avatar/bio here — confirmed with the
+  user rather than assumed, specifically to keep the leaderboard as the
+  one place XP/level shows regardless of the setting, not the profile
+  page too. See WORKLOG's "Opt-in anonymous mode" entry for
   the full design and the three scoping questions asked before writing
   any code. **Fixed for real 2026-09-06** (same day, later) together with
   the four-table gap above: `worker/migrations/0000_pre_migration_baseline_tables.sql`

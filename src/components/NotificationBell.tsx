@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useSession } from './SessionProvider'
-import { getMyNotifications, markNotificationsSeen, unwrapResult, type Notification } from '@/lib/authClient'
+import { getMyNotifications, markNotificationsSeen, dismissNotifications, unwrapResult, type Notification } from '@/lib/authClient'
 import { BellIcon } from './icons'
 
 // Same "feels live without a push subscription" tradeoff as
@@ -66,6 +66,28 @@ export default function NotificationBell() {
     }
   }
 
+  // Dismissing is only reachable with the dropdown already open, which
+  // means handleToggle already zeroed unseenCount above — no need to
+  // touch it here too. Same fire-and-forget style as markNotificationsSeen:
+  // optimistic locally, no rollback on failure (a stray un-dismissed
+  // notification reappearing on the next poll is a harmless failure mode).
+  function handleDismiss(e: React.MouseEvent, key: string) {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!data) return
+    queryClient.setQueryData(['myNotifications'], { ...data, notifications: data.notifications.filter((n) => n.key !== key) })
+    dismissNotifications([key]).catch(() => {})
+  }
+
+  function handleClearAll(e: React.MouseEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!data || data.notifications.length === 0) return
+    const keys = data.notifications.map((n) => n.key)
+    queryClient.setQueryData(['myNotifications'], { ...data, notifications: [] })
+    dismissNotifications(keys).catch(() => {})
+  }
+
   if (!user) return null
 
   return (
@@ -89,23 +111,38 @@ export default function NotificationBell() {
 
       {open && (
         <div className="absolute right-0 top-full z-50 mt-3 w-80 border border-white/10 bg-[#17181B] shadow-xl">
-          <p className="border-b border-white/10 px-4 py-3 text-xs font-medium uppercase tracking-[0.12em] text-white/40">Notifications</p>
+          <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+            <p className="text-xs font-medium uppercase tracking-[0.12em] text-white/40">Notifications</p>
+            {data && data.notifications.length > 0 && (
+              <button type="button" onClick={handleClearAll} className="text-xs font-medium text-white/40 transition-colors hover:text-white">
+                Clear all
+              </button>
+            )}
+          </div>
           {!data || data.notifications.length === 0 ? (
             <p className="p-4 text-sm text-[#90939A]">Nothing yet.</p>
           ) : (
             <ul className="max-h-96 overflow-y-auto">
-              {data.notifications.map((n, i) => {
+              {data.notifications.map((n) => {
                 const { line, sub } = copy(n)
                 return (
-                  <li key={`${n.type}-${n.at}-${i}`} className="border-b border-white/5 last:border-0">
+                  <li key={n.key} className="group relative border-b border-white/5 last:border-0">
                     <Link
                       href={href(n, user.id)}
                       onClick={() => setOpen(false)}
-                      className="block px-4 py-3 text-sm text-white/80 transition-colors hover:bg-white/5 hover:text-white"
+                      className="block px-4 py-3 pr-9 text-sm text-white/80 transition-colors hover:bg-white/5 hover:text-white"
                     >
                       {line}
                       {sub && <span className="mt-1 block text-xs text-[#90939A]">{sub}</span>}
                     </Link>
+                    <button
+                      type="button"
+                      aria-label="Dismiss notification"
+                      onClick={(e) => handleDismiss(e, n.key)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 px-1.5 py-1 text-white/30 opacity-0 transition-opacity hover:text-white group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF7A33]"
+                    >
+                      ×
+                    </button>
                   </li>
                 )
               })}

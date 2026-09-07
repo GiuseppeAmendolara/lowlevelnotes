@@ -2,13 +2,14 @@
 
 import { use, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useSession } from '@/components/SessionProvider'
 import { useToast } from '@/components/ToastProvider'
 import AchievementTile from '@/components/AchievementTile'
 import AuthSubmitButton from '@/components/auth/AuthSubmitButton'
 import { Skeleton } from '@/components/Skeleton'
-import { getUserProfile, updateMyProfile, uploadMyAvatar, unwrapResult, getAssetSrc, roleLabel, type UserProfile } from '@/lib/authClient'
+import { getUserProfile, updateMyProfile, uploadMyAvatar, getAnonymousMode, unwrapResult, getAssetSrc, roleLabel, type UserProfile } from '@/lib/authClient'
 import Eyebrow from '@/components/Eyebrow'
 import AccountShell from '@/components/AccountShell'
 
@@ -160,8 +161,16 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
               <Eyebrow>{roleLabel(profile.role)}</Eyebrow>
               <h1 className="mt-1 text-3xl font-bold tracking-[-0.04em] text-white sm:text-4xl">{profile.displayName}</h1>
               <p className="mt-1 text-xs text-white/40">Joined {new Date(profile.joinedAt).toLocaleDateString()}</p>
+              {profile.level !== null && profile.xp !== null && (
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="shrink-0 border border-white/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-white/50">Lv {profile.level}</span>
+                  <span className="shrink-0 text-sm font-bold tabular-nums text-white">{profile.xp.toLocaleString()} XP</span>
+                </div>
+              )}
             </div>
           </div>
+
+          {isOwnProfile && <AnonymousModeIndicator />}
 
           {isOwnProfile ? (
             <form onSubmit={handleSaveProfile} className="mt-6 flex max-w-xl flex-col gap-3">
@@ -245,5 +254,25 @@ function ProfileSkeleton() {
         </div>
       </div>
     </div>
+  )
+}
+
+// Owner-only reassurance that anonymous_mode is actually doing what it
+// says — the setting itself lives on /account/security, but nothing on
+// this page (the thing it's protecting) previously said whether it was
+// even on. Reuses the same getAnonymousMode() that page already calls.
+function AnonymousModeIndicator() {
+  const { data } = useQuery({ queryKey: ['anonymousMode'], queryFn: () => unwrapResult(getAnonymousMode()) })
+  if (!data) return null
+
+  return (
+    <p className={`mt-4 max-w-xl border px-3 py-2 text-xs leading-5 ${data.enabled ? 'border-[#3FB950]/30 bg-[#3FB950]/5 text-[#3FB950]' : 'border-white/10 bg-white/5 text-white/50'}`}>
+      {data.enabled
+        ? 'Anonymous mode is ON — others can’t see your name, photo, XP, or level here.'
+        : 'Anonymous mode is OFF — your name, photo, XP, and level are visible to other users.'}{' '}
+      <Link href="/account/security" className="underline underline-offset-2 hover:text-white">
+        Change this
+      </Link>
+    </p>
   )
 }
