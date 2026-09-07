@@ -12,26 +12,33 @@ import { codeEditorTheme, languageExtensionFor } from '@/lib/codeEditorTheme'
 // an unauthenticated code-execution endpoint on the site's most
 // trafficked, logged-out page -- real execution stays gated behind
 // session + enrollment (see AGENTS.md's "End-Phase -- Exercises").
-// The canned stats below are realistic magnitudes (compile ~400ms,
-// run ~10ms for a similarly small C# program), not literally sourced
-// from a live run.
+// "Passed" only ever fires for an exact match against the original
+// snippet -- anything edited gets a "NICE TRY" instead, so editing the
+// code doesn't produce a canned-but-wrong "it passed!" that would make
+// this feel like it's actually executing arbitrary input.
 const MOCK_STDOUT = 'Hello World!\n'
 const MOCK_COMPILE = '412ms wall / 401ms cpu, 63.4 MB'
 const MOCK_RUN = '9ms wall / 7ms cpu, 8.6 MB'
 const RUN_DELAY_MS = 700
 
+type Result = 'idle' | 'passed' | 'tampered'
+
 export default function HomeCodeDemo({ code: initialCode }: { code: string }) {
-  const [code, setCode] = useState(() => initialCode.trim())
+  const original = initialCode.trim()
+  const [code, setCode] = useState(original)
   const [running, setRunning] = useState(false)
-  const [ranOnce, setRanOnce] = useState(false)
+  const [result, setResult] = useState<Result>('idle')
 
   function handleRun() {
     setRunning(true)
     setTimeout(() => {
       setRunning(false)
-      setRanOnce(true)
+      setResult(code === original ? 'passed' : 'tampered')
     }, RUN_DELAY_MS)
   }
+
+  const revealed = result !== 'idle'
+  const passed = result === 'passed'
 
   return (
     <div>
@@ -53,17 +60,27 @@ export default function HomeCodeDemo({ code: initialCode }: { code: string }) {
       {/* Always mounted, at full final size, from first render -- reveals via
           opacity only so the page never reflows/jumps when Run finishes. */}
       <div
-        aria-hidden={!ranOnce}
+        aria-hidden={!revealed}
         className={`mt-4 border p-4 text-xs transition-opacity duration-300 ${
-          ranOnce ? 'border-[#3FB950]/40 bg-[#3FB950]/5 opacity-100' : 'border-transparent opacity-0'
+          revealed ? (passed ? 'border-[#3FB950]/40 bg-[#3FB950]/5' : 'border-[#F85149]/40 bg-[#F85149]/5') + ' opacity-100' : 'border-transparent opacity-0'
         }`}
       >
-        <p className="font-semibold text-[#3FB950]">✓ Passed</p>
-        <p className="mt-1.5 flex flex-wrap gap-x-4 gap-y-0.5 text-white/40">
-          <span>Compile: {MOCK_COMPILE}</span>
-          <span>Run: {MOCK_RUN}</span>
-        </p>
-        <pre className="mt-2 whitespace-pre-wrap font-mono text-white/70">{MOCK_STDOUT}</pre>
+        {passed ? (
+          <>
+            <p className="font-semibold text-[#3FB950]">✓ Passed</p>
+            <p className="mt-1.5 flex flex-wrap gap-x-4 gap-y-0.5 text-white/40">
+              <span>Compile: {MOCK_COMPILE}</span>
+              <span>Run: {MOCK_RUN}</span>
+            </p>
+            <pre className="mt-2 whitespace-pre-wrap font-mono text-white/70">{MOCK_STDOUT}</pre>
+          </>
+        ) : (
+          <>
+            <p className="font-semibold text-[#F85149]">✗ NICE TRY</p>
+            <p className="mt-1.5 text-white/40">This demo only recognizes the original snippet, byte for byte.</p>
+            <pre className="mt-2 whitespace-pre-wrap font-mono text-white/40">{'$ diff original.cs your_version.cs\n> tampering detected'}</pre>
+          </>
+        )}
       </div>
     </div>
   )
