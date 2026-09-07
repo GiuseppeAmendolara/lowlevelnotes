@@ -2,12 +2,14 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import CodeMirror from '@uiw/react-codemirror'
 import SolutionReveal from '@/components/SolutionReveal'
 import { Skeleton } from '@/components/Skeleton'
 import ActionButton from '@/components/ActionButton'
 import { useToast } from '@/components/ToastProvider'
-import { getLessonContent, submitExercise, unwrapResult, type Exercise, type ExerciseSubmitResult } from '@/lib/authClient'
+import { getLessonContent, submitExercise, unwrapResult, type Exercise, type ExerciseSubmitResult, type ExerciseStageStats } from '@/lib/authClient'
 import { attachContentCopyDetection, attachLargeSelectionDetection } from '@/lib/securityMonitor'
+import { codeEditorTheme, languageExtensionFor } from '@/lib/codeEditorTheme'
 
 function ProseSkeleton() {
   return (
@@ -170,6 +172,14 @@ export function RenderedCode({ code, lang }: { code: string; lang: string }) {
   )
 }
 
+function formatStageStats(stats: ExerciseStageStats): string {
+  const parts: string[] = []
+  if (stats.wallTimeMs != null) parts.push(`${stats.wallTimeMs}ms wall`)
+  if (stats.cpuTimeMs != null) parts.push(`${stats.cpuTimeMs}ms cpu`)
+  if (stats.memoryBytes != null) parts.push(`${(stats.memoryBytes / 1_000_000).toFixed(1)} MB`)
+  return parts.join(', ') || '—'
+}
+
 // Unlike QuizBody (which completes the lesson on any attempt), completion
 // here only happens on a passing run — see submitExerciseV1's own
 // reasoning in worker/routes/courses.js. Owns invalidating progress
@@ -207,14 +217,15 @@ export function ExerciseBody({
     <div>
       <p className="text-sm leading-7 text-[#90939A]">{exercise.prompt}</p>
 
-      <div className="mt-6">
-        <textarea
+      <div className="mt-6 overflow-hidden border border-white/10 [&_.cm-editor]:!bg-transparent [&_.cm-scroller]:overflow-auto">
+        <CodeMirror
           value={code}
-          onChange={(e) => setCode(e.target.value)}
-          spellCheck={false}
-          rows={14}
+          onChange={setCode}
+          theme={codeEditorTheme}
+          extensions={languageExtensionFor(exercise.language)}
+          minHeight="320px"
           placeholder="Write your solution here…"
-          className="w-full resize-y border border-white/10 bg-[#0B0B0D] px-4 py-3 font-mono text-xs leading-6 text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none"
+          basicSetup={{ tabSize: 4 }}
         />
       </div>
 
@@ -232,6 +243,12 @@ export function ExerciseBody({
               ? '✓ Passed'
               : `✗ Failed (${result.statusLabel ?? `exit code ${result.exitCode ?? 'n/a'}`})`}
           </p>
+          {(result.compile || result.run) && (
+            <p className="mt-1.5 flex flex-wrap gap-x-4 gap-y-0.5 text-white/40">
+              {result.compile && <span>Compile: {formatStageStats(result.compile)}</span>}
+              {result.run && <span>Run: {formatStageStats(result.run)}</span>}
+            </p>
+          )}
           {output && <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap font-mono text-white/70">{output}</pre>}
         </div>
       )}

@@ -334,12 +334,20 @@ export function attemptQuiz(lessonId: number, answers: { questionId: number; ans
   })
 }
 
+export type ExerciseStageStats = {
+  wallTimeMs: number | null
+  cpuTimeMs: number | null
+  memoryBytes: number | null
+}
+
 export type ExerciseSubmitResult = {
   passed: boolean
   exitCode: number | null
   statusLabel: string | null
   stdout: string
   stderr: string
+  compile: ExerciseStageStats | null
+  run: ExerciseStageStats | null
 }
 
 export function submitExercise(lessonId: number, code: string) {

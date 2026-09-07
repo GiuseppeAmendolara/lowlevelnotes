@@ -208,11 +208,16 @@ client-side WASM/x86 emulator) and Piston was the pick either way.
   namespaces, chroot, unprivileged users, cgroups, via its `isolate`
   dependency) — no need to hand-roll process isolation.
 - **Access:** the public API at `https://emkc.org/api/v2/piston`
-  (`worker/lib/piston.js`'s `DEFAULT_BASE_URL`), authorized via a bearer
-  token (`PISTON_API_KEY`, a Wrangler secret; never committed — see "No
-  infra IDs in public docs" conventions elsewhere in this file) issued
-  directly by Piston's maintainer, not a private instance this app hosts
-  or pays for. `env.PISTON_API_URL` can override the base if this ever
+  (`worker/lib/piston.js`'s `DEFAULT_BASE_URL`), authorized via the raw
+  key in the `Authorization` header (`PISTON_API_KEY`, a Wrangler
+  secret; never committed — see "No infra IDs in public docs"
+  conventions elsewhere in this file) issued directly by Piston's
+  maintainer, not a private instance this app hosts or pays for.
+  Deliberately **not** `Bearer <key>` — Piston's own docs never document
+  this gate's header format at all (a plain `curl .../runtimes` with no
+  auth still returns 200; only `/execute` is actually gated), so this
+  was found empirically: a `Bearer`-prefixed value 401s, the bare key
+  value doesn't. `env.PISTON_API_URL` can override the base if this ever
   does move to a private instance later — cheap to swap since it's just
   a secret, not a code change — but note a self-hosted Piston normally
   serves its API at its own root (`.../api/v2`), not under emkc.org's
@@ -226,9 +231,17 @@ client-side WASM/x86 emulator) and Piston was the pick either way.
   (`version: "*"` matches Piston's own CLI default — picks whatever
   version of that language is installed, so this never has to track
   exact installed versions; `status` — Piston's two-letter RE/SG/TO/OL/
-  EL/XX codes — maps to a human-readable `statusLabel`, e.g. "Timed
-  out", so a killed-by-timeout run doesn't just show a bare null exit
-  code). `PISTON_LANGUAGE_ALIASES` maps this app's display-oriented
+  EL/XX codes — maps to a human-readable `statusLabel` for the
+  genuinely distinctive failure modes (e.g. "Timed out" for TO), so a
+  killed-by-timeout run doesn't just show a bare null exit code. `RE` is
+  deliberately excluded from that mapping — confirmed empirically that
+  Piston returns it for *any* plain nonzero exit, including a harness's
+  own `Environment.Exit(1)` for "the student's answer was wrong" (the
+  overwhelmingly common case), not just an actual unhandled exception,
+  so labeling it "Runtime error" would mislead a student whose code ran
+  fine but produced a wrong result; a plain nonzero exit just falls back
+  to showing the exit code instead). `PISTON_LANGUAGE_ALIASES` maps this
+  app's display-oriented
   `exercises.language` values to Piston's own runtime names where they
   differ (`asm` -> `nasm`; anything already matching, e.g. `c`, passes
   through unchanged).
@@ -263,19 +276,43 @@ client-side WASM/x86 emulator) and Piston was the pick either way.
   Phase 9 `criteria_type`s — no `exercise_*` criteria added yet, so
   exercise attempts don't unlock anything new on their own for now.
 - **Frontend:** `ExerciseBody` (`src/components/lesson/
-  LessonContentViews.tsx`) is now interactive — a plain monospace
-  `<textarea>` (no CodeMirror; kept to what the rest of this stack
-  already uses — the instructor builder's own code fields are plain
-  textareas too) seeded with `starterCode`, a "Run" button hitting
-  `submitExercise()`, and a pass/fail + stdout/stderr panel. Owns its own
+  LessonContentViews.tsx`) is now interactive — originally shipped as a
+  plain `<textarea>` to avoid a new dependency, upgraded to a real
+  `@uiw/react-codemirror` editor once the user asked for syntax
+  highlighting and real-editor Tab behavior (a plain textarea genuinely
+  can't do either). `src/lib/codeEditorTheme.ts` holds the setup:
+  `codeEditorTheme` (via `@uiw/codemirror-themes`' `createTheme`)
+  mirrors `shikiTheme.ts`'s exact palette so the editable editor and the
+  site's existing read-only code blocks don't look like two different
+  products, and `languageExtensionFor()` maps `exercises.language` to a
+  CodeMirror extension. Neither C# nor NASM has an official CM6 lezer
+  grammar, so this uses `@codemirror/legacy-modes` (CM5's modes ported
+  to CM6's `StreamLanguage`) — `clike`'s `csharp` config and `gas` for
+  assembly (close enough to NASM for highlighting; no dedicated NASM
+  mode exists). Tab-to-indent works via `@uiw/react-codemirror`'s own
+  `indentWithTab` default (true) — no extra keymap wiring needed.
+  Verified for real (not assumed): a temporary, unauthenticated preview
+  route + a local Playwright script (no `claude-in-chrome` available in
+  this environment) confirmed Tab inserts 4 spaces and read back the
+  actual computed CSS colors per token, matching every rule in
+  `codeEditorTheme` exactly; route and script deleted after. Seeded with
+  `starterCode`, a "Run" button hitting `submitExercise()`, and a
+  pass/fail + stdout/stderr panel that also surfaces whatever Piston
+  returned: compile/run wall time, CPU time, and memory (confirmed
+  empirically that a failed compile makes Piston's `run` stage an exact
+  duplicate of `compile`, since it never actually ran — `piston.js`
+  suppresses that duplicate `run` entry rather than showing misleading
+  "ran in Nms" stats for code that only ever compiled). Owns its own
   completion/progress-invalidation the same way `QuizBody` does, so the
   page excludes `exercise` (alongside `quiz`) from the generic
   `CompletionControl`. The instructor builder
   (`src/app/account/build/[id]/page.tsx`) gained a `testHarness` textarea
-  next to the existing exercise fields; `CourseReviewPanel.tsx`'s
-  read-only staff preview got its own `ExerciseReview` (parallel to its
-  existing `QuizReview`) rather than reusing the now-interactive
-  `ExerciseBody`, since a review pass isn't a real enrolled attempt.
+  next to the existing exercise fields (still a plain textarea — this
+  editor upgrade was scoped to the student-facing submission UI, not
+  instructor authoring); `CourseReviewPanel.tsx`'s read-only staff
+  preview got its own `ExerciseReview` (parallel to its existing
+  `QuizReview`) rather than reusing the now-interactive `ExerciseBody`,
+  since a review pass isn't a real enrolled attempt.
 - **Security boundary:** correctness of isolation is Piston's job, not this
   app's — the Worker only needs to be a disciplined caller (real timeouts,
   rate limits, never trusting output beyond the harness's own pass/fail
@@ -289,19 +326,19 @@ client-side WASM/x86 emulator) and Piston was the pick either way.
   `cloudflare:test` type docs. `vitest.config.mjs` carries fake
   `PISTON_API_URL`/`PISTON_API_KEY` test bindings so `executeCode()`
   doesn't short-circuit on "not configured" before the mock ever runs.
-- **Not yet done (needs the user):** the migration hasn't been applied to
-  the live D1 instance yet (`wrangler d1 migrations apply
-  lowlevelnotes-db --remote` from `worker/` — production-affecting, so
-  needs explicit go-ahead each time per this repo's own safety norms, not
-  bundled into this pass); `PISTON_API_KEY` itself was already staged
-  pre-launch (see WORKLOG) and `PISTON_API_URL` needs no setting at all
-  since the code's own default already points at the public API this key
-  is for. Once the migration's applied: same verification pattern as every
-  feature in this repo — a throwaway QA account (never a real user's
-  session), submit both a passing and a failing solution to a real
-  exercise, confirm the `exercise_attempts` row is correct, and confirm
-  a deliberately hanging submission (infinite loop) is killed by Piston's
-  own timeout rather than hanging the Worker's request.
+- **Status: live and verified.** Migration applied to production, Worker
+  deployed. Verified the same way every feature in this repo is — a
+  throwaway QA account (never a real user's session): enrolled, submitted
+  both a passing and a failing solution to a real exercise (the first
+  pass surfaced the wrong auth header format, since fixed — see WORKLOG),
+  confirmed the `exercise_attempts` row and `lesson_progress` completion
+  were correct, and separately confirmed (a direct `/execute` call, not
+  through this app) that a deliberately hanging submission
+  (`while True: pass`, `run_timeout: 2000`) comes back promptly as
+  `{"code": null, "signal": "SIGKILL", "status": "TO"}` rather than
+  hanging the Worker's own request. Three real exercises exist in the
+  live "Programming Foundations" course as the first content built
+  against this (see WORKLOG's "first real exercises" entry).
 
 ## Future implementation reference
 
