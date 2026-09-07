@@ -175,7 +175,13 @@ export default function LessonPage({ params }: { params: Promise<{ course: strin
                 <div className="animate-fade-in-up motion-reduce:animate-none">
                   {lesson.type === 'article' && <ArticleBody contentPath={lesson.contentPath} />}
                   {lesson.type === 'video' && <VideoBody videoUrl={lesson.videoUrl} />}
-                  {lesson.type === 'exercise' && lesson.exercise && <ExerciseBody exercise={lesson.exercise} />}
+                  {lesson.type === 'exercise' && lesson.exercise && (
+                    <ExerciseBody
+                      lessonId={lesson.id}
+                      exercise={lesson.exercise}
+                      isCompleted={isCompleted}
+                    />
+                  )}
                   {lesson.type === 'quiz' && lesson.quiz && (
                     <QuizBody
                       lessonId={lesson.id}
@@ -184,7 +190,7 @@ export default function LessonPage({ params }: { params: Promise<{ course: strin
                     />
                   )}
 
-                  {lesson.type !== 'quiz' && (
+                  {lesson.type !== 'quiz' && lesson.type !== 'exercise' && (
                     <CompletionControl
                       lessonId={lesson.id}
                       isCompleted={isCompleted}

@@ -9,8 +9,9 @@ import {
   deleteStaffCourse,
   unwrapResult,
   type InstructorQuizQuestion,
+  type InstructorExercise,
 } from '@/lib/authClient'
-import { ArticleBody, VideoBody, ExerciseBody } from '@/components/lesson/LessonContentViews'
+import { ArticleBody, VideoBody, RenderedCode } from '@/components/lesson/LessonContentViews'
 import { SectionHeading, buttonClass } from '@/components/admin/shared'
 import Eyebrow from '@/components/Eyebrow'
 import { useToast } from '@/components/ToastProvider'
@@ -127,7 +128,7 @@ export default function CourseReviewPanel({ id }: { id: number }) {
                   <div className="mt-4">
                     {lesson.type === 'article' && <ArticleBody contentPath={lesson.contentPath} />}
                     {lesson.type === 'video' && <VideoBody videoUrl={lesson.videoUrl} />}
-                    {lesson.type === 'exercise' && lesson.exercise && <ExerciseBody exercise={lesson.exercise} />}
+                    {lesson.type === 'exercise' && lesson.exercise && <ExerciseReview exercise={lesson.exercise} />}
                     {lesson.type === 'quiz' && lesson.quiz && <QuizReview questions={lesson.quiz.questions} />}
                   </div>
                 </div>
@@ -136,6 +137,32 @@ export default function CourseReviewPanel({ id }: { id: number }) {
           </div>
         ))}
       </div>
+    </div>
+  )
+}
+
+// Read-only inverse of the student-facing ExerciseBody — no editor, no
+// Run button, just a preview of what a student would see plus the test
+// harness (owner/admin-only, like QuizReview's answers[].correct — never
+// present in the student-facing getLessonV1 response, only this
+// instructor one).
+function ExerciseReview({ exercise }: { exercise: InstructorExercise }) {
+  return (
+    <div>
+      <p className="text-sm leading-7 text-[#90939A]">{exercise.prompt}</p>
+      {exercise.starterCode && (
+        <div className="mt-6">
+          <RenderedCode code={exercise.starterCode} lang={exercise.language ?? 'text'} />
+        </div>
+      )}
+      {exercise.testHarness && (
+        <div className="mt-4">
+          <p className="text-xs uppercase tracking-[0.1em] text-white/40">Test harness</p>
+          <div className="mt-2">
+            <RenderedCode code={exercise.testHarness} lang={exercise.language ?? 'text'} />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

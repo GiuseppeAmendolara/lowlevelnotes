@@ -21,7 +21,13 @@ export default defineConfig(async () => {
         miniflare: {
           // Test-only binding, read by setup.js to apply every real
           // migration before each test file runs.
-          bindings: { TEST_MIGRATIONS: migrations },
+          bindings: {
+            TEST_MIGRATIONS: migrations,
+            // Fake, test-only -- exercise-submission.test.js mocks global
+            // fetch rather than calling a real Piston instance.
+            PISTON_API_URL: "https://piston.test",
+            PISTON_API_KEY: "test-piston-key",
+          },
         },
       }),
     ],

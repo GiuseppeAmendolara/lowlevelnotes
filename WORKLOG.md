@@ -5341,3 +5341,75 @@ and `wrangler deploy --dry-run` all clean. `/verify` added to
 `robots.ts`'s disallow list, same reasoning as `/reset-password`/
 `/verify-email` (single-purpose, query-string-driven, nothing generic
 to index). No new database table or migration.
+
+## Exercise code execution, wired up (2026-09-07)
+
+The developer running a private, self-hosted Piston instance (see
+AGENTS.md's long-deferred "End-Phase — Exercises" plan) sent over an API
+key. User staged it into the Worker (`wrangler secret put
+PISTON_API_KEY`), `.env.local`, and `.claude/settings.local.json`'s `env`
+block, then asked to build the actual integration same-day — earlier than
+the plan's own "only if the platform grows past two real users" trigger,
+but the plan itself was already fully written out, so this was pure
+execution against it, not re-design.
+
+Implemented exactly per that plan (see AGENTS.md's End-Phase section,
+now updated to reflect this as done rather than pending):
+- `worker/migrations/0039_exercise_execution.sql` — `exercises.test_harness`,
+  new `exercise_attempts` table, `'exercise_submit'` added to
+  `auth_events`' CHECK.
+- `worker/lib/piston.js` (`executeCode()`) — the only thing that calls the
+  private instance; confirmed against Piston's own repo (not guessed) that
+  `version: "*"` is the CLI's own default for "latest installed" and that
+  its `gcc`/`nasm` compile scripts don't care about the source filename,
+  so no per-language file-naming logic was needed.
+- `POST /v1/lessons/:id/submit-exercise` (`submitExerciseV1`) — session +
+  enrollment gated, 20/hour rate limited, concatenates submission +
+  harness, only completes the lesson on an actual exit-0 pass (not on
+  every attempt, unlike quiz).
+- `mapExerciseForInstructor` split off from the student-facing
+  `mapExercise` so `test_harness` (the answer key) never reaches
+  `getLessonV1`.
+- Frontend: `ExerciseBody` is now a real editor (plain `<textarea>`, not
+  a new CodeMirror dependency — matches how the instructor builder
+  already edits code) with a Run button and pass/fail panel;
+  instructor builder gained a `testHarness` field; `CourseReviewPanel`
+  got its own read-only `ExerciseReview` instead of reusing the now-
+  interactive body.
+- `worker/test/exercise-submission.test.js` (4 new tests) — mocks global
+  `fetch` via `vi.stubGlobal` rather than hitting a real Piston instance;
+  works because vitest-pool-workers runs the Worker under test in the
+  same isolate as the test file. `vitest.config.mjs` carries fake
+  `PISTON_API_URL`/`PISTON_API_KEY` test bindings so `executeCode()`
+  doesn't short-circuit before the mock runs.
+
+145/145 across the whole suite (141 prior + 4 new). `npx tsc --noEmit`,
+`npx next build`, and `wrangler deploy --dry-run` all clean.
+
+**Correction, same session:** the base URL question below got resolved
+immediately after — the user pasted Piston's own README, which
+documents its public API's base URL directly
+(`https://emkc.org/api/v2/piston`) and explains that, as of Feb 2026,
+that public API requires a maintainer-issued authorization key for
+approved non-commercial educational use — exactly the "key from the
+developer" already staged. Confirmed with the user this is in fact that
+public endpoint, not a separate private instance. `worker/lib/piston.js`
+now defaults to that URL directly (`env.PISTON_API_URL` only needed if
+this ever moves to a private instance later), so no VPS, no hosting
+cost, and no second secret to chase down — the original "self-hosted
+Piston, deferred for its VPS cost" premise in AGENTS.md's older plan
+didn't end up applying at all. Also added `run_cpu_time`/
+`compile_cpu_time` (documented Piston params this pass had missed) and
+surfaced Piston's two-letter status code as a human-readable
+`statusLabel` (e.g. "Timed out") so a killed run doesn't just show a
+bare null exit code.
+
+**Not done in this pass, deliberately** — needs the user, not just more
+coding: the migration hasn't been applied to the live D1 instance
+(`wrangler d1 migrations apply lowlevelnotes-db --remote` is a
+production-affecting command, held for explicit go-ahead per this repo's
+own safety norms). Once that lands: the plan's own "Verification, once
+built" checklist (throwaway QA account, a real passing + failing
+submission, confirm the `exercise_attempts` row, confirm a hanging
+submission gets killed by Piston's own timeout) is still the right next
+step, not skippable just because the code shipped.

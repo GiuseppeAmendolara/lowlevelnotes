@@ -1,9 +1,12 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import SolutionReveal from '@/components/SolutionReveal'
 import { Skeleton } from '@/components/Skeleton'
-import { getLessonContent } from '@/lib/authClient'
+import ActionButton from '@/components/ActionButton'
+import { useToast } from '@/components/ToastProvider'
+import { getLessonContent, submitExercise, unwrapResult, type Exercise, type ExerciseSubmitResult } from '@/lib/authClient'
 import { attachContentCopyDetection, attachLargeSelectionDetection } from '@/lib/securityMonitor'
 
 function ProseSkeleton() {
@@ -167,15 +170,72 @@ export function RenderedCode({ code, lang }: { code: string; lang: string }) {
   )
 }
 
-export function ExerciseBody({ exercise }: { exercise: { prompt: string; language: string | null; starterCode: string | null; solutionNotes: string | null } }) {
+// Unlike QuizBody (which completes the lesson on any attempt), completion
+// here only happens on a passing run — see submitExerciseV1's own
+// reasoning in worker/routes/courses.js. Owns invalidating progress
+// itself, same reason the page excludes exercise lessons from the
+// generic CompletionControl entirely.
+export function ExerciseBody({
+  lessonId,
+  exercise,
+  isCompleted,
+}: {
+  lessonId: number
+  exercise: Exercise
+  isCompleted: boolean
+}) {
+  const queryClient = useQueryClient()
+  const toast = useToast()
+  const [code, setCode] = useState(exercise.starterCode ?? '')
+  const [result, setResult] = useState<ExerciseSubmitResult | null>(null)
+
+  const submitMutation = useMutation({
+    mutationFn: () => unwrapResult(submitExercise(lessonId, code)),
+    onSuccess: (data) => {
+      setResult(data)
+      if (data.passed) {
+        queryClient.invalidateQueries({ queryKey: ['progress'] })
+        toast.success('Passed! Lesson marked complete.')
+      }
+    },
+    onError: (error) => toast.error(error.message),
+  })
+
+  const output = result ? [result.stdout, result.stderr].filter(Boolean).join('\n') : ''
+
   return (
     <div>
       <p className="text-sm leading-7 text-[#90939A]">{exercise.prompt}</p>
-      {exercise.starterCode && (
-        <div className="mt-6">
-          <RenderedCode code={exercise.starterCode} lang={exercise.language ?? 'text'} />
+
+      <div className="mt-6">
+        <textarea
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          spellCheck={false}
+          rows={14}
+          placeholder="Write your solution here…"
+          className="w-full resize-y border border-white/10 bg-[#0B0B0D] px-4 py-3 font-mono text-xs leading-6 text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none"
+        />
+      </div>
+
+      <div className="mt-3 flex items-center gap-3">
+        <ActionButton onClick={() => submitMutation.mutate()} loading={submitMutation.isPending} disabled={!code.trim()}>
+          Run
+        </ActionButton>
+        {isCompleted && !result && <span className="text-sm text-[#3FB950]">✓ Completed</span>}
+      </div>
+
+      {result && (
+        <div className={`mt-4 border p-4 text-xs ${result.passed ? 'border-[#3FB950]/40 bg-[#3FB950]/5' : 'border-[#F85149]/40 bg-[#F85149]/5'}`}>
+          <p className={`font-semibold ${result.passed ? 'text-[#3FB950]' : 'text-[#F85149]'}`}>
+            {result.passed
+              ? '✓ Passed'
+              : `✗ Failed (${result.statusLabel ?? `exit code ${result.exitCode ?? 'n/a'}`})`}
+          </p>
+          {output && <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap font-mono text-white/70">{output}</pre>}
         </div>
       )}
+
       {exercise.solutionNotes && <SolutionReveal notes={exercise.solutionNotes} />}
     </div>
   )

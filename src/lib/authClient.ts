@@ -334,6 +334,21 @@ export function attemptQuiz(lessonId: number, answers: { questionId: number; ans
   })
 }
 
+export type ExerciseSubmitResult = {
+  passed: boolean
+  exitCode: number | null
+  statusLabel: string | null
+  stdout: string
+  stderr: string
+}
+
+export function submitExercise(lessonId: number, code: string) {
+  return authFetch<ExerciseSubmitResult>(`/v1/lessons/${lessonId}/submit-exercise`, {
+    method: 'POST',
+    body: JSON.stringify({ code }),
+  })
+}
+
 export type MyEnrollment = {
   id: number
   courseId: number
@@ -833,6 +848,8 @@ export type InstructorCourse = {
 export type InstructorQuizAnswer = { id: number; body: string; correct: boolean; position: number }
 export type InstructorQuizQuestion = { id: number; prompt: string; position: number; answers: InstructorQuizAnswer[] }
 
+export type InstructorExercise = Exercise & { testHarness: string | null }
+
 export type InstructorLesson = {
   id: number
   moduleId: number
@@ -842,7 +859,7 @@ export type InstructorLesson = {
   contentPath: string | null
   videoUrl: string | null
   position: number
-  exercise?: Exercise
+  exercise?: InstructorExercise
   quiz?: { questions: InstructorQuizQuestion[] }
 }
 
@@ -1017,6 +1034,7 @@ export type LessonFields = {
   language?: string
   starterCode?: string
   solutionNotes?: string
+  testHarness?: string
   questions?: { prompt: string; answers: { body: string; correct: boolean }[] }[]
 }
 

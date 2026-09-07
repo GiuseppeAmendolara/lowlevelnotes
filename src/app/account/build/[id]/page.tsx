@@ -840,6 +840,7 @@ function LessonEditor({
   const [language, setLanguage] = useState(lesson?.exercise?.language ?? '')
   const [starterCode, setStarterCode] = useState(lesson?.exercise?.starterCode ?? '')
   const [solutionNotes, setSolutionNotes] = useState(lesson?.exercise?.solutionNotes ?? '')
+  const [testHarness, setTestHarness] = useState(lesson?.exercise?.testHarness ?? '')
   const [questions, setQuestions] = useState<QuestionDraft[]>(
     lesson?.quiz?.questions.map((q) => ({
       prompt: q.prompt,
@@ -942,7 +943,7 @@ function LessonEditor({
         title,
         type,
         ...(type === 'video' ? { videoUrl } : {}),
-        ...(type === 'exercise' ? { prompt, language: language || undefined, starterCode: starterCode || undefined, solutionNotes: solutionNotes || undefined } : {}),
+        ...(type === 'exercise' ? { prompt, language: language || undefined, starterCode: starterCode || undefined, solutionNotes: solutionNotes || undefined, testHarness: testHarness || undefined } : {}),
         ...(type === 'quiz' ? { questions: questions.map((q) => ({ prompt: q.prompt, answers: q.answers.map((a) => ({ body: a.body, correct: a.correct })) })) } : {}),
       }
 
@@ -1019,6 +1020,18 @@ function LessonEditor({
           <input value={language} onChange={(e) => setLanguage(e.target.value)} placeholder="Language (e.g. c, asm)" className={inputClass} />
           <textarea value={starterCode} onChange={(e) => setStarterCode(e.target.value)} rows={6} placeholder="Starter code" className={`${inputClass} resize-y font-mono`} />
           <textarea value={solutionNotes} onChange={(e) => setSolutionNotes(e.target.value)} rows={4} placeholder="Solution notes" className={`${inputClass} resize-y`} />
+          <div>
+            <textarea
+              value={testHarness}
+              onChange={(e) => setTestHarness(e.target.value)}
+              rows={8}
+              placeholder="Test harness — code that calls the student's submission, feeds it fixed inputs, and exits 0 on pass / nonzero on fail"
+              className={`${inputClass} resize-y font-mono`}
+            />
+            <p className="mt-1 text-xs text-white/40">
+              Appended after the student&rsquo;s code and run together on submit. Never shown to students. Leave blank to let any exit-0 submission pass.
+            </p>
+          </div>
         </div>
       )}
 

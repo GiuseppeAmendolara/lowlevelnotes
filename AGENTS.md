@@ -178,73 +178,128 @@ not just the auth-only paths originally planned.
    `lesson_progress`/`quiz_attempts`, surfaced on `/account/courses`); a new
    achievements system (unlockable milestones layered on that same
    progress data — see "Achievements" below) shipped in this pass.
-   Exercise results stay blocked on End-Phase (below) — not scheduled.
+   Exercise results shipped ahead of schedule once a Piston key arrived
+   (see "End-Phase — Exercises" below, now implemented).
 8. **Phase 9:** Gamification: goals, XP, badges, levels, streaks, certificates,
    and leaderboards.
 
 **End-Phase — Exercises** (standard-library-free programming tasks and
-x86-64 assembly tasks): out of the numbered sequence on purpose. This isn't
-scheduled — it gets picked up only if the platform grows past two real
-users, since it's the one piece of this roadmap with an ongoing hosting
-cost. Cloudflare Workers can't run a compiler/assembler in-process, so real
-grading needs an external sandboxed execution backend; three options were
-weighed (Cloudflare Containers, a self-hosted Piston instance, a
-from-scratch client-side WASM/x86 emulator) and the pick was **self-hosted
-Piston** — the VPS cost, not the tool, is what's actually being deferred.
-Written out fully below so this is pure execution whenever it's picked up,
-not re-research:
+x86-64 assembly tasks): out of the numbered sequence on purpose, and was
+originally deferred indefinitely on the assumption that real grading
+would require paying for a private, self-hosted VPS (below is that
+pre-implementation reasoning, kept for the record) — shipped early
+instead, without that cost, once the developer running Piston's public
+instance (github.com/engineer-man/piston) personally issued an
+authorization key. That project tightened its public API in Feb 2026:
+it's no longer freely open, but a maintainer-issued key for approved
+non-commercial educational use (this project qualifies) now unlocks the
+same public endpoint (`https://emkc.org/api/v2/piston`) that used to be
+rate-limited-but-open — so the original "requires a private instance"
+premise below turned out to be avoidable, not the VPS spend itself.
+Cloudflare Workers can't run a compiler/assembler in-process regardless
+of which Piston instance is used, so real grading always needed an
+external sandboxed execution backend; three options were weighed
+(Cloudflare Containers, a self-hosted Piston instance, a from-scratch
+client-side WASM/x86 emulator) and Piston was the pick either way.
 
 - **Why Piston:** open-source, purpose-built code-execution engine already
   used by several competitive-programming sites; supports C (via `gcc`) and
   NASM out of the box; does its own sandboxing internally (Linux
   namespaces, chroot, unprivileged users, cgroups, via its `isolate`
-  dependency) — no need to hand-roll process isolation. Its public instance
-  is explicitly rate-limited and not meant for real reliance, so this
-  requires a private, self-hosted instance, not the public API.
-- **Hosting:** one small VPS (a $5-6/mo tier — DigitalOcean, Hetzner, or
-  Fly.io are all fine) running Piston via its official docker-compose
-  setup, with the `gcc` and `nasm` language packages installed
-  (`cli.js ppman install gcc nasm`). Put behind a reverse proxy that checks
-  a shared-secret bearer token (a new Wrangler secret, e.g.
-  `PISTON_API_KEY`) before forwarding to Piston's actual API — Workers have
-  no static egress IP to firewall by IP alone.
-- **Schema:** extend `exercises` (`worker/migrations/0001_phase1_learning_
-  platform.sql`) with a `test_harness` column — instructor-authored code
-  that wraps the student's submission (includes/calls it, feeds fixed
-  inputs, and exits 0 on pass / nonzero on fail), matching the shape of
-  this doc's own example exercises ("reverse a string without the standard
-  library"; "write an x86-64 function returning the maximum of two
-  integers" — see "Learning and motivation model" below). Add a new
-  `exercise_attempts` table (id, user_id, lesson_id, submitted_code,
-  stdout, exit_code, passed, attempted_at), mirroring `quiz_attempts`'s
-  shape.
-- **Grading flow:** a new endpoint, `POST /v1/lessons/:id/submit-exercise`
-  (parallel to the existing `.../attempt` for quizzes) — session- and
-  enrollment-gated the same way `completeLessonV1`/`attemptQuizV1` already
-  are, rate-limited via the existing `countAuthEvents` pattern with a new
-  `exercise_submit` event type (needs an `auth_events` CHECK-constraint
-  migration, same as `course_content_write` did). The Worker concatenates
-  the submission with the exercise's stored `test_harness`, POSTs it to
-  Piston's `/api/v2/execute` with the right `language` and a
-  `compile_timeout`/`run_timeout`/memory limit (all native Piston request
-  params), reads back stdout/stderr/exit code, writes an
-  `exercise_attempts` row, and calls `evaluateAchievementsV1` — making
-  "exercise results" achievements (the original Phase 9 goal left out this
-  pass) a one-line `criteria_type` addition once this lands.
+  dependency) — no need to hand-roll process isolation.
+- **Access:** the public API at `https://emkc.org/api/v2/piston`
+  (`worker/lib/piston.js`'s `DEFAULT_BASE_URL`), authorized via a bearer
+  token (`PISTON_API_KEY`, a Wrangler secret; never committed — see "No
+  infra IDs in public docs" conventions elsewhere in this file) issued
+  directly by Piston's maintainer, not a private instance this app hosts
+  or pays for. `env.PISTON_API_URL` can override the base if this ever
+  does move to a private instance later — cheap to swap since it's just
+  a secret, not a code change — but note a self-hosted Piston normally
+  serves its API at its own root (`.../api/v2`), not under emkc.org's
+  public-gateway-specific `/piston` path segment, so an override value
+  needs to resolve `/execute` correctly off it the same way the default
+  does. `executeCode()` is the only thing that calls out to it, POSTing
+  `{ language, version: "*", files: [{ content }], stdin, run_timeout:
+  5000, compile_timeout: 10000, run_cpu_time: 5000, compile_cpu_time:
+  10000, run_memory_limit/compile_memory_limit: 256MB }` to `/execute`
+  and reading back `run`/`compile`'s `stdout`/`stderr`/`code`/`status`
+  (`version: "*"` matches Piston's own CLI default — picks whatever
+  version of that language is installed, so this never has to track
+  exact installed versions; `status` — Piston's two-letter RE/SG/TO/OL/
+  EL/XX codes — maps to a human-readable `statusLabel`, e.g. "Timed
+  out", so a killed-by-timeout run doesn't just show a bare null exit
+  code). `PISTON_LANGUAGE_ALIASES` maps this app's display-oriented
+  `exercises.language` values to Piston's own runtime names where they
+  differ (`asm` -> `nasm`; anything already matching, e.g. `c`, passes
+  through unchanged).
+- **Schema:** `worker/migrations/0039_exercise_execution.sql` extended
+  `exercises` (`0001_phase1_learning_platform.sql`) with a `test_harness`
+  column — instructor-authored code that wraps the student's submission
+  (includes/calls it, feeds fixed inputs, and exits 0 on pass / nonzero on
+  fail), matching the shape of this doc's own example exercises ("reverse
+  a string without the standard library"; "write an x86-64 function
+  returning the maximum of two integers" — see "Learning and motivation
+  model" below). Same migration added `exercise_attempts` (id, user_id,
+  lesson_id, submitted_code, stdout, exit_code, passed, attempted_at),
+  mirroring `quiz_attempts`'s shape, and `'exercise_submit'` to
+  `auth_events`' event_type CHECK.
+- **Grading flow:** `POST /v1/lessons/:id/submit-exercise`
+  (`submitExerciseV1` in `worker/routes/courses.js`, parallel to the
+  existing `.../attempt` for quizzes) — session- and enrollment-gated the
+  same way `completeLessonV1`/`attemptQuizV1` already are, rate-limited to
+  20/hour via `countAuthEvents`'s existing pattern with the new
+  `exercise_submit` event type. Concatenates the submission with the
+  exercise's stored `test_harness` (harness after submission, so it can
+  call whatever the student just defined), runs it via `executeCode()`,
+  writes an `exercise_attempts` row unconditionally, but — unlike
+  `attemptQuizV1`, which completes the lesson on any attempt — only marks
+  the lesson complete (and calls `awardXpV1`/`maybeCompleteModuleV1`/
+  `maybeCompleteEnrollmentV1`/`evaluateAchievementsV1`, same as
+  `completeLessonV1`) on an actual exit-code-0 pass, since an exercise's
+  whole point is correct code, not just an attempt. `test_harness` is
+  never sent to students: `mapExercise` (student-facing, `getLessonV1`)
+  omits it; only `mapExerciseForInstructor` (author/staff-facing,
+  `getMyCourseV1`) includes it. Achievements still use only the original
+  Phase 9 `criteria_type`s — no `exercise_*` criteria added yet, so
+  exercise attempts don't unlock anything new on their own for now.
 - **Frontend:** `ExerciseBody` (`src/components/lesson/
-  LessonContentViews.tsx`) already renders the prompt and starter code; it
-  would need a real code editor (a new dependency — CodeMirror is a
-  reasonable pick, nothing like it exists in this stack today) in place of
-  the current read-only `RenderedCode`, a "Run" action hitting the new
-  endpoint, and a pass/fail + stdout/stderr result panel.
+  LessonContentViews.tsx`) is now interactive — a plain monospace
+  `<textarea>` (no CodeMirror; kept to what the rest of this stack
+  already uses — the instructor builder's own code fields are plain
+  textareas too) seeded with `starterCode`, a "Run" button hitting
+  `submitExercise()`, and a pass/fail + stdout/stderr panel. Owns its own
+  completion/progress-invalidation the same way `QuizBody` does, so the
+  page excludes `exercise` (alongside `quiz`) from the generic
+  `CompletionControl`. The instructor builder
+  (`src/app/account/build/[id]/page.tsx`) gained a `testHarness` textarea
+  next to the existing exercise fields; `CourseReviewPanel.tsx`'s
+  read-only staff preview got its own `ExerciseReview` (parallel to its
+  existing `QuizReview`) rather than reusing the now-interactive
+  `ExerciseBody`, since a review pass isn't a real enrolled attempt.
 - **Security boundary:** correctness of isolation is Piston's job, not this
   app's — the Worker only needs to be a disciplined caller (real timeouts,
   rate limits, never trusting output beyond the harness's own pass/fail
   exit code).
-- **Verification, once built:** same pattern as every feature in this repo
-  — a throwaway QA account (never a real user's session), submit both a
-  passing and a failing solution to a real exercise, confirm the
-  `exercise_attempts` row and achievement unlock are correct, and confirm
+- **Tests:** `worker/test/exercise-submission.test.js` — enrollment gating,
+  pass marks the lesson complete and records the attempt, fail leaves
+  progress untouched, and rejecting a non-exercise lesson. Mocks global
+  `fetch` (`vi.stubGlobal`) rather than calling a real Piston instance —
+  works because vitest-pool-workers runs the Worker under test in the
+  same isolate as the test file itself, confirmed by Cloudflare's own
+  `cloudflare:test` type docs. `vitest.config.mjs` carries fake
+  `PISTON_API_URL`/`PISTON_API_KEY` test bindings so `executeCode()`
+  doesn't short-circuit on "not configured" before the mock ever runs.
+- **Not yet done (needs the user):** the migration hasn't been applied to
+  the live D1 instance yet (`wrangler d1 migrations apply
+  lowlevelnotes-db --remote` from `worker/` — production-affecting, so
+  needs explicit go-ahead each time per this repo's own safety norms, not
+  bundled into this pass); `PISTON_API_KEY` itself was already staged
+  pre-launch (see WORKLOG) and `PISTON_API_URL` needs no setting at all
+  since the code's own default already points at the public API this key
+  is for. Once the migration's applied: same verification pattern as every
+  feature in this repo — a throwaway QA account (never a real user's
+  session), submit both a passing and a failing solution to a real
+  exercise, confirm the `exercise_attempts` row is correct, and confirm
   a deliberately hanging submission (infinite loop) is killed by Piston's
   own timeout rather than hanging the Worker's request.
 
